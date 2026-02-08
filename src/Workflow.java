@@ -49,3 +49,93 @@ public class Workflow {
     System.out.println(PINK + BOLD + text + RESET);
     printLine();
     }
+     private void printDashboardBox(Admin admin) {
+    String top    = "╔══════════════════════════════════════╗";
+    String mid    = "║                                      ║";
+    String bottom = "╚══════════════════════════════════════╝";
+
+    System.out.println(SOFTGRAY + top + RESET);
+
+    // Centered Title line
+    String title = "ADMIN DASHBOARD";
+    System.out.println(SOFTGRAY + "║" + RESET
+            + PINK + BOLD + centerText(title, 38) + RESET
+            + SOFTGRAY + "║" + RESET);
+
+    System.out.println(SOFTGRAY + mid + RESET);
+
+    // Info line: Logged in as
+    String info = "Logged in as: " + admin.username + " (" + admin.role + ")";
+    System.out.println(SOFTGRAY + "║" + RESET
+            + LAVENDER + centerText(info, 38) + RESET
+            + SOFTGRAY + "║" + RESET);
+
+    System.out.println(SOFTGRAY + bottom + RESET);
+}
+private String centerText(String text, int width) {
+    if (text == null) text = "";
+    if (text.length() >= width) return text.substring(0, width);
+
+    int left = (width - text.length()) / 2;
+    int right = width - text.length() - left;
+
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < left; i++) sb.append(' ');
+    sb.append(text);
+    for (int i = 0; i < right; i++) sb.append(' ');
+    return sb.toString();
+}
+private void printRoleSummary(Admin admin) {
+    printTitle("Quick Summary");
+   int pending = 0;
+int packed = 0;
+int shipped = 0;
+int outForDelivery = 0;
+int delivered = 0;
+int cancelled = 0;
+
+for (int i = 0; i < dp.orderCount; i++) {
+    Order o = dp.orders[i];
+    if (o == null || o.status == null) continue;
+
+    switch (o.status) {
+        case "PENDING":
+            pending++;
+            break;
+        case "PACKED":
+            packed++;
+            break;
+        case "SHIPPED":
+            shipped++;
+            break;
+        case "OUT_FOR_DELIVERY":
+            outForDelivery++;
+            break;
+        case "DELIVERED":
+            delivered++;
+            break;
+        case "CANCELLED":
+            cancelled++;
+            break;
+    }
+}
+   int activeOrders = packed + shipped + outForDelivery;
+       System.out.println(SOFTGRAY + "Total Orders: " + RESET + MINT + dp.orderCount + RESET);
+       System.out.println(SOFTGRAY + "Active Orders: " + RESET + MINT + activeOrders + RESET);
+       System.out.println(SOFTGRAY + "Pending: " + RESET + MINT+ pending + RESET);
+       System.out.println(SOFTGRAY + "Packed: " + RESET + MINT + packed + RESET);
+       System.out.println(SOFTGRAY + "Shipped: " + RESET + MINT + shipped + RESET);
+       System.out.println(SOFTGRAY + "Out for Delivery: " + RESET + MINT + outForDelivery + RESET);
+       System.out.println(SOFTGRAY + "Delivered: " + RESET + MINT + delivered + RESET);
+       System.out.println(SOFTGRAY + "Cancelled: " + RESET +ROSE+ cancelled + RESET);
+       printLine();
+       printProductSummary();  
+}
+private int countLowStock(int threshold) {
+    int c = 0;
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p != null && p.stock <= threshold) c++;
+    }
+    return c;
+}
