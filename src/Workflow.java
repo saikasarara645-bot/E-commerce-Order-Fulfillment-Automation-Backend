@@ -35,4 +35,17 @@ public class Workflow {
         this.log = log;
         this.paymentService = new PaymentService(log);
     }
+     /** Wrapper for Admin authentication */
+    public boolean adminLogin(BufferedReader console) throws Exception {
+        return Admin.authenticate(dp, console);
+    }
+    
+    private void printLine() {
+    System.out.println(SOFTGRAY + "────────────────────────────────────────" + RESET);
+    }
 
+    private void printTitle(String text) {
+    printLine();
+    System.out.println(PINK + BOLD + text + RESET);
+    printLine();
+    }
