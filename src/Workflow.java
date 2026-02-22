@@ -217,7 +217,7 @@ private int countLowStock(int threshold) {
             System.out.print(LAVENDER + "23." + RESET + " " + ROSE + "Generate Report (Admin only)" + RESET + "\n");
             System.out.print(LAVENDER+"24."+RESET +" "+ ROSE + "Delete ALL Order History(Admin only)" + RESET + "\n");
             System.out.print(LAVENDER+"25."+RESET + " "+ROSE + "Restore Order History(Admin Only)" + RESET + "\n");
-            System.out.print(LAVENDER+"26."+RESET + " "+ROSE + "Undo Last Restore" + RESET + "\n");
+            System.out.print(LAVENDER+"26."+RESET + " "+ROSE + "Undo Last Restore(Admin Only)" + RESET + "\n");
 
 
         }
@@ -695,4 +695,112 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
     log.write(order.orderId, "Status changed to " + nextStatus);
     System.out.print(MINT+"Order " + order.orderId + " status updated to " + nextStatus + ".\n"+RESET);
 }
+  /** Feature 5 & 8: Reorder a previous order (copy its items into a new order and process it) */
+    private void handleReorder(BufferedReader console) throws Exception {
+        showReorderPreview();
+        System.out.print(SOFTGRAY+"Enter Order ID to reorder: "+RESET);
+        String oldId = console.readLine();
+        if (oldId == null) oldId = "";
+        oldId = oldId.trim();
+        if (oldId.equals("")) {
+            System.out.print(ROSE+"Order ID cannot be empty.\n"+RESET);
+            return;
+        }
+        oldId = normalizeOrderId(oldId);
+        // Find the original order
+        Order original = null;
+        for (int i = 0; i < dp.orderCount; i++) {
+            if (dp.orders[i] != null && dp.orders[i].orderId.equalsIgnoreCase(oldId)) {
+                original = dp.orders[i];
+                break;
+            }
+        }
+        if (original == null) {
+            System.out.print(ROSE+"Order " + oldId + " not found.\n"+RESET);
+            return;
+        }
+        // Create a new order with the same items (and same address/payment as original, if available)
+        Order newOrder = new Order();
+        newOrder.orderId = dp.generateOrderId();
+        newOrder.date = currentDateString();
+        newOrder.address = original.address;
+        newOrder.paymentMode = original.paymentMode.equals("") ? "COD" : original.paymentMode;
+        // Copy each item from original
+        for (int j = 0; j < original.itemCount; j++) {
+            Item it = original.items[j];
+            if (it == null) continue;
+            newOrder.addItem(new Item(it.productId, it.quantity));
+        }
+        // Process the new order through inventory & payment
+        boolean success = processPendingOrder(newOrder, console);
+        // Add the new order to system records
+        dp.orders[dp.orderCount++] = newOrder;
+        if (!success) {
+            System.out.print(ROSE+"Reorder created as " + newOrder.orderId + " but failed (" + newOrder.cancelReason + ").\n"+RESET);
+        } else {
+            System.out.print(MINT+"Reorder successful! New Order ID: " + newOrder.orderId + " (Status: " + newOrder.status + ").\n"+RESET);
+            log.write(newOrder.orderId, "Reordered from " + oldId);
+        }
+    }
+        /** Feature 6 (continued): View or filter products by brand or category */
+    private void handleAdvancedFilter(BufferedReader console) throws Exception {
+        showProductsPreview2();
+        System.out.print(SOFTGRAY+"Filter by Brand or Category? (B/C): "+RESET);
+        String choice = console.readLine();
+        if (choice == null) choice = "";
+        choice = choice.trim().toUpperCase();
+        if (!choice.equals("B") && !choice.equals("C")) {
+            System.out.print(ROSE+"Invalid choice."+RESET+SOFTGRAY+" Enter 'B' for Brand or 'C' for Category.\n"+RESET);
+            return;
+        }
+        System.out.print("Enter " + (choice.equals("B") ? "Brand" : "Category") + " name: ");
+        String keyword = console.readLine();
+        if (keyword == null) keyword = "";
+        keyword = keyword.trim();
+        if (keyword.equals("")) {
+            System.out.print(ROSE+"Input cannot be empty.\n"+RESET);
+            return;
+        }
+        // Filter products by brand or category (case-insensitive substring match)
+        Product[] filtered = new Product[dp.productCount];
+        int count = 0;
+        for (int i = 0; i < dp.productCount; i++) {
+            Product p = dp.products[i];
+            if (p == null) continue;
+            String field = choice.equals("B") ? p.brand : p.category;
+            if (field.toLowerCase().contains(keyword.toLowerCase())) {
+                filtered[count++] = p;
+            }
+        }
+        if (count == 0) {
+            System.out.print(ROSE+"No products found for \"" + keyword + "\".\n"+RESET);
+        }  else {
+    String title =
+        "Filtered Products (" +
+        (choice.equals("B") ? "Brand" : "Category") +
+        " contains \"" + keyword + "\")";
+
+    printProductTable(filtered, count, title);
+}
+    
+    }
+
+   
+    /** Feature 13: Display low stock items (stock < 5) highlighted in color */
+    private void showLowStockAlerts() {
+        boolean anyLow = false;
+        System.out.print(ANSI_Yellow+"Low Stock Items (stock < 5):\n"+RESET);
+        for (int i = 0; i < dp.productCount; i++) {
+            Product p = dp.products[i];
+            if (p == null) continue;
+            if (p.stock < 5) {
+                anyLow = true;
+                // Highlight low stock product in yellow
+                System.out.print(ANSI_Yellow+ p.productId + " | " + p.name + " | Stock: " + p.stock + RESET + "\n");
+            }
+        }
+        if (!anyLow) {
+            System.out.print(ROSE+"None (all products have sufficient stock).\n"+RESET);
+        }
+    } 
 }
