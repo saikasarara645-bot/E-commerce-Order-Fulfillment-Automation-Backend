@@ -1058,4 +1058,165 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
         dp.orderCount = remCount;
         System.out.print(MINT+"Archived " + archivedCount + " delivered orders (older than " + N + " days).\n"+RESET);
     }  
+     /** Feature 20: Change password for the currently logged-in admin account */
+    private void changeAdminPassword(BufferedReader console) throws Exception {
+        System.out.print(SOFTGRAY+"Enter current password: "+RESET);
+        String currentPass = console.readLine();
+        if (currentPass == null) currentPass = "";
+        currentPass = currentPass.trim();
+        Admin admin = dp.admins[dp.currentAdminIndex];
+        if (!admin.passHash.equals(Admin.hashPassword(currentPass))) {
+            System.out.print(ROSE+"Current password is incorrect.\n"+RESET);
+            return;
+        }
+        System.out.print(SOFTGRAY+"Enter new password: "+RESET);
+        String newPass1 = console.readLine();
+        if (newPass1 == null) newPass1 = "";
+        newPass1 = newPass1.trim();
+        System.out.print(SOFTGRAY+"Confirm new password: "+RESET);
+        String newPass2 = console.readLine();
+        if (newPass2 == null) newPass2 = "";
+        newPass2 = newPass2.trim();
+        if (!newPass1.equals(newPass2) || newPass1.equals("")) {
+            System.out.print(ROSE+"Password mismatch or empty. Password not changed.\n"+RESET);
+            return;
+        }
+        // Update password hash and save to file immediately
+        admin.passHash = Admin.hashPassword(newPass1);
+        dp.saveAll();
+        log.write("ADMIN", "Password changed");
+        System.out.print(MINT+"Admin password changed successfully.\n"+RESET);
+    }
+
+    /** Feature 14: Clear all logs (logs.txt) after confirmation */
+    private void clearLogs(BufferedReader console) throws Exception {
+        System.out.print(ANSI_Yellow+"Are you sure you want to clear all logs? (Y/N): "+RESET);
+        String confirm = console.readLine();
+        if (confirm == null) confirm = "";
+        confirm = confirm.trim();
+        if (!confirm.equalsIgnoreCase("Y") && !confirm.equalsIgnoreCase("YES")) {
+            System.out.print(ROSE+"Log clearance cancelled.\n"+RESET);
+            return;
+        }
+        // Overwrite logs.txt with nothing
+        FileWriter fw = new FileWriter(dp.path("logs.txt"), false);
+        fw.write("");
+        fw.close();
+        System.out.print(MINT+"All logs cleared.\n"+RESET);
+    }
+
+    /** Feature 16: Generate a receipt text file for a delivered order */
+private void generateReceipt(BufferedReader console) throws Exception {
+    showOrdersPreview();
+
+    System.out.print(SOFTGRAY + "Enter Order ID for receipt: " + RESET);
+    String rid = console.readLine();
+    if (rid == null) rid = "";
+    rid = rid.trim();
+
+    if (rid.equals("")) {
+        System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
+        return;
+    }
+
+    rid = normalizeOrderId(rid);
+
+    Order order = null;
+    for (int i = 0; i < dp.orderCount; i++) {
+        if (dp.orders[i] != null && dp.orders[i].orderId.equalsIgnoreCase(rid)) {
+            order = dp.orders[i];
+            break;
+        }
+    }
+
+    if (order == null) {
+        System.out.print(ROSE + "Order " + rid + " not found.\n" + RESET);
+        return;
+    }
+
+    // ✅ safer status check
+    if (!"DELIVERED".equalsIgnoreCase(order.status)) {
+        System.out.print(ROSE + "Receipt can only be generated for delivered orders.\n" + RESET);
+        return;
+    }
+
+    // Create receipt file with order details
+    String filename = "receipt_" + order.orderId + ".txt";
+    FileWriter fw = new FileWriter(dp.path(filename), false);
+
+    fw.write("Receipt for Order " + order.orderId + "\n");
+
+    // ✅ safe address check
+    String addr = (order.address == null || order.address.trim().equals("")) ? "(Not Provided)" : order.address.trim();
+    fw.write("Address: " + addr + "\n");
+
+    fw.write("Status: " + order.status + "\n");
+
+    // ✅ tracking id logic that actually makes sense for DELIVERED receipts
+    if (order.trackingId != null && !order.trackingId.trim().equals("")) {
+        fw.write("Tracking ID: " + order.trackingId.trim() + "\n");
+    } else {
+        fw.write("Tracking ID: (Not assigned)\n");
+    }
+
+    fw.write("Items:\n");
+    for (int j = 0; j < order.itemCount; j++) {
+        Item it = order.items[j];
+        if (it == null) continue;
+
+        Product p = dp.findProductById(it.productId);
+        String itemName = (p != null ? p.name : it.productId);
+        int priceEach = (p != null ? p.price : 0);
+
+        fw.write("- " + itemName + " (x" + it.quantity + " @ BDT " + priceEach + " each)\n");
+    }
+
+    fw.write("--------------------------------------\n");
+    fw.write("Total Paid: BDT " + order.totalAmount + "\n");
+    fw.write("Thank you for your purchase!\n");
+
+    fw.close();
+
+    System.out.print(MINT + "Receipt generated: " + filename + "\n" + RESET);
+}
+
+  /** Feature 14: Increase stock of an existing product (restock) */
+    private void handleRestock(BufferedReader console) throws Exception {
+        showRestockPreview();
+        System.out.print(SOFTGRAY+"Enter Product ID to restock: "+RESET);
+        String pid = console.readLine();
+        if (pid == null) pid = "";
+        pid = pid.trim();
+        if (pid.equals("")) {
+            System.out.print(ROSE+"Product ID cannot be empty.\n"+RESET);
+            return;
+        }
+        Product product = dp.findProductById(pid);
+        if (product == null) {
+            System.out.print(ROSE+"Product " + pid + " not found.\n"+RESET);
+            return;
+        }
+        System.out.print(SOFTGRAY+"Enter quantity to add: "+RESET);
+        String qtyStr = console.readLine();
+        if (qtyStr == null) qtyStr = "";
+        qtyStr = qtyStr.trim();
+        int addQty = DataPersistence.toInt(qtyStr);
+        if (addQty <= 0) {
+            System.out.print(ROSE+"Invalid quantity.\n"+RESET);
+            return;
+        }
+        product.stock += addQty;
+        System.out.print(MINT+"Product " + product.productId + " restocked. New stock: " + product.stock + "\n"+RESET);
+        dp.saveProducts();
+        log.write("ADMIN", "Restocked " + product.productId + " (+" + addQty + ")");
+    }
+    
+    private String padRight(String s, int width) {
+    if (s == null) s = "";
+    if (s.length() >= width) return s.substring(0, width - 1) + "…";
+    String out = s;
+    while (out.length() < width) out += " ";
+    return out;
+}
+
 }
