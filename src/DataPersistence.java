@@ -53,3 +53,15 @@ private String normalizeOrderIdForUI(String id) {
  while (num.length() < 5) num = "0" + num;
  return num;
 }
+
+/** Load all data from files: products, orders, admins */
+ public void loadAll() throws Exception {
+ loadProducts();
+ loadOrders();
+ loadAdmins();
+ // Compute initial next order number based on loaded orders
+ computeNextOrderNumber();
+ }
+ private void loadProducts() throws Exception {
+ productCount = 0;
+ BufferedReader br = null;
