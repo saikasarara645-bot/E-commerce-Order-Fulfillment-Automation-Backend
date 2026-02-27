@@ -97,3 +97,33 @@ defaults if any)
  private String normalizeOrderId(String raw) {
  if (raw == null) return "";
  raw = raw.trim().toUpperCase();
+
+ // remove leading 'O' if present
+ if (raw.startsWith("O")) raw = raw.substring(1);
+ // keep only digits
+ String digits = "";
+ for (int i = 0; i < raw.length(); i++) {
+ char c = raw.charAt(i);
+ if (c >= '0' && c <= '9') digits += c;
+ }
+ int num = toInt(digits);
+ if (num <= 0) return "";
+ // pad to 4 digits: 1019 -> 1019, 19 -> 0019
+ String s = "" + num;
+ while (s.length() < 4) s = "0" + s;
+ return "O" + s;
+}
+private void loadOrders() throws Exception {
+ orderCount = 0;
+ BufferedReader br = null;
+ try {
+ br = new BufferedReader(new FileReader(path("orders.txt")));
+ String line;
+ while ((line = br.readLine()) != null) {
+ line = line.trim();
+ if (line.length() == 0) continue;
+ // Format:
+ //OrderID|Date|Address|PaymentMode|Status|Total|ItemList|CancelReason|TrackingId(optional)
+ String[] parts = line.split("\\|");
+ if (parts.length < 5) continue;
+ Order o = new Order();
