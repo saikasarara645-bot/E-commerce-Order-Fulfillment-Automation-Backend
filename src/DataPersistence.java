@@ -35,3 +35,9 @@ this.baseDir = (baseDir == null ? "" : baseDir);
  }
  return baseDir + "/" + filename; // e.g. "data/admins.txt"
 }
+private String normalizeOrderIdForUI(String id) {
+ if (id == null) return "";
+ id = id.trim();
+ if (id.length() == 0) return "";
+ // If starts with O -> remove it
+ if (id.startsWith("O") || id.startsWith("o")) id = id.substring(1);
