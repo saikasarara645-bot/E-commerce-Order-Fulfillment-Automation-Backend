@@ -1218,5 +1218,53 @@ private void generateReceipt(BufferedReader console) throws Exception {
     while (out.length() < width) out += " ";
     return out;
 }
+private String formatMoney(int n) {
+    // simple (no commas). If you want commas, tell me.
+    return "BDT " + n;
+}
 
+private void printProductTable(Product[] list, int count, String title) {
+    System.out.println(PINK + BOLD + "\n" + title + RESET);
+    printLine();
+
+    if (count == 0) {
+        System.out.println(ROSE + "No products found." + RESET);
+        printLine();
+        return;
+    }
+
+    // Header
+    System.out.print(LAVENDER
+            + padRight("ID", 8)
+            + padRight("Name", 26)
+            + padRight("Brand", 14)
+            + padRight("Category", 16)
+            + padRight("Price", 12)
+            + padRight("Stock", 8)
+            + RESET + "\n");
+
+    System.out.println(SOFTGRAY
+            + "----------------------------------------------------------------------------------------"
+            + RESET);
+
+    // Rows
+    for (int i = 0; i < count; i++) {
+        Product p = list[i];
+        if (p == null) continue;
+
+        String stockColor = (p.stock <= 5) ? ROSE : MINT;
+
+        System.out.print(
+                SOFTGRAY + padRight(p.productId, 8) + RESET +
+                padRight(p.name, 26) +
+                padRight(p.brand, 14) +
+                padRight(p.category, 16) +
+                padRight(formatMoney(p.price), 12) +
+                stockColor + padRight(String.valueOf(p.stock), 8) + RESET +
+                "\n"
+        );
+    }
+
+    printLine();
+}
 }
