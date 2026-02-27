@@ -41,3 +41,15 @@ private String normalizeOrderIdForUI(String id) {
  if (id.length() == 0) return "";
  // If starts with O -> remove it
  if (id.startsWith("O") || id.startsWith("o")) id = id.substring(1);
+
+ // Keep only digits
+ String num = "";
+ for (int i = 0; i < id.length(); i++) {
+ char c = id.charAt(i);
+ if (c >= '0' && c <= '9') num += c;
+ }
+ if (num.length() == 0) return "";
+ // Pad to 5 digits
+ while (num.length() < 5) num = "0" + num;
+ return num;
+}
