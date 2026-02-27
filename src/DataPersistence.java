@@ -87,3 +87,13 @@ FileReader(path("products.txt")));
  products[productCount++] = new Product(pid, category,
 brand, name, price, stock);
  }
+} catch (Exception e) {
+ // If file not found or format error, skip (will use
+defaults if any)
+ } finally {
+ if (br != null) br.close();
+ }
+ }
+ private String normalizeOrderId(String raw) {
+ if (raw == null) return "";
+ raw = raw.trim().toUpperCase();
