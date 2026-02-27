@@ -65,3 +65,25 @@ private String normalizeOrderIdForUI(String id) {
  private void loadProducts() throws Exception {
  productCount = 0;
  BufferedReader br = null;
+
+ try {
+ br = new BufferedReader(new
+FileReader(path("products.txt")));
+ String line;
+ while ((line = br.readLine()) != null) {
+ line = line.trim();
+ if (line.length() == 0) continue;
+ // Format: ProductID|Category|Brand|Name|Price|Stock
+ String[] parts = line.split("\\|");
+ if (parts.length < 6) continue;
+ String pid = parts[0].trim();
+ String category = parts[1].trim();
+ String brand = parts[2].trim();
+ String name = parts[3].trim();
+ String priceStr = parts[4].trim().replace(",", "");
+ String stockStr = parts[5].trim();
+ int price = toInt(priceStr);
+ int stock = toInt(stockStr);
+ products[productCount++] = new Product(pid, category,
+brand, name, price, stock);
+ }
