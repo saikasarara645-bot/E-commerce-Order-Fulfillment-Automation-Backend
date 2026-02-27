@@ -127,3 +127,36 @@ private void loadOrders() throws Exception {
  String[] parts = line.split("\\|");
  if (parts.length < 5) continue;
  Order o = new Order();
+
+ //  normalize to STORAGE format (keep O + 4 digits)
+ o.orderId = normalizeOrderId(parts[0].trim());
+ o.date = (parts.length > 1 ? parts[1].trim() : "");
+ o.address = (parts.length > 2 ? parts[2].trim() : "");
+ o.paymentMode = (parts.length > 3 ? parts[3].trim() : "");
+ o.status = (parts.length > 4 ? parts[4].trim() :
+"PENDING");
+ // Items list (index 6)
+ String itemsPart = "";
+ if (parts.length > 6) {
+ itemsPart = parts[6].trim();
+ parseItemsIntoOrder(o, itemsPart);
+ }
+ // Total amount (index 5)
+ if (parts.length > 5) {
+ o.totalAmount = toInt(parts[5].trim());
+ } else {
+ o.totalAmount = 0;
+ }
+ // FIX: if total is 0 but items exist → recalculate from products
+ if (o.totalAmount <= 0 && o.itemCount > 0) {
+ int total = 0;
+ for (int i = 0; i < o.itemCount; i++) {
+ Item it = o.items[i];
+ if (it == null) continue;
+ Product p = findProductById(it.productId);
+ if (p != null) {
+ total += p.price * it.quantity;
+ }
+ }
+ o.totalAmount = total;
+ }
