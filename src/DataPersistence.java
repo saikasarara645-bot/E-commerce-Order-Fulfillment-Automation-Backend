@@ -207,3 +207,48 @@ username + ". Using ADMIN by default."+RESET);
  }
  } catch (Exception e) {
  // It's okay if file doesn't exist yet.
+
+ } finally {
+ if (br != null) br.close();
+ }
+ // Debug print AFTER loading
+ for (int i = 0; i < adminCount; i++) {
+ if (admins[i] != null) {
+ System.out.print(LAVENDER+"Loaded admin: " +
+admins[i].username + " (" + admins[i].role + ")\n"+RESET);
+ }
+ }
+ // Default admin if none found
+ if (adminCount == 0) {
+ String defaultUser = "admin";
+ String defaultPassHash = Admin.hashPassword("admin123");
+ admins[adminCount++] = new Admin(defaultUser, defaultPassHash,
+Role.ADMIN);
+ }
+}
+ /** Save all data back to text files */
+ public void saveAll() throws Exception {
+ saveProducts();
+ saveOrders();
+ saveAdmins();
+ }
+ public void saveProducts() throws Exception {
+ FileWriter fw = new FileWriter(path("products.txt"), false);
+// overwrite file
+ for (int i = 0; i < productCount; i++) {
+ Product p = products[i];
+ if (p == null) continue;
+ // Format: ProductID|Category|Brand|Name|Price|Stock
+ fw.write(p.productId + "|" + p.category + "|" + p.brand +
+"|" + p.name + "|" + p.price + "|" + p.stock + "\n");
+ }
+ fw.close();
+ }
+public void addAdmin(Admin newAdmin) {
+ if (adminCount < admins.length) {
+ admins[adminCount++] = newAdmin; // Add new admin to the list
+ } else {
+ System.out.println(ROSE+"Unable to add new admin. Admin list is
+full."+RESET);
+ }
+}
