@@ -252,3 +252,29 @@ public void addAdmin(Admin newAdmin) {
 full."+RESET);
  }
 }
+
+public void saveOrders() throws Exception {
+ // Open the file for writing (overwrite the file)
+ FileWriter fw = new FileWriter(path("orders.txt"), false); 
+ //'false' to overwrite
+ // Iterate through all orders and write them to the file
+ for (int i = 0; i < orderCount; i++) {
+ Order o = orders[i];
+ if (o == null) continue; // Skip null orders
+ //format and write each order as:
+//OrderID|Date|Address|PaymentMode|Status|ItemList|TotalAmount|CancelReason
+ fw.write(o.orderId + "|" + o.date + "|" + o.address + "|" +
+o.paymentMode + "|"
+ + o.status + "|" + o.totalAmount); // Write order basic details
+ // Prepare the item list in the format "ProductIDxQuantity,ProductIDxQuantity, ..."
+ StringBuilder itemList = new StringBuilder();
+ for (int j = 0; j < o.itemCount; j++) {
+ Item item = o.items[j];
+ if (item != null) {
+
+itemList.append(item.productId).append("x").append(item.quantity);
+ if (j < o.itemCount - 1) {
+ itemList.append(","); // Add comma between items
+ }
+ }
+ }
