@@ -160,3 +160,21 @@ private void loadOrders() throws Exception {
  }
  o.totalAmount = total;
  }
+
+ 
+ // Cancel reason (index 7)
+ if (parts.length > 7) {
+ o.cancelReason = parts[7].trim();
+ }
+ // Tracking ID (index 8)
+ if (parts.length > 8) {
+ o.trackingId = parts[8].trim();
+ }
+ orders[orderCount++] = o;
+ }
+ } catch (Exception e) {
+ // If orders.txt doesn't exist, it's fine
+ } finally {
+ if (br != null) br.close();
+ }
+}
