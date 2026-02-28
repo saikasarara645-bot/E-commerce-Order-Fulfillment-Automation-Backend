@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
+
+import javax.management.relation.Role;
 /** DataPersistence.java – Handles loading and saving of data from text
 files */
 public class DataPersistence {
@@ -319,3 +321,106 @@ itemList.append(item.productId).append("x").append(item.quantity);
  value = value * 10 + (c - '0');
  } else {
  // ignore any non-digit characters
+
+ }
+ }
+ return neg ? -value : value;
+ }
+public int computeOrderTotal(Order o) {
+ if (o == null) return 0;
+ int total = 0;
+ for (int i = 0; i < o.itemCount; i++) {
+ Item it = o.items[i];
+ if (it == null) continue;
+ Product p = findProductById(it.productId);
+ if (p != null) {
+ total += p.price * it.quantity;
+ }
+ }
+ return total;
+}
+ /** Determine nextOrderNumber by finding the max numeric part of loaded order IDs */
+ private void computeNextOrderNumber() {
+ int maxNum = 0;
+ for (int i = 0; i < orderCount; i++) {
+ Order o = orders[i];
+ if (o == null || o.orderId == null) continue;
+ String id = o.orderId;
+ // extract numeric part from ID (works for O1019, 01019, 1019)
+ String numPart = "";
+ for (int k = 0; k < id.length(); k++) {
+ char ch = id.charAt(k);
+ if (ch >= '0' && ch <= '9') {
+ numPart += ch;
+ }
+ }
+ int num = toInt(numPart);
+ if (num > maxNum) {
+ maxNum = num;
+ }
+ }
+ // set next order number after loop
+ nextOrderNumber = maxNum + 1;
+}
+ // Generate a new unique Order ID (e.g., "O1001", "O1002", ...) 
+ public String generateOrderId() {
+ int n = nextOrderNumber;
+ nextOrderNumber++;
+ String s = "" + n;
+ while (s.length() < 5) s = "0" + s; // 1001 -> 01001
+ return s;
+}
+/** Parse an "ItemList" string into Item objects added to Order
+* Supported formats:
+* - "P01x2,P03x1"
+* - "P01:2,P03:1"
+*/
+public void parseItemsIntoOrder(Order o, String itemsPart) {
+ if (o == null || itemsPart == null) return;
+ String part = itemsPart.trim();
+ if (part.length() == 0) return;
+ String[] itemTokens = part.split(",");
+ for (int i = 0; i < itemTokens.length; i++) {
+ String token = itemTokens[i].trim();
+ if (token.length() == 0) continue;
+ String pid = "";
+ int qty = 0;
+ // Support "PIDxQTY"
+ if (token.contains("x")) {
+ String[] kv = token.split("x");
+ if (kv.length == 2) {
+ pid = kv[0].trim();
+ qty = toInt(kv[1].trim());
+ }
+ }
+ // Support "PID:QTY"
+ else if (token.contains(":")) {
+ String[] kv = token.split(":");
+ if (kv.length == 2) {
+ pid = kv[0].trim();
+ qty = toInt(kv[1].trim());
+ }
+ }
+ if (pid.length() > 0 && qty > 0) {
+ Item item = new Item(pid, qty);
+ o.addItem(item);
+ }
+ }
+}
+
+//Find a Product by its ID (case-sensitive match). Returns null if not found. */
+
+ public Product findProductById(String productId) {
+ if (productId == null) return null;
+ String key = productId.trim();
+ for (int i = 0; i < productCount; i++) {
+ Product p = products[i];
+ if (p != null && p.productId != null &&
+p.productId.trim().equalsIgnoreCase(key)) {
+ return p;
+ }
+ }
+ return null;
+}
+public void loadTestDataFromFile(String filename) {
+ int productLoaded = 0, adminLoaded = 0, orderLoaded = 0;
