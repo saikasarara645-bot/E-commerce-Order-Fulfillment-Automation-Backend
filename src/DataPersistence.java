@@ -161,7 +161,7 @@ private void loadOrders() throws Exception {
  o.totalAmount = total;
  }
 
- 
+
  // Cancel reason (index 7)
  if (parts.length > 7) {
  o.cancelReason = parts[7].trim();
@@ -178,3 +178,32 @@ private void loadOrders() throws Exception {
  if (br != null) br.close();
  }
 }
+
+private void loadAdmins() throws Exception {
+ adminCount = 0;
+ BufferedReader br = null;
+ try {
+ br = new BufferedReader(new FileReader(path("admins.txt")));
+ String line;
+ while ((line = br.readLine()) != null) {
+ line = line.trim();
+ if (line.length() == 0) continue;
+ // username|passHash|role
+ String[] parts = line.split("\\|");
+ if (parts.length < 3) continue;
+ String username = parts[0].trim();
+ String passHash = parts[1].trim();
+ //  use YOUR enum Role (NOT javax.management.relation.Role)
+ Role role;
+ try {
+ role = Role.valueOf(parts[2].trim().toUpperCase());
+ } catch (Exception ex) {
+ System.out.println(ROSE+"Invalid role for user " +
+username + ". Using ADMIN by default."+RESET);
+ role = Role.ADMIN; // fallback instead of skipping
+ }
+ Admin a = new Admin(username, passHash, role);
+ admins[adminCount++] = a;
+ }
+ } catch (Exception e) {
+ // It's okay if file doesn't exist yet.
