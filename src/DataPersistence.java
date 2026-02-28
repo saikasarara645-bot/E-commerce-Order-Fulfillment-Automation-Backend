@@ -278,3 +278,44 @@ itemList.append(item.productId).append("x").append(item.quantity);
  }
  }
  }
+
+ // Write item list to the order record
+ fw.write("|" + itemList.toString());
+ // If the order was canceled, write the cancel reason
+ if (o.cancelReason != null && !o.cancelReason.isEmpty()) {
+ fw.write("|" + o.cancelReason); // Add cancellation reason if present
+ }
+ // End the order record with a new line
+ fw.write("\n");
+ }
+ // Close the FileWriter after writing all orders
+ fw.close();
+}
+ private void saveAdmins() throws Exception {
+ FileWriter fw = new FileWriter(path("admins.txt"), false);
+ for (int i = 0; i < adminCount; i++) {
+ Admin a = admins[i];
+ if (a == null) continue;
+ fw.write(a.username + "|" + a.passHash +"|"+a.role.name()+
+"\n");
+ }
+ fw.close();
+ }
+ //Convert a string to integer without using library parse methods
+
+ public static int toInt(String s) {
+ if (s == null) return 0;
+ s = s.trim();
+ if (s.length() == 0) return 0;
+ boolean neg = false;
+ if (s.charAt(0) == '-') {
+ neg = true;
+ s = s.substring(1);
+ }
+ int value = 0;
+ for (int i = 0; i < s.length(); i++) {
+ char c = s.charAt(i);
+ if (c >= '0' && c <= '9') {
+ value = value * 10 + (c - '0');
+ } else {
+ // ignore any non-digit characters
