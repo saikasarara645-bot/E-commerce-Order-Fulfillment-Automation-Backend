@@ -424,3 +424,71 @@ p.productId.trim().equalsIgnoreCase(key)) {
 }
 public void loadTestDataFromFile(String filename) {
  int productLoaded = 0, adminLoaded = 0, orderLoaded = 0;
+
+
+ String mode = "";
+ try (BufferedReader br = new BufferedReader(new
+FileReader(path(filename)))) {
+ String line;
+ while ((line = br.readLine()) != null) {
+ line = line.trim();
+ if (line.equals("")) continue;
+ if (line.startsWith("#")) {
+ mode = line.trim().toUpperCase();
+ continue;
+ }
+ String[] parts = line.split("\\|");
+ switch (mode) {
+ case "#PRODUCTS":
+ if (parts.length == 6) {
+ String pid = parts[0].trim();
+ String cat = parts[1].trim();
+ String brand = parts[2].trim();
+ String name = parts[3].trim();
+ int price = toInt(parts[4].trim());
+ int stock = toInt(parts[5].trim());
+ products[productCount++] = new Product(pid,
+cat, brand, name, price, stock);
+ productLoaded++;
+ }
+ break;
+ case "#ADMINS":
+ if (parts.length == 2) {
+ String username = parts[0].trim();
+ String passHash = parts[1].trim();
+ admins[adminCount++] = new Admin(username,
+passHash);
+ adminLoaded++;
+ }
+ break;
+ case "#ORDERS":
+ if (parts.length >= 7) {
+ Order o = new Order();
+ o.orderId = parts[0].trim();
+ o.date = parts[1].trim();
+ o.address = parts[2].trim();
+ o.paymentMode = parts[3].trim();
+ o.status = parts[4].trim();
+ parseItemsIntoOrder(o, parts[5].trim());
+ o.totalAmount = toInt(parts[6].trim());
+ if (parts.length >= 8) o.cancelReason =
+parts[7].trim();
+ orders[orderCount++] = o;
+ orderLoaded++;
+ }
+ break;
+ }
+ }
+ System.out.println(PINK+"Test data loaded from: " +
+filename+RESET);
+ System.out.println(LAVENDER+"- Products added: " +
+productLoaded+RESET);
+ System.out.println(LAVENDER+"- Orders added: " +
+orderLoaded+RESET);
+ System.out.println(LAVENDER+"- Admins added: " +
+adminLoaded+RESET);
+ } catch (Exception e) {
+ System.out.println(ROSE+" Failed to load test data from " +
+filename + ": " + e.getMessage()+RESET);
+ }
+}
