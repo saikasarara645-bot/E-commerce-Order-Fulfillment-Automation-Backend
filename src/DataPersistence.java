@@ -505,3 +505,21 @@ currentDateTimeString() + "\n");
  try { if (fw != null) fw.close(); } catch (Exception ex) {}
  }
 }
+
+public String currentDateTimeString() {
+ java.time.LocalDateTime dt = java.time.LocalDateTime.now();
+ return dt.toString(); // 2026-02-07T12:30:00
+}
+// Auto-generate Product ID based on category using your existing pattern (M/L/H/A/P)
+public String generateProductIdByCategory(String category) {
+ // Map category -> prefix
+ char prefix = 'X';
+ if (category != null) {
+ String c = category.trim().toUpperCase();
+ if (c.equals("SMARTPHONE")) prefix = 'M';
+ else if (c.equals("LAPTOP")) prefix = 'L';
+ else if (c.equals("HOME APPLIANCE")) prefix = 'H';
+ else if (c.equals("ACCESSORIES")) prefix = 'A';
+ else if (c.equals("POWER BANK")) prefix = 'P';
+ }
+
