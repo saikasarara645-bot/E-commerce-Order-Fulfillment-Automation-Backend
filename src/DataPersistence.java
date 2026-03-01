@@ -523,3 +523,5 @@ public String generateProductIdByCategory(String category) {
  else if (c.equals("POWER BANK")) prefix = 'P';
  }
 
+// If unknown category, default prefix
+ if (prefix == 'X') prefix = 'G'; // General
