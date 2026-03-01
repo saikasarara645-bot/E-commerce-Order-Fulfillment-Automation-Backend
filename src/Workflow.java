@@ -1443,4 +1443,105 @@ private void handleProductManagement(BufferedReader console) throws Exception {
         System.out.print(ROSE+"Invalid action.\n"+RESET);
     }
 }
+/** Process a PENDING order through inventory check, reservation, invoice generation, and payment simulation */
+private boolean processPendingOrder(Order order, BufferedReader console) throws Exception {
+    if (order == null || !order.status.equals("PENDING")) return false;
+
+    boolean inventoryOK = true;
+
+    // Step 1: Pre-check all items without modifying stock
+    for (int i = 0; i < order.itemCount; i++) {
+        Item it = order.items[i];
+        if (it == null) continue;
+        Product prod = dp.findProductById(it.productId);
+        if (prod == null) {
+            order.status = "CANCELLED";
+            order.cancelReason = "Invalid product " + it.productId;
+            log.write(order.orderId, "Order cancelled - " + order.cancelReason);
+            return false;
+        }
+        if (prod.stock < it.quantity) {
+            inventoryOK = false;
+            order.cancelReason = "Inventory Shortage: " + it.productId;
+            break;
+        }
+    }
+
+    if (!inventoryOK) {
+        order.status = "CANCELLED";
+        log.write(order.orderId, "Order cancelled -" + order.cancelReason);
+        return false;
+    }
+
+    // Step 2: Reserve stock
+    for (int i = 0; i < order.itemCount; i++) {
+        Item it = order.items[i];
+        Product prod = dp.findProductById(it.productId);
+        if (prod != null) {
+            prod.stock -= it.quantity;
+        }
+    }
+    log.write(order.orderId, "Inventory OK – stock reserved");
+
+    // Step 3: Calculate total price
+    int total = 0;
+    for (int i = 0; i < order.itemCount; i++) {
+        Item it = order.items[i];
+        Product prod = dp.findProductById(it.productId);
+        int price = (prod != null ? prod.price : 0);
+        total += price * it.quantity;
+    }
+    order.totalAmount = total;
+
+    // Step 4: Simulate payment
+    boolean paymentSuccess;
+    if (console == null) {
+        paymentSuccess = order.paymentMode.equalsIgnoreCase("COD");
+        if (order.paymentMode.equalsIgnoreCase("COD")) {
+        log.write(order.orderId, "PAYMENT OK (COD)");
+       } else {
+        log.write(order.orderId, "PAYMENT FAIL (Auto decline for simulation)");
+        paymentSuccess = false;
+    }
+    } else {
+        paymentSuccess = paymentService.processPayment(order, console);
+    }
+
+    // Step 5: Rollback stock if payment fails
+    if (!paymentSuccess) {
+        for (int i = 0; i < order.itemCount; i++) {
+            Item it = order.items[i];
+            Product prod = dp.findProductById(it.productId);
+            if (prod != null) {
+                prod.stock += it.quantity;
+            }
+        }
+        order.status = "CANCELLED";
+        order.cancelReason = "Payment Declined";
+        log.write(order.orderId, "Order cancelled - " + order.cancelReason);
+        return false;
+    }
+
+    // Step 6: Mark as PACKED and generate properly formatted invoice
+    order.status = "PACKED";
+    log.write(order.orderId, "Status changed to PACKED");
+
+    try {
+        // ✅ Format: INV-YYYYMM-####
+        String ym = order.date.substring(0, 7).replace("-", ""); // "202602"
+        String orderNum = order.orderId.substring(1); // drop 'O' → "1005"
+        String invoiceId = "INV-" + ym + "-" + orderNum;
+
+        FileWriter fw = new FileWriter(dp.path("invoices.txt"), true);
+        fw.write(invoiceId + "|BDT " + order.totalAmount + "\n");
+        fw.close();
+
+        // (Optional) Show invoice ID to admin
+        System.out.print("Invoice generated: " + invoiceId + "\n");
+    } catch (Exception e) {
+        // Ignore invoice errors silently
+    }
+
+    return true;
+}
 }
