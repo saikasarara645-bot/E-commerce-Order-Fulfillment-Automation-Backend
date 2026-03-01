@@ -1639,4 +1639,32 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
     }
 
 
+    /** Helper: normalize input to full Order ID format (e.g., add 'O' prefix if missing) */
+private String normalizeOrderId(String input) {
+    if (input == null) return "";
+    String s = input.trim();
+
+    // Remove optional 'O' prefix if user types it
+    if (s.length() > 0 && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
+        s = s.substring(1).trim();
+    }
+
+    // If numeric, pad to 5 digits (01001 style)
+    if (isNumeric(s)) {
+        while (s.length() < 5) s = "0" + s;
+        return s;
+    }
+
+    // Otherwise return as-is (maybe they typed status)
+    return input.trim();
+}
+/** Helper: check if a string is numeric */
+    private boolean isNumeric(String s) {
+        if (s == null) return false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < '0' || c > '9') return false;
+        }
+        return s.length() > 0;
+    }
 }
