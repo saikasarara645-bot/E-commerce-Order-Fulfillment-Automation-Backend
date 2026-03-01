@@ -1544,4 +1544,27 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
 
     return true;
 }
+ /** View detailed information of an order (internal helper) */
+    private void viewOrderDetails(Order order) {
+        System.out.print(LAVENDER+"Order ID: " + order.orderId + "\n"+RESET);
+        System.out.print(LAVENDER+"Date: " + order.date + "\n"+RESET);
+        System.out.print(LAVENDER+"Status: " + order.status + "\n"+RESET);
+        if (order.status.equalsIgnoreCase("CANCELLED")) {
+            System.out.print(ROSE+"Cancel Reason: " + (order.cancelReason.equals("") ? "(None)" : order.cancelReason) + "\n"+RESET);
+        }
+        if (order.trackingId != null && !order.trackingId.equals("")) {
+            System.out.print(LAVENDER+"Tracking ID: " + order.trackingId + "\n"+RESET);
+        }
+        System.out.print(LAVENDER+"Address: " + (order.address.equals("") ? "(Not provided)" : order.address) + "\n"+RESET);
+        System.out.print(LAVENDER+"Payment Mode: " + (order.paymentMode.equals("") ? "(N/A)" : order.paymentMode) + "\n"+RESET);
+        System.out.print(LAVENDER+"Total Amount: BDT " + order.totalAmount + "\n"+RESET);
+        System.out.print("Items:\n");
+        for (int i = 0; i < order.itemCount; i++) {
+            Item it = order.items[i];
+            if (it == null) continue;
+            Product p = dp.findProductById(it.productId);
+            String itemName = (p != null ? p.name : it.productId);
+            System.out.print(LAVENDER+"- " + itemName + " (x" + it.quantity + ")\n"+RESET);
+        }
+    }
 }
