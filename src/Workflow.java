@@ -1567,4 +1567,76 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
             System.out.print(LAVENDER+"- " + itemName + " (x" + it.quantity + ")\n"+RESET);
         }
     }
+     /** Feature 17: Generate a report of revenue and cancellations, write to report.txt */
+    private void generateReport() throws Exception {
+        int totalOrders = dp.orderCount;
+        int completedCount = 0;
+        int cancelledCount = 0;
+        int revenueSum = 0;
+        // Count cancellation reasons
+        String[] reasons = new String[totalOrders];
+        int[] reasonCounts = new int[totalOrders];
+        int reasonTypes = 0;
+        for (int i = 0; i < dp.orderCount; i++) {
+            Order o = dp.orders[i];
+            if (o == null) continue;
+            if (o.status.equalsIgnoreCase("DELIVERED")) {
+                completedCount++;
+                revenueSum += o.totalAmount;
+            }
+            if (o.status.equalsIgnoreCase("CANCELLED")) {
+                cancelledCount++;
+                String reason = (o.cancelReason == null || o.cancelReason.equals("") ? "Unknown" : o.cancelReason);
+                // Increment count for this reason
+                boolean found = false;
+                for (int r = 0; r < reasonTypes; r++) {
+                    if (reasons[r].equalsIgnoreCase(reason)) {
+                        reasonCounts[r]++;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    reasons[reasonTypes] = reason;
+                    reasonCounts[reasonTypes] = 1;
+                    reasonTypes++;
+                }
+            }
+        }
+        // Sort cancellation reasons by frequency (descending)
+        for (int i = 0; i < reasonTypes - 1; i++) {
+            int maxIndex = i;
+            for (int j = i + 1; j < reasonTypes; j++) {
+                if (reasonCounts[j] > reasonCounts[maxIndex]) {
+                    maxIndex = j;
+                }
+            }
+            // swap
+            String tempReason = reasons[i];
+            reasons[i] = reasons[maxIndex];
+            reasons[maxIndex] = tempReason;
+            int tempCount = reasonCounts[i];
+            reasonCounts[i] = reasonCounts[maxIndex];
+            reasonCounts[maxIndex] = tempCount;
+        }
+        // Build report content
+        StringBuilder report = new StringBuilder();
+        report.append("Total Orders: ").append(totalOrders).append("\n");
+        report.append("Completed Orders: ").append(completedCount).append("\n");
+        report.append("Cancelled Orders: ").append(cancelledCount).append("\n");
+        report.append("Total Revenue: BDT ").append(revenueSum).append("\n");
+        report.append("Top 3 Cancellation Reasons:\n");
+        for (int k = 0; k < reasonTypes && k < 3; k++) {
+            report.append((k + 1) + ". " + reasons[k] + " – " + reasonCounts[k] + "\n");
+        }
+        // Write report to file and display summary in console
+        FileWriter fw = new FileWriter(dp.path("report.txt"), false);
+        fw.write(report.toString());
+        fw.close();
+        printTitle("Report Summary");
+        System.out.print(report.toString());
+        System.out.print(MINT+"(Full report saved to report.txt)\n"+RESET);
+    }
+
+
 }
