@@ -492,3 +492,16 @@ adminLoaded+RESET);
 filename + ": " + e.getMessage()+RESET);
  }
 }
+
+public void appendLoginAudit(String action, String username) {
+ FileWriter fw = null;
+ try {
+ fw = new FileWriter(path("login_audit.txt"), true);
+ fw.write(action + "|" + username + "|" +
+currentDateTimeString() + "\n");
+ } catch (Exception e) {
+ // ignore to avoid crash
+ } finally {
+ try { if (fw != null) fw.close(); } catch (Exception ex) {}
+ }
+}
