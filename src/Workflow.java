@@ -1869,4 +1869,49 @@ private void autoCancelStaleOrders(int days) throws Exception {
         System.out.print(ROSE + "No stale PENDING orders found.\n" + RESET);
     }
 }
+
+
+private void showOrdersForStatusUpdate() {
+    System.out.println(PINK + BOLD + "\nOrders List (Choose an Order ID)" + RESET);
+    printLine();
+
+    if (dp.orderCount == 0) {
+        System.out.println(ROSE+ "No orders found." + RESET);
+        printLine();
+        return;
+    }
+
+    // Table header
+    System.out.printf(LAVENDER + "%-10s %-12s %-18s %-10s %-10s" + RESET + "%n",
+            "OrderID", "Date", "Status", "Payment", "Total");
+    System.out.println(SOFTGRAY + "--------------------------------------------------------------" + RESET);
+
+    // Rows
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null) continue;
+
+        String st = o.status == null ? "" : o.status.trim();
+
+        // Color status
+        String stColor = SOFTGRAY;
+        if (st.equals("PENDING")) stColor = ANSI_MUTED_PEACH;            // warning
+        else if (st.equals("OUT_FOR_DELIVERY")) stColor = ANSI_SOFT_CORAL;        // 🚚 on the way (attention)
+        else if (st.equals("DELIVERED")) stColor = MINT; // success
+        else if (st.equals("CANCELLED")) stColor = ROSE;     // warning
+        else stColor = SOFTGRAY;
+
+        int total = o.totalAmount;
+
+        System.out.printf("%-10s %-12s %s%-18s%s %-10s %-10d%n",
+                o.orderId,
+                o.date,
+                stColor, st, RESET,
+                (o.paymentMode == null ? "" : o.paymentMode),
+                total
+        );
+    }
+
+    printLine();
+}
 }
