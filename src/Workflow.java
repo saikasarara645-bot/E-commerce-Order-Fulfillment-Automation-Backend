@@ -1958,4 +1958,25 @@ private void showProductsPreview2() {
     printLine();
 }
 
+private void printProductSummary() {
+    int totalProducts = dp.productCount;
+    int inStock = 0;
+    int lowStock = 0;
+    int outOfStock = 0;
+
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p == null) continue;
+
+        if (p.stock <= 0) outOfStock++;
+        else if (p.stock <= 5) lowStock++;
+        else inStock++;
+    }
+    printTitle("Product Summary");
+    System.out.println(SOFTGRAY + "Total Products: " + RESET + MINT + totalProducts + RESET);
+    System.out.println(SOFTGRAY + "In Stock: " + RESET + MINT + inStock + RESET);
+    System.out.println(SOFTGRAY + "Low Stock (<=5): " + RESET + ANSI_Yellow + lowStock + RESET);
+    System.out.println(SOFTGRAY + "Out of Stock: " + RESET + ROSE + outOfStock + RESET);
+    printLine();
+}
 }
