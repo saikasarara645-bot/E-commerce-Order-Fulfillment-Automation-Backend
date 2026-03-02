@@ -2580,4 +2580,87 @@ private int restoreByDate(String dateFilter) {
 
     return restored;
 }
+
+private int restoreAllArchiveOrders() {
+    BufferedReader br = null;
+    FileWriter fw = null;
+
+    int restored = 0;
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
+        fw = new FileWriter(dp.path("orders.txt"), true);
+
+        String line;
+        while ((line = br.readLine()) != null) {
+            String t = line.trim();
+            if (t.equals("")) continue;
+
+            if (t.startsWith("===") || t.startsWith("Deleted at:")) continue;
+
+            if (t.contains("|")) {
+                fw.write(t + "\n");
+                restored++;
+            }
+        }
+
+    } catch (Exception e) {
+        return restored;
+    } finally {
+        try { if (br != null) br.close(); } catch (Exception ex) {}
+        try { if (fw != null) fw.close(); } catch (Exception ex) {}
+    }
+
+    return restored;
 }
+private void undoLastRestore(BufferedReader console) throws Exception {
+    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+    if (currentAdmin == null || currentAdmin.role != Role.ADMIN) {
+        System.out.print(ROSE + "Access denied. Admin only.\n" + RESET);
+        return;
+    }
+
+    java.io.File backupFile = new java.io.File(dp.path("orders_restore_backup.txt"));
+    if (!backupFile.exists()) {
+        System.out.print(ROSE + "No restore backup found. Cannot undo.\n" + RESET);
+        return;
+    }
+
+    System.out.print(ROSE + "Undo will revert orders.txt to previous state.\n" + RESET);
+    System.out.print(SOFTGRAY + "Type UNDO to confirm: " + RESET);
+    String conf = console.readLine();
+    if (conf == null) conf = "";
+    conf = conf.trim();
+
+    if (!conf.equalsIgnoreCase("UNDO")) {
+        System.out.print(ROSE + "Undo cancelled.\n" + RESET);
+        return;
+    }
+
+    BufferedReader br = null;
+    FileWriter fw = null;
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path("orders_restore_backup.txt")));
+        fw = new FileWriter(dp.path("orders.txt"), false); // overwrite
+
+        String line;
+        while ((line = br.readLine()) != null) {
+            fw.write(line + "\n");
+        }
+    } finally {
+        try { if (br != null) br.close(); } catch (Exception ex) {}
+        try { if (fw != null) fw.close(); } catch (Exception ex) {}
+    }
+
+    dp.loadAll();
+
+    log.write("ADMIN", "UNDO restore (orders.txt reverted).");
+    dp.appendLoginAudit("UNDO_RESTORE", currentAdmin.username);
+
+    System.out.print(MINT + "Undo successful. orders.txt restored to previous state.\n" + RESET);
+}
+   }
+
+
+
