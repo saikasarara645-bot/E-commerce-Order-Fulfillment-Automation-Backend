@@ -2269,4 +2269,45 @@ private String readLastLine(String filePath) {
         try { if (br != null) br.close(); } catch (Exception ex) {}
     }
 }
+
+private int[] deleteAllReceiptFiles() {
+    int deleted = 0;
+    int failed = 0;
+
+    try {
+        // Find the folder where orders.txt exists (same folder will contain receipts usually)
+        java.io.File ordersFile = new java.io.File(dp.path("orders.txt"));
+        java.io.File dir = ordersFile.getParentFile();
+
+        // If no parent folder, use current directory
+        if (dir == null) dir = new java.io.File(".");
+
+        java.io.File[] files = dir.listFiles();
+        if (files == null) return new int[]{0, 0};
+
+        for (int i = 0; i < files.length; i++) {
+            java.io.File f = files[i];
+            if (f == null) continue;
+
+            String name = f.getName();
+            if (name == null) continue;
+
+            // receipts like: receipt_O1016.txt or receipt_01016.txt
+            if (name.startsWith("receipt_") && name.endsWith(".txt")) {
+                boolean ok = false;
+                try {
+                    ok = f.delete();
+                } catch (Exception ex) {
+                    ok = false;
+                }
+                if (ok) deleted++;
+                else failed++;
+            }
+        }
+    } catch (Exception e) {
+        // ignore (no crash)
+    }
+
+    return new int[]{deleted, failed};
+}
 }
