@@ -1,13 +1,15 @@
 # E-commerce-Order-Fulfillment-Automation-Backend
 
 Project Overview
-
+------------------------------------------------------
 The E-commerce Order Fulfillment Automation Backend is a Java-based command-line interface (CLI) application designed to simulate an end-to-end order fulfillment workflow. This system manages the order lifecycle, including order intake, payment processing, inventory management, order status tracking, and reporting.
 
 The backend system is designed to be used by admins who can perform various tasks like accepting orders, updating order statuses, managing products, handling payments, generating invoices, and more.
 
 Features
+------------------------------------------------------
 1. Order Management
+--------------------
 
 Accept New Order: Admins can create new orders and assign products to them.
 
@@ -20,6 +22,7 @@ Search/Filter Orders: Admins can search orders by ID or filter by status.
 Generate Receipt: Admins can generate a receipt for a delivered order.
 
 2. Product & Stock Management
+-----------------------------
 
 Advanced Product Filter: Admins can filter products based on categories and brands.
 
@@ -32,6 +35,7 @@ Restock Product: Admins can increase stock quantities for products.
 Export Stock Report: Admins can generate a stock report showing current inventory.
 
 3. Admin Operations
+--------------------
 
 Bulk Import Orders: Admins can bulk import orders from external files.
 
@@ -44,6 +48,7 @@ Add New Admin: Only admins can add new admin accounts.
 Change Admin Password: Admins can change their password securely.
 
 4. System Features (Admin Only)
+-------------------------------
 
 Simulation Mode: Admins can simulate different order processing scenarios.
 
@@ -54,6 +59,7 @@ Generate Report: Admins can generate detailed reports about orders, revenue, and
 Undo Last Restore: Admins can undo the last data restoration.
 
 5. Order Processing Logic
+--------------------------
 
 Order Validation: Checks that orders are valid (correct data, items, and quantities).
 
@@ -66,6 +72,7 @@ Payment Simulation: Supports Cash on Delivery (COD) and MockCard payments.
 Shipping Simulation: Tracks orders with generated tracking IDs and simulates shipping delays.
 
 Technologies
+----------------------------------------------------------------------------
 
 Programming Language: Java (JDK 8 or above)
 
@@ -82,7 +89,9 @@ String.split() for parsing text data
 MessageDigest.digest() for password hashing
 
 System Architecture
+-------------------------------------------------------------------------------------------------------------
 Main Components
+--------------------------------
 
 Admin.java: Handles authentication and user roles.
 
@@ -105,6 +114,7 @@ Item.java: Represents an item in an order, with product ID and quantity.
 Role.java: Defines user roles (ADMIN, MANAGER, SUPPORT) used for permission management.
 
 File Structure
+------------------------------------------------------------------------------------------
 /src
   Main.java              - Entry point for the CLI
   Admin.java             - Admin logic for authentication and role management
@@ -126,21 +136,27 @@ File Structure
   orders_import.txt     - Orders for bulk import (TXT format)
   stock_report.txt      - Product stock report
   report.txt            - Revenue and cancellation reports
+  
 How to Run the Project
+------------------------------------------------------------
 
 Clone the repository:
+----------------------
 
 git clone <repository-url>
 
 Compile the Java files:
+------------------------
 
 javac *.java
 
 Run the Main class:
+--------------------
 
 java Main
 
 Login:
+--------
 After running the application, log in using the admin credentials. The default credentials (if no admin is loaded) are:
 
 Username: admin
@@ -148,6 +164,7 @@ Username: admin
 Password: admin123
 
 Running Simulation Scenarios
+--------------------------------
 
 The system includes simulation modes to test different scenarios, including:
 
@@ -162,6 +179,7 @@ Random order scenarios
 To run a simulation, choose option 13 from the Admin Dashboard and select the scenario you'd like to simulate.
 
 Future Improvements
+-----------------------
 
 Full JSON Support: Switch from text files to JSON for better data management.
 
