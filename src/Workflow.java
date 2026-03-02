@@ -2030,4 +2030,12 @@ private void showRestockPreview() {
 
     printLine();
 }
+
+// small helper so long names don't break your table
+private String trimTo(String s, int max) {
+    if (s == null) return "";
+    s = s.trim();
+    if (s.length() <= max) return s;
+    return s.substring(0, max - 3) + "...";
+}
 }
