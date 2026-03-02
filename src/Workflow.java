@@ -2080,4 +2080,32 @@ private void showReorderPreview() {
 
     printLine();
 }
+
+private void showTimelinePreview() {
+    System.out.print(PINK + "\nOrders Available for Timeline\n" + RESET);
+    printLine();
+
+    if (dp.orderCount == 0) {
+        System.out.print(ROSE + "No orders found.\n" + RESET);
+        printLine();
+        return;
+    }
+
+    System.out.printf(LAVENDER + "%-8s %-12s %-18s\n" + RESET,
+            "OrderID", "Date", "Status");
+    System.out.print(SOFTGRAY + "----------------------------------------\n" + RESET);
+
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null) continue;
+
+        System.out.printf("%-8s %-12s %-18s\n",
+                o.orderId,
+                o.date,
+                o.status
+        );
+    }
+
+    printLine();
+}
 }
