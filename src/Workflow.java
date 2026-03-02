@@ -1914,4 +1914,48 @@ private void showOrdersForStatusUpdate() {
 
     printLine();
 }
+
+private void showProductsPreview2() {
+    System.out.println(PINK + BOLD + "\nProducts List (Preview)" + RESET);
+    printLine();
+
+    if (dp.productCount == 0) {
+        System.out.println(ROSE + "No products available." + RESET);
+        printLine();
+        return;
+    }
+
+    // Header
+    System.out.printf(
+        LAVENDER + "%-8s %-16s %-14s %-30s %-10s %-8s" + RESET + "%n",
+        "ProdID", "Category", "Brand", "Name", "Price", "Stock"
+    );
+    System.out.println(SOFTGRAY +
+        "--------------------------------------------------------------------------"
+        + RESET
+    );
+
+    // Rows
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p == null) continue;
+
+        String stockColor = p.stock <= 5 ? ROSE : MINT;
+
+        System.out.printf(
+            "%-8s %-16s %-14s %-30s %-10d %s%-8d%s%n",
+            p.productId,
+            p.category,
+            p.brand,
+            p.name,
+            p.price,
+            stockColor,
+            p.stock,
+            RESET
+        );
+    }
+
+    printLine();
+}
+
 }
