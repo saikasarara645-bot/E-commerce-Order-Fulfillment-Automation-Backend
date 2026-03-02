@@ -1685,4 +1685,105 @@ private String normalizeOrderId(String input) {
         // approximate: year*360 + month*30 + day
         return y * 360 + m * 30 + d;
     }
+    
+    /** 
+ * Accept a new order from the admin by manually inputting order details.
+ * This will generate a new Order ID, collect product selections, and process the order.
+ */
+private void acceptNewOrder(BufferedReader console) throws Exception {
+    // 1. Auto-generate Order ID and initialize a new Order
+    String newId = dp.generateOrderId();
+    Order newOrder = new Order();
+    newOrder.orderId = newId;
+    newOrder.date = currentDateString();  // set current date (YYYY-MM-DD)
+    System.out.print(LAVENDER+"New Order ID: " + newOrder.orderId + "\n"+RESET);
+
+    // 2. Display product catalog (Product ID, Name, Stock)
+    printTitle("Product Catalog");
+    for (int i = 0; i < dp.productCount; i++) {
+        Product prod = dp.products[i];
+        if (prod == null) continue;
+        System.out.print(LAVENDER+prod.productId + " - " + prod.name + " (Stock: " + prod.stock + ")\n"+RESET);
+    }
+    printLine();
+    // 3. Allow admin to select 1–3 products and specify quantities
+    System.out.print(SOFTGRAY+"How many different products in this order? (1-10): "+RESET);
+    String countStr = console.readLine();
+    if (countStr == null) countStr = "";
+    countStr = countStr.trim();
+    int itemCount = DataPersistence.toInt(countStr);
+    if (itemCount < 1 || itemCount > 10) {
+        System.out.print(ROSE+"Invalid number of products. Order cancelled.\n"+RESET);
+        return;
+    }
+    for (int i = 1; i <= itemCount; i++) {
+        System.out.print(SOFTGRAY+"Enter Product ID for item " + i + ": "+RESET);
+        String pid = console.readLine();
+        if (pid == null) pid = "";
+        pid = pid.trim();
+        if (pid.equals("")) {
+            System.out.print(ROSE+"Product ID cannot be empty. Order cancelled.\n"+RESET);
+            return;
+        }
+        Product product = dp.findProductById(pid);
+        if (product == null) {
+            System.out.print(ROSE+"Product " + pid + " not found. Order cancelled.\n"+RESET);
+            return;
+        }
+        System.out.print(SOFTGRAY+"Enter quantity for " + product.name + ": "+RESET);
+        String qtyStr = console.readLine();
+        if (qtyStr == null) qtyStr = "";
+        qtyStr = qtyStr.trim();
+        int qty = DataPersistence.toInt(qtyStr);
+        if (qty <= 0) {
+            System.out.print(ROSE+"Invalid quantity. Order cancelled.\n"+RESET);
+            return;
+        }
+        // Add the selected item to the order
+        if (!newOrder.addItem(new Item(product.productId, qty))) {
+            System.out.print(ROSE+"Failed to add item " + product.productId + ". Order cancelled.\n"+RESET);
+            return;
+        }
+    }
+
+    // 4. Ask for shipping address and payment mode
+    System.out.print(SOFTGRAY+"Enter shipping address: "+RESET);
+    String address = console.readLine();
+    if (address == null) address = "";
+    address = address.trim();
+    if (address.equals("")) {
+        System.out.print(ROSE+"Address cannot be empty. Order cancelled.\n"+RESET);
+        return;
+    }
+    newOrder.address = address;
+    System.out.print(SOFTGRAY+"Enter payment mode (COD or MockCard): "+RESET);
+    String paymentMode = console.readLine();
+    if (paymentMode == null) paymentMode = "";
+    paymentMode = paymentMode.trim();
+    if (paymentMode.equalsIgnoreCase("")) {
+        System.out.print(ROSE+"Payment mode cannot be empty. Order cancelled.\n"+RESET);
+        return;
+    }
+    newOrder.paymentMode = paymentMode;  // e.g., "COD" or "MockCard"
+
+    // 5. Log the order creation and process the order through existing workflow
+    log.write(newOrder.orderId, "Order created via admin interface (pending)");  // Log creation event
+    boolean processed = processPendingOrder(newOrder, console);
+    // (processPendingOrder will handle inventory check, payment processing, and update order status)
+
+    // 6. Add the new order to system records
+    dp.orders[dp.orderCount++] = newOrder;
+
+    // 7. Output result and log outcome
+    if (!processed) {
+        // If processing failed, the order status is now "CANCELLED" (cancelReason set by processPendingOrder)
+        System.out.print(ROSE+"Order processing failed. Order ID: " + newOrder.orderId  + " is CANCELLED (" + newOrder.cancelReason + ").\n"+RESET);
+        // (The cancellation reason and status change have been logged by processPendingOrder)
+    } else {
+        // If processing succeeded, the order status is now "PACKED"
+        System.out.print(MINT+"New order accepted and processed successfully! New Order ID: " + newOrder.orderId + " (Status: " + newOrder.status + ").\n"+RESET);
+        // (Inventory reservation and payment confirmation have been logged, and status set to PACKED)
+    }
+}
+
 }
