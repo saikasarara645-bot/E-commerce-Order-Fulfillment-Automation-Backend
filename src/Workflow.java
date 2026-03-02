@@ -1839,4 +1839,34 @@ private void showOrderTimeline(BufferedReader console) throws Exception {
     printLine();
 }
 
+private void autoCancelStaleOrders(int days) throws Exception {
+    java.time.LocalDate today = java.time.LocalDate.now();
+    int cancelled = 0;
+
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null) continue;
+        if (!"PENDING".equals(o.status)) continue;
+
+        try {
+            java.time.LocalDate d = java.time.LocalDate.parse(o.date); // expects YYYY-MM-DD
+            long diff = java.time.temporal.ChronoUnit.DAYS.between(d, today);
+            if (diff >= days) {
+                o.status = "CANCELLED";
+                cancelled++;
+                // if you have workflow log:
+                // log.write(o.orderId, "AUTO_CANCEL", "Order stale (" + diff + " days)");
+            }
+        } catch (Exception ex) {
+            // ignore bad date format
+        }
+    }
+
+    if (cancelled > 0) {
+        dp.saveAll();
+        System.out.print(MINT + "Auto-cancelled " + cancelled + " stale PENDING orders.\n" + RESET);
+    } else {
+        System.out.print(ROSE + "No stale PENDING orders found.\n" + RESET);
+    }
+}
 }
