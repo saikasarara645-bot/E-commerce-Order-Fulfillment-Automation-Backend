@@ -1803,4 +1803,40 @@ private void systemHealthCheck() {
     printLine();
 }
 
+private void showOrderTimeline(BufferedReader console) throws Exception {
+    showTimelinePreview();   
+    System.out.print("Enter Order ID for timeline: ");
+    String id = console.readLine();
+    if (id == null) id = "";
+    id = id.trim();
+    if (id.equals("")) return;
+
+    id = normalizeOrderId(id);
+
+    System.out.print(PINK + BOLD + "Timeline for " + id + "\n" + RESET);
+    printLine();
+
+    BufferedReader br = null;
+    boolean found = false;
+    try {
+        br = new BufferedReader(new FileReader(dp.path("logs.txt")));
+        String line;
+        while ((line = br.readLine()) != null) {
+            if (line.contains(id)) {
+                found = true;
+                System.out.print(SOFTGRAY + "- " + RESET + line + "\n");
+            }
+        }
+    } catch (Exception e) {
+        System.out.print(ROSE + "logs.txt not found.\n" + RESET);
+    } finally {
+        if (br != null) br.close();
+    }
+
+    if (!found) {
+        System.out.print(ROSE + "No timeline entries found for " + id + RESET + "\n");
+    }
+    printLine();
+}
+
 }
