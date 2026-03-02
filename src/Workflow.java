@@ -2387,4 +2387,69 @@ private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
     System.out.print(SOFTGRAY + "Orders Restored: " + RESET + MINT + restoredCount + RESET + "\n");
     System.out.print(SOFTGRAY + "You can undo using option 26.\n" + RESET);
 }
+
+private void previewArchiveSessions() {
+    System.out.println(PINK + BOLD + "\nArchive Preview (Delete Sessions)" + RESET);
+    printLine();
+
+    BufferedReader br = null;
+    try {
+        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
+        String line;
+
+        String currentUser = "";
+        String currentDateTime = "";
+        int currentCount = 0;
+
+        int sessionNo = 0;
+
+        while ((line = br.readLine()) != null) {
+            line = line.trim();
+            if (line.equals("")) continue;
+
+            // session header
+            if (line.startsWith("=== ARCHIVE DELETE by")) {
+                // print previous session
+                if (sessionNo > 0) {
+                    System.out.println(LAVENDER + "Session " + sessionNo + RESET +
+                            SOFTGRAY + " | By: " + RESET + currentUser +
+                            SOFTGRAY + " | At: " + RESET + currentDateTime +
+                            SOFTGRAY + " | Orders: " + RESET + currentCount);
+                    currentCount = 0;
+                }
+                sessionNo++;
+                currentUser = line.replace("=== ARCHIVE DELETE by", "").replace("===", "").trim();
+                currentDateTime = "";
+                continue;
+            }
+
+            if (line.startsWith("Deleted at:")) {
+                currentDateTime = line.replace("Deleted at:", "").trim();
+                continue;
+            }
+
+            // order lines
+            if (line.contains("|")) {
+                currentCount++;
+            }
+        }
+
+        // last session
+        if (sessionNo > 0) {
+            System.out.println(LAVENDER + "Session " + sessionNo + RESET +
+                    SOFTGRAY + " | By: " + RESET + currentUser +
+                    SOFTGRAY + " | At: " + RESET + currentDateTime +
+                    SOFTGRAY + " | Orders: " + RESET + currentCount);
+        } else {
+            System.out.println(ROSE + "No archive sessions found." + RESET);
+        }
+
+    } catch (Exception e) {
+        System.out.println(ROSE + "Failed to preview archive." + RESET);
+    } finally {
+        try { if (br != null) br.close(); } catch (Exception ex) {}
+    }
+
+    printLine();
+}
 }
