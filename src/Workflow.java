@@ -2452,4 +2452,27 @@ private void previewArchiveSessions() {
 
     printLine();
 }
+
+private void backupOrdersBeforeRestore() {
+    BufferedReader br = null;
+    FileWriter fw = null;
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path("orders.txt")));
+        fw = new FileWriter(dp.path("orders_restore_backup.txt"), false);
+
+        String line;
+        while ((line = br.readLine()) != null) {
+            fw.write(line + "\n");
+        }
+    } catch (Exception e) {
+        // if orders.txt doesn't exist yet, still create empty backup
+        try {
+            fw = new FileWriter(dp.path("orders_restore_backup.txt"), false);
+        } catch (Exception ex) {}
+    } finally {
+        try { if (br != null) br.close(); } catch (Exception ex) {}
+        try { if (fw != null) fw.close(); } catch (Exception ex) {}
+    }
+}
 }
