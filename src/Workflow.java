@@ -1667,4 +1667,22 @@ private String normalizeOrderId(String input) {
         }
         return s.length() > 0;
     }
+        /** Helper: get current date as YYYY-MM-DD */
+    private String currentDateString() {
+        // Use system date for realism
+        LocalDate today = LocalDate.now();
+        return today.toString();
+    }
+
+    /** Helper: convert a YYYY-MM-DD date string to an approximate day count for comparison */
+    private int dateToDayCount(String dateStr) {
+        if (dateStr == null || dateStr.length() == 0) return 0;
+        String[] parts = dateStr.split("-");
+        if (parts.length < 3) return 0;
+        int y = DataPersistence.toInt(parts[0]);
+        int m = DataPersistence.toInt(parts[1]);
+        int d = DataPersistence.toInt(parts[2]);
+        // approximate: year*360 + month*30 + day
+        return y * 360 + m * 30 + d;
+    }
 }
