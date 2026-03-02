@@ -2310,4 +2310,81 @@ private int[] deleteAllReceiptFiles() {
 
     return new int[]{deleted, failed};
 }
+
+private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
+    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+    if (currentAdmin == null || currentAdmin.role != Role.ADMIN) {
+        System.out.print(ROSE + "Access denied. Admin only.\n" + RESET);
+        return;
+    }
+
+    String archivePath = dp.path("orders_archive.txt");
+    java.io.File archiveFile = new java.io.File(archivePath);
+
+    if (!archiveFile.exists()) {
+        System.out.print(ROSE + "Archive file not found: orders_archive.txt\n" + RESET);
+        return;
+    }
+
+    // ✅ Preview first
+    previewArchiveSessions();
+
+    System.out.print(SOFTGRAY +
+        "Restore Options:\n" + RESET +
+        "1) Restore latest delete only\n" +
+        "2) Restore by date (YYYY-MM-DD)\n" +
+        "3) Restore ALL archive orders\n" +
+        "Choose (1-3): "
+    );
+    String opt = console.readLine();
+    if (opt == null) opt = "";
+    opt = opt.trim();
+
+    if (!opt.equals("1") && !opt.equals("2") && !opt.equals("3")) {
+        System.out.print(ROSE + "Invalid option.\n" + RESET);
+        return;
+    }
+
+    String dateFilter = "";
+    if (opt.equals("2")) {
+        System.out.print(SOFTGRAY + "Enter date (YYYY-MM-DD): " + RESET);
+        dateFilter = console.readLine();
+        if (dateFilter == null) dateFilter = "";
+        dateFilter = dateFilter.trim();
+
+        if (dateFilter.length() != 10) {
+            System.out.print(ROSE + "Invalid date format.\n" + RESET);
+            return;
+        }
+    }
+
+    // ✅ Confirm restore
+    System.out.print(ROSE + "This will modify orders.txt.\n" + RESET);
+    System.out.print(SOFTGRAY + "Type RESTORE to confirm: " + RESET);
+    String conf = console.readLine();
+    if (conf == null) conf = "";
+    conf = conf.trim();
+    if (!conf.equalsIgnoreCase("RESTORE")) {
+        System.out.print(ROSE + "Restore cancelled.\n" + RESET);
+        return;
+    }
+
+    // ✅ Backup orders.txt so we can UNDO
+    backupOrdersBeforeRestore();
+
+    int restoredCount = 0;
+    if (opt.equals("1")) restoredCount = restoreLatestSessionOnly();
+    else if (opt.equals("2")) restoredCount = restoreByDate(dateFilter);
+    else restoredCount = restoreAllArchiveOrders();
+
+    // Reload into memory
+    dp.loadAll();
+
+    log.write("ADMIN", "RESTORE from archive. Count=" + restoredCount);
+    dp.appendLoginAudit("RESTORE_ORDERS", currentAdmin.username);
+
+    System.out.print(MINT + "Restore complete.\n" + RESET);
+    System.out.print(SOFTGRAY + "Orders Restored: " + RESET + MINT + restoredCount + RESET + "\n");
+    System.out.print(SOFTGRAY + "You can undo using option 26.\n" + RESET);
+}
 }
