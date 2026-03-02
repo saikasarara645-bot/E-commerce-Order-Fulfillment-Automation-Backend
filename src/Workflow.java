@@ -2251,4 +2251,22 @@ private void deleteAllOrderHistory(BufferedReader console) throws Exception {
         System.out.print(SOFTGRAY + "Last Audit: " + RESET + lastAuditLine + "\n");
     }
 }
+
+private String readLastLine(String filePath) {
+    BufferedReader br = null;
+    try {
+        br = new BufferedReader(new FileReader(filePath));
+        String line;
+        String last = "";
+        while ((line = br.readLine()) != null) {
+            line = line.trim();
+            if (!line.equals("")) last = line;
+        }
+        return last;
+    } catch (Exception e) {
+        return "";
+    } finally {
+        try { if (br != null) br.close(); } catch (Exception ex) {}
+    }
+}
 }
