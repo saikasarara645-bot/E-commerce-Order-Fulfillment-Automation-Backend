@@ -2108,4 +2108,147 @@ private void showTimelinePreview() {
 
     printLine();
 }
+
+private void deleteAllOrderHistory(BufferedReader console) throws Exception {
+    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+
+    // ✅ Admin-only protection
+    if (currentAdmin == null || currentAdmin.role != Role.ADMIN) {
+        System.out.print(ROSE + "Access denied. Admin only.\n" + RESET);
+        return;
+    }
+
+    if (dp.orderCount == 0) {
+        System.out.print(SOFTGRAY + "No orders to delete.\n" + RESET);
+        return;
+    }
+
+    System.out.print(ROSE + "WARNING: This will delete ALL order history.\n" + RESET);
+    System.out.print(SOFTGRAY + "Type DELETE to confirm: " + RESET);
+    String conf1 = console.readLine();
+    if (conf1 == null) conf1 = "";
+    conf1 = conf1.trim();
+
+    if (!conf1.equalsIgnoreCase("DELETE")) {
+        System.out.print(ROSE + "Cancelled.\n" + RESET);
+        return;
+    }
+
+    System.out.print(SOFTGRAY + "Are you REALLY sure? Type YES: " + RESET);
+    String conf2 = console.readLine();
+    if (conf2 == null) conf2 = "";
+    conf2 = conf2.trim();
+
+    if (!conf2.equalsIgnoreCase("YES")) {
+        System.out.print(ROSE + "Cancelled.\n" + RESET);
+        return;
+    }
+
+    // ✅ Count before delete
+    int deletedCount = dp.orderCount;
+
+    String archiveFileName = "orders_archive.txt";
+    String archivePath = dp.path(archiveFileName);
+
+    // ===============================
+    // ✅ BACKUP ORDERS (SOFT DELETE)
+    // ===============================
+    FileWriter backup = null;
+    try {
+        backup = new FileWriter(archivePath, true);
+        backup.write("\n=== ARCHIVE DELETE by " + currentAdmin.username + " ===\n");
+        backup.write("Deleted at: " + dp.currentDateTimeString() + "\n");
+
+        for (int i = 0; i < dp.orderCount; i++) {
+            Order o = dp.orders[i];
+            if (o == null) continue;
+
+            StringBuilder itemList = new StringBuilder();
+            for (int j = 0; j < o.itemCount; j++) {
+                Item it = o.items[j];
+                if (it == null) continue;
+                itemList.append(it.productId).append("x").append(it.quantity);
+                if (j < o.itemCount - 1) itemList.append(",");
+            }
+
+            backup.write(
+                o.orderId + "|" + o.date + "|" + o.address + "|" +
+                o.paymentMode + "|" + o.status + "|" +
+                o.totalAmount + "|" + itemList.toString()
+            );
+
+            if (o.cancelReason != null && !o.cancelReason.equals("")) {
+                backup.write("|" + o.cancelReason);
+            }
+
+            if (o.trackingId != null && !o.trackingId.equals("")) {
+                backup.write("|" + o.trackingId);
+            }
+
+            backup.write("\n");
+        }
+    } finally {
+        if (backup != null) backup.close();
+    }
+
+    // ===============================
+    // ✅ CLEAR ORDERS FROM MEMORY
+    // ===============================
+    for (int i = 0; i < dp.orderCount; i++) {
+        dp.orders[i] = null;
+    }
+    dp.orderCount = 0;
+
+    // ✅ Clear orders.txt
+    dp.saveOrders();
+
+    // ===============================
+    // ✅ DELETE RECEIPT FILES
+    // ===============================
+    int[] receiptResult = deleteAllReceiptFiles();
+    int receiptDeleted = receiptResult[0];
+    int receiptFailed = receiptResult[1];
+
+    // ===============================
+    // ✅ ARCHIVE SIZE
+    // ===============================
+    long sizeBytes = 0;
+    try {
+        java.io.File f = new java.io.File(archivePath);
+        if (f.exists()) sizeBytes = f.length();
+    } catch (Exception e) {}
+
+    long sizeKB = (sizeBytes + 1023) / 1024;
+
+    // ===============================
+    // ✅ LOGGING & AUDIT
+    // ===============================
+    log.write(
+        "ADMIN",
+        "Deleted ALL order history. Orders=" + deletedCount +
+        ", Receipts=" + receiptDeleted +
+        ", Backup=" + archiveFileName
+    );
+    dp.appendLoginAudit("DELETE_ORDERS", currentAdmin.username);
+
+    String lastAuditLine = readLastLine(dp.path("login_audit.txt"));
+
+    // ===============================
+    // ✅ FINAL OUTPUT
+    // ===============================
+    System.out.print(MINT + "All order history deleted successfully.\n" + RESET);
+    System.out.print(SOFTGRAY + "Deleted Orders: " + RESET + MINT + deletedCount + RESET + "\n");
+    System.out.print(SOFTGRAY + "Receipts Deleted: " + RESET + LAVENDER + receiptDeleted + RESET + "\n");
+
+    if (receiptFailed > 0) {
+        System.out.print(ROSE + "Receipts Failed: " + receiptFailed + RESET + "\n");
+    }
+
+    System.out.print(SOFTGRAY + "Backup File: " + RESET + LAVENDER + archiveFileName + RESET + "\n");
+    System.out.print(SOFTGRAY + "Archive Size: " + RESET + LAVENDER + sizeKB + " KB" + RESET + "\n");
+
+    if (lastAuditLine != null && !lastAuditLine.equals("")) {
+        System.out.print(SOFTGRAY + "Last Audit: " + RESET + lastAuditLine + "\n");
+    }
+}
 }
