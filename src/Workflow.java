@@ -1785,5 +1785,22 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
         // (Inventory reservation and payment confirmation have been logged, and status set to PACKED)
     }
 }
+private void systemHealthCheck() {
+    System.out.print(PINK + BOLD + "System Health Check\n" + RESET);
+    printLine();
+
+    System.out.print(MINT + "Orders loaded: " + RESET + dp.orderCount + "\n");
+    System.out.print(MINT + "Products loaded: " + RESET + dp.productCount + "\n");
+    System.out.print(MINT + "Admins loaded: " + RESET + dp.adminCount + "\n");
+
+    int low = countLowStock(5);
+    if (low > 0) {
+        System.out.print(ANSI_Yellow + "Low stock products: " + low + RESET + "\n");
+    } else {
+        System.out.print(MINT + "No low stock products" + RESET + "\n");
+    }
+
+    printLine();
+}
 
 }
