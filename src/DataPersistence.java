@@ -90,8 +90,7 @@ FileReader(path("products.txt")));
 brand, name, price, stock);
  }
 } catch (Exception e) {
- // If file not found or format error, skip (will use
-defaults if any)
+ // If file not found or format error, skip (will use defaults if any)
  } finally {
  if (br != null) br.close();
  }
@@ -250,8 +249,7 @@ public void addAdmin(Admin newAdmin) {
  if (adminCount < admins.length) {
  admins[adminCount++] = newAdmin; // Add new admin to the list
  } else {
- System.out.println(ROSE+"Unable to add new admin. Admin list is
-full."+RESET);
+ System.out.println(ROSE+"Unable to add new admin. Admin list is full."+RESET);
  }
 }
 
