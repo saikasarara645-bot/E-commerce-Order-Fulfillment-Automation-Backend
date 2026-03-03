@@ -40,3 +40,8 @@ if (mode.equalsIgnoreCase("MockCard")) {
  log.write(order.orderId, "PAYMENT FAIL (Unknown payment mode: " + mode + ")");
  return false;
  }
+
+ private String safe(String s) {
+ if (s == null) return "";
+ return s.trim();
+ }
