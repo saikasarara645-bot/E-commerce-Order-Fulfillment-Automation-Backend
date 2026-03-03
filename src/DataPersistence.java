@@ -543,3 +543,7 @@ public String generateProductIdByCategory(String category) {
  char ch = pid.charAt(k);
  if (ch >= '0' && ch <= '9') digits += ch;
  }
+
+ int n = toInt(digits);
+ if (n > max) max = n;
+  }
