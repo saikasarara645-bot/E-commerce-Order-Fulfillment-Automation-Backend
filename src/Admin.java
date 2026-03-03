@@ -94,3 +94,27 @@ public class Admin {
 
     System.out.print(ROSE+"\nToo many failed attempts.\n"+RESET);
     return false;
+    }
+
+
+    /** Compute SHA-256 hash of a plaintext password and return hex string */
+    public static String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");  // hashing algorithm
+            byte[] hashBytes = md.digest(password.getBytes());        // compute hash
+            // Convert hash bytes to hexadecimal string
+            String hexDigits = "0123456789abcdef";
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                int val = b & 0xFF;
+                sb.append(hexDigits.charAt(val >>> 4));
+                sb.append(hexDigits.charAt(val & 0x0F));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            // In case of error, fall back to plain password (should not happen in normal use)
+            return password;
+        }
+    }
+    
+}
