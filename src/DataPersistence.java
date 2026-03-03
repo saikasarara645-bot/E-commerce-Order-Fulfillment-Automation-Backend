@@ -531,3 +531,7 @@ public String generateProductIdByCategory(String category) {
  for (int i = 0; i < productCount; i++) {
  Product p = products[i];
  if (p == null || p.productId == null) continue;
+
+ String pid = p.productId.trim().toUpperCase();
+ if (pid.length() < 2) continue;
+ if (pid.charAt(0) != prefix) continue;
