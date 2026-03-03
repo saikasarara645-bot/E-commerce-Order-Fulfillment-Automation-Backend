@@ -9,3 +9,21 @@ public class Order {
     public int totalAmount;
     public String cancelReason;
     public String trackingId;
+    
+      public Order() {
+        this.status = "PENDING";
+        this.cancelReason = "";
+        this.trackingId = "";
+        this.address = "";
+        this.paymentMode = "";
+    }
+
+    /** Add an item to the order (returns false if capacity reached or invalid quantity) */
+    public boolean addItem(Item it) {
+        if (it == null || it.quantity <= 0 || itemCount >= items.length) {
+            // Reject invalid item input (e.g., zero quantity or capacity exceeded)
+            return false;
+        }
+        items[itemCount++] = it;
+        return true;
+    }
