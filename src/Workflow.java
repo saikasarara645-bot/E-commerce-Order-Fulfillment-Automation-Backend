@@ -1914,7 +1914,6 @@ private void showOrdersForStatusUpdate() {
 
     printLine();
 }
-
 private void showProductsPreview2() {
     System.out.println(PINK + BOLD + "\nProducts List (Preview)" + RESET);
     printLine();
