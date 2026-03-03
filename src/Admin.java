@@ -75,3 +75,25 @@ public class Admin {
 
           if (authenticated) {
             dp.currentAdminIndex = foundIndex;
+
+            // ✅ NEW LINE #1 (SUCCESS LOG)
+            dp.appendLoginAudit("LOGIN_SUCCESS", u);
+
+            Admin admin = dp.admins[foundIndex];
+            System.out.println(MINT+"Login successful. Role: " + admin.role +RESET);
+            return true;
+
+        } else {
+            // ✅ NEW LINE #2 (FAIL LOG)
+            dp.appendLoginAudit("LOGIN_FAIL", u);
+
+            System.out.print(ROSE+"Invalid credentials. "+RESET);
+            attempts++;
+            if (attempts < 3) {
+                System.out.print(ANSI_Yellow+"Try again.\n"+RESET);
+            }
+        }
+    }
+
+    System.out.print(ROSE+"\nToo many failed attempts.\n"+RESET);
+    return false;
