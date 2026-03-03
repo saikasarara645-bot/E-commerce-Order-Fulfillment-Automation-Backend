@@ -24,3 +24,16 @@ public class Log {
             // ignore logging errors to avoid disrupting main flow
         }
     }
+      /** Display all log entries for a given Order ID (order timeline) */
+    public void viewLogsByOrder(String orderId) {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(dp.path("logs.txt")));
+            String line;
+            boolean foundAny = false;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("Order " + orderId + " ")) {
+                    System.out.print(line + "\n");
+                    foundAny = true;
+                }
+            }
