@@ -45,3 +45,10 @@ if (mode.equalsIgnoreCase("MockCard")) {
  if (s == null) return "";
  return s.trim();
  }
+
+
+private boolean startsWithYes(String s) {
+ s = safe(s).toLowerCase();
+ return s.startsWith("y");
+ }
+}
