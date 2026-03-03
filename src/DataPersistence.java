@@ -547,3 +547,10 @@ public String generateProductIdByCategory(String category) {
  int n = toInt(digits);
  if (n > max) max = n;
   }
+
+  // Next number
+ int next = max + 1;
+ // keep your style: M101, L201, H301, A401, P501
+ return "" + prefix + next;
+}
+}
