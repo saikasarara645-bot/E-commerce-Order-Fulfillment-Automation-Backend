@@ -18,5 +18,11 @@ throws Exception {
  // Cash on Delivery always "approved" (no upfront failure)
  log.write(order.orderId, "PAYMENT OK (Cash on Delivery)");
  return true;
- 
+
  }
+
+if (mode.equalsIgnoreCase("MockCard")) {
+ // Simulate card payment by asking admin to approve (Y) or decline (N)
+ System.out.print("MockCard Payment: Total BDT " + order.totalAmount + "\n");
+ System.out.print("Approve? (Y/N): ");
+ String ans = safe(console.readLine());
