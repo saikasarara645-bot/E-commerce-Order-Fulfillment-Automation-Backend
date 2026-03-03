@@ -111,26 +111,46 @@ Role.java: Defines user roles (ADMIN, MANAGER, SUPPORT) used for permission mana
 File Structure
 ------------------------------------------------------------------------------------------
 /src
+-
   Main.java              - Entry point for the CLI
+  -
   Admin.java             - Admin logic for authentication and role management
+  -
   Order.java             - Order details and item management
+  -
   Product.java           - Product details and inventory management
+  -
   PaymentService.java    - Payment simulation logic
+  -
   Log.java               - Logging system
+  -
   DataPersistence.java   - Data loading and saving logic
+  -
   Workflow.java          - Workflow orchestration and admin dashboard
+  -
   Item.java              - Item details for orders (product ID, quantity)
+  -
   Role.java              - Enum defining roles (ADMIN, MANAGER, SUPPORT)
+  -
   
 /data
+-
   admins.txt            - Stores admin credentials (username|password hash|role)
+  -
   products.txt          - Stores product details (productId|category|brand|name|price|stock)
+  -
   orders.txt            - Stores orders (orderId|date|address|paymentMode|status|items|totalAmount)
+  -
   logs.txt              - Stores logs for system actions
+  -
   orders_import.json    - Orders for bulk import (JSON format)
+  -
   orders_import.txt     - Orders for bulk import (TXT format)
+  -
   stock_report.txt      - Product stock report
+  -
   report.txt            - Revenue and cancellation reports
+  -
 
 
 How to Run the Project
