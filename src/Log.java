@@ -37,3 +37,14 @@ public class Log {
                     foundAny = true;
                 }
             }
+                        if (!foundAny) {
+                System.out.print(ROSE+"No log entries found for Order " + orderId + ".\n"+RESET);
+            }
+        } catch (Exception e) {
+            System.out.print(ROSE+"Error reading logs.\n"+RESET);
+        } finally {
+            try { if (br != null) br.close(); } catch (Exception ex) { /* ignore */ }
+        }
+    }
+    
+}
