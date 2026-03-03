@@ -525,3 +525,9 @@ public String generateProductIdByCategory(String category) {
 
 // If unknown category, default prefix
  if (prefix == 'X') prefix = 'G'; // General
+
+ // Find current max number for that prefix
+ int max = 0;
+ for (int i = 0; i < productCount; i++) {
+ Product p = products[i];
+ if (p == null || p.productId == null) continue;
