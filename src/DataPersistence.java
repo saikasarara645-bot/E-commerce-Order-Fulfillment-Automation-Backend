@@ -535,3 +535,11 @@ public String generateProductIdByCategory(String category) {
  String pid = p.productId.trim().toUpperCase();
  if (pid.length() < 2) continue;
  if (pid.charAt(0) != prefix) continue;
+
+
+ // extract digits
+ String digits = "";
+ for (int k = 0; k < pid.length(); k++) {
+ char ch = pid.charAt(k);
+ if (ch >= '0' && ch <= '9') digits += ch;
+ }
