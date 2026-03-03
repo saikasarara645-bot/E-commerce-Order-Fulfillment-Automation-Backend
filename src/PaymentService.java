@@ -35,3 +35,8 @@ if (mode.equalsIgnoreCase("MockCard")) {
  return false;
  }
  }
+
+ // If payment mode is unknown, treat as failure
+ log.write(order.orderId, "PAYMENT FAIL (Unknown payment mode: " + mode + ")");
+ return false;
+ }
