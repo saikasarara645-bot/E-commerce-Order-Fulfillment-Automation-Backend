@@ -1,1 +1,5 @@
-public enum Role { ADMIN, MANAGER, SUPPORT }
+public enum Role {
+    ADMIN,
+    MANAGER,
+    SUPPORT
+}
