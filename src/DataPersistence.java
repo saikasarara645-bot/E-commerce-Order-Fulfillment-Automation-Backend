@@ -1,8 +1,6 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
-
-import javax.management.relation.Role;
 /** DataPersistence.java – Handles loading and saving of data from text
 files */
 public class DataPersistence {
@@ -90,8 +88,7 @@ FileReader(path("products.txt")));
 brand, name, price, stock);
  }
 } catch (Exception e) {
- // If file not found or format error, skip (will use
-defaults if any)
+ // If file not found or format error, skip (will use defaults if any)
  } finally {
  if (br != null) br.close();
  }
@@ -250,8 +247,7 @@ public void addAdmin(Admin newAdmin) {
  if (adminCount < admins.length) {
  admins[adminCount++] = newAdmin; // Add new admin to the list
  } else {
- System.out.println(ROSE+"Unable to add new admin. Admin list is
-full."+RESET);
+ System.out.println(ROSE+"Unable to add new admin. Admin list is full."+RESET);
  }
 }
 
@@ -525,3 +521,32 @@ public String generateProductIdByCategory(String category) {
 
 // If unknown category, default prefix
  if (prefix == 'X') prefix = 'G'; // General
+
+ // Find current max number for that prefix
+ int max = 0;
+ for (int i = 0; i < productCount; i++) {
+ Product p = products[i];
+ if (p == null || p.productId == null) continue;
+
+ String pid = p.productId.trim().toUpperCase();
+ if (pid.length() < 2) continue;
+ if (pid.charAt(0) != prefix) continue;
+
+
+ // extract digits
+ String digits = "";
+ for (int k = 0; k < pid.length(); k++) {
+ char ch = pid.charAt(k);
+ if (ch >= '0' && ch <= '9') digits += ch;
+ }
+
+ int n = toInt(digits);
+ if (n > max) max = n;
+  }
+
+  // Next number
+ int next = max + 1;
+ // keep your style: M101, L201, H301, A401, P501
+ return "" + prefix + next;
+}
+}
