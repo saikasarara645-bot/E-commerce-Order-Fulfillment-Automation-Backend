@@ -9,7 +9,7 @@ public class Order {
     public int totalAmount;
     public String cancelReason;
     public String trackingId;
-    
+
       public Order() {
         this.status = "PENDING";
         this.cancelReason = "";
@@ -27,3 +27,20 @@ public class Order {
         items[itemCount++] = it;
         return true;
     }
+
+        /** Prepare a text record of this order for saving to file */
+    public String toRecord() {
+        // Build items list string as "ProductIDxQty, ProductIDxQty, ..."
+        StringBuilder itemsPart = new StringBuilder();
+        for (int i = 0; i < itemCount; i++) {
+            Item it = items[i];
+            if (it == null) continue;
+            itemsPart.append(it.productId).append("x").append(it.quantity);
+            if (i < itemCount - 1) itemsPart.append(", ");
+        }
+        // Use empty strings for blank fields (e.g., no cancel reason)
+        String reasonPart = (cancelReason == null ? "" : cancelReason);
+        return orderId + "|" + date + "|" + address + "|" + paymentMode + "|" + status + "|" 
+               + itemsPart.toString() + "|" + totalAmount + "|" + reasonPart;
+    }
+}
