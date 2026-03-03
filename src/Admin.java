@@ -43,3 +43,32 @@ public class Admin {
     System.out.println(PINK + BOLD + text + RESET);
     printLine();
     }
+    public static boolean authenticate(DataPersistence dp, BufferedReader console) throws Exception {
+    printTitle("Admin Login");
+    int attempts = 0;
+
+    while (attempts < 3) {
+        System.out.print(SOFTGRAY+"Username: "+RESET);
+        String u = console.readLine();
+        if (u == null) u = "";
+        u = u.trim();
+
+        System.out.print(SOFTGRAY+"Password: "+RESET);
+        String p = console.readLine();
+        if (p == null) p = "";
+        p = p.trim();
+        
+        boolean authenticated = false;
+        int foundIndex = -1;
+
+        for (int i = 0; i < dp.adminCount; i++) {
+            Admin adm = dp.admins[i];
+            if (adm != null && adm.username.equals(u) && adm.passHash.equals(hashPassword(p))) {
+                foundIndex = i;
+                authenticated = true;
+                break;
+            }
+        }
+
+          if (authenticated) {
+            dp.currentAdminIndex = foundIndex;
