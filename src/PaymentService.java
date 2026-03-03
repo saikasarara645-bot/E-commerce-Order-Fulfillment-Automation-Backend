@@ -26,3 +26,12 @@ if (mode.equalsIgnoreCase("MockCard")) {
  System.out.print("MockCard Payment: Total BDT " + order.totalAmount + "\n");
  System.out.print("Approve? (Y/N): ");
  String ans = safe(console.readLine());
+
+ if (startsWithYes(ans)) {
+ log.write(order.orderId, "PAYMENT OK (MockCard approved)");
+ return true;
+ } else {
+ log.write(order.orderId, "PAYMENT FAIL (MockCard declined)");
+ return false;
+ }
+ }
