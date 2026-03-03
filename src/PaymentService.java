@@ -18,4 +18,5 @@ throws Exception {
  // Cash on Delivery always "approved" (no upfront failure)
  log.write(order.orderId, "PAYMENT OK (Cash on Delivery)");
  return true;
+ 
  }
