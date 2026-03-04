@@ -11,7 +11,7 @@ Features
 -------
 
 1. Order Management
-   -----
+    ---
 
 -**Accept New Order**: Admins can create new orders and assign products to them.
 
