@@ -140,6 +140,7 @@ File Structure
  **Item.java**              - Item details for orders (product ID, quantity)
  -----
  **Role.java**              - Enum defining roles (ADMIN, MANAGER, SUPPORT)
+ --------
   
 /data
 -------
