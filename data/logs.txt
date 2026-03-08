@@ -1,1 +1,8 @@
 
+Order 00002 - Order created via admin interface (pending)
+Order 00002 - Inventory OK – stock reserved
+Order 00002 - PAYMENT OK (MockCard approved)
+Order 00002 - Status changed to PACKED
+Order 00002 - Status changed to SHIPPED
+Order ADMIN - Edited product L203 (Price changed)
+Order ADMIN - Restocked M101 (+22)

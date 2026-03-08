@@ -1,10 +1,10 @@
-M101|Smartphone|Samsung|Galaxy A14 (4/64)|2500|9
-M102|Smartphone|Xiaomi|Redmi 12 (8/128)|18999|10
-M103|Smartphone|Realme|C55 (8/128)|19500|21
+M101|Smartphone|Samsung|Galaxy A14 (4/64)|2500|25
+M102|Smartphone|Xiaomi|Redmi 12 (8/128)|18999|1
+M103|Smartphone|Realme|C55 (8/128)|19500|11
 M104|Smartphone|Nokia|G21 (6/128)|17500|60
 L201|Laptop|HP|Pavilion 15 (i5)|72000|6
 L202|Laptop|Dell|Inspiron 14 (i5)|75000|15
-L203|Laptop|Lenovo|IdeaPad 3 (i5)|68000|8
+L203|Laptop|Lenovo|IdeaPad 3 (i5)|80000|8
 L204|Laptop|ASUS|VivoBook 15 (i5)|70000|60
 H301|Home Appliance|Walton|Ceiling Fan|6200|22
 H302|Home Appliance|Singer|Stand Fan|6800|8

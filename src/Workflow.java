@@ -2100,7 +2100,37 @@ private String trimTo(String s, int max) {
     if (s.length() <= max) return s;
     return s.substring(0, max - 3) + "...";
 }
+private String buildOrderItemsSummary(Order order) {
+    if (order == null || order.itemCount == 0) {
+        return "No items";
+    }
 
+    String summary = "";
+
+    for (int i = 0; i < order.itemCount; i++) {
+        Item it = order.items[i];
+        if (it == null) continue;
+
+        String productName = it.productId; // fallback if product not found
+
+        // Find product name from product list
+        for (int j = 0; j < dp.productCount; j++) {
+            Product p = dp.products[j];
+            if (p != null && p.productId.equalsIgnoreCase(it.productId)) {
+                productName = p.name;
+                break;
+            }
+        }
+
+        if (!summary.equals("")) {
+            summary += ", ";
+        }
+
+        summary += productName + " x" + it.quantity;
+    }
+
+    return summary;
+}
 private void showReorderPreview() {
     System.out.println(PINK + BOLD + "\nPrevious Orders (For Reorder)" + RESET);
     printLine();
@@ -2111,32 +2141,46 @@ private void showReorderPreview() {
         return;
     }
 
-    System.out.printf(LAVENDER + "%-10s %-12s %-18s %-10s %-10s" + RESET + "%n",
-            "OrderID", "Date", "Status", "Payment", "Total");
-    System.out.println(SOFTGRAY + "--------------------------------------------------------------" + RESET);
+    System.out.printf(
+        LAVENDER + "%-10s %-12s %-18s %-10s %-10s %-40s" + RESET + "%n",
+        "OrderID", "Date", "Status", "Payment", "Total", "Items (Qty)"
+    );
+
+    System.out.println(
+        SOFTGRAY + "--------------------------------------------------------------------------------------------------------------" + RESET
+    );
 
     for (int i = 0; i < dp.orderCount; i++) {
         Order o = dp.orders[i];
         if (o == null) continue;
 
-        // Skip cancelled orders (optional, but useful for reorder)
+        // Skip cancelled orders
         if (o.status != null && o.status.equalsIgnoreCase("CANCELLED")) continue;
 
         String st = (o.status == null) ? "" : o.status.trim().toUpperCase();
-
         String stColor = SOFTGRAY;
+
         if (st.equals("PENDING")) stColor = MINT;
         else if (st.equals("PACKED")) stColor = MINT;
         else if (st.equals("SHIPPED")) stColor = MINT;
         else if (st.equals("OUT_FOR_DELIVERY")) stColor = MINT;
         else if (st.equals("DELIVERED")) stColor = MINT;
 
-        System.out.printf("%-10s %-12s %s%-18s%s %-10s %-10d%n",
-                o.orderId,
-                o.date,
-                stColor, st, RESET,
-                (o.paymentMode == null ? "" : o.paymentMode),
-                o.totalAmount
+        String itemsSummary = buildOrderItemsSummary(o);
+
+        // Optional truncation so the table does not break badly
+        if (itemsSummary.length() > 40) {
+            itemsSummary = itemsSummary.substring(0, 37) + "...";
+        }
+
+        System.out.printf(
+            "%-10s %-12s %s%-18s%s %-10s %-10d %-40s%n",
+            o.orderId,
+            o.date,
+            stColor, st, RESET,
+            (o.paymentMode == null ? "" : o.paymentMode),
+            o.totalAmount,
+            itemsSummary
         );
     }
 
