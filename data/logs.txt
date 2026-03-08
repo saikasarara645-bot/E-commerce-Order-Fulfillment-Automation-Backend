@@ -6,3 +6,4 @@ Order 00002 - Status changed to PACKED
 Order 00002 - Status changed to SHIPPED
 Order ADMIN - Edited product L203 (Price changed)
 Order ADMIN - Restocked M101 (+22)
+Order 00003 - Order cancelled -Inventory Shortage: M102

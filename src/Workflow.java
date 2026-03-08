@@ -39,51 +39,83 @@ public class Workflow {
     public boolean adminLogin(BufferedReader console) throws Exception {
         return Admin.authenticate(dp, console);
     }
-    
-    private void printLine() {
-    System.out.println(SOFTGRAY + "────────────────────────────────────────" + RESET);
-    }
+private void printLine() {
+    System.out.println(SOFTGRAY + "╠════════════════════════════════════════════════════════════╣" + RESET);
+}
 
-    private void printTitle(String text) {
-    printLine();
-    System.out.println(PINK + BOLD + text + RESET);
-    printLine();
-    }
-     private void printDashboardBox(Admin admin) {
-    String top    = "╔══════════════════════════════════════╗";
-    String mid    = "║                                      ║";
-    String bottom = "╚══════════════════════════════════════╝";
+private void printTitle(String text) {
+    String border = "╔════════════════════════════════════════════════════════════╗";
+    String bottom = "╚════════════════════════════════════════════════════════════╝";
+
+    System.out.println(SOFTGRAY + border + RESET);
+    System.out.println(SOFTGRAY + "║" + RESET
+            + PINK + BOLD + centerText("✦ " + text + " ✦", 60) + RESET
+            + SOFTGRAY + "║" + RESET);
+    System.out.println(SOFTGRAY + bottom + RESET);
+}
+
+private void printDashboardBox(Admin admin) {
+
+    String username = (admin != null && admin.username != null)
+            ? admin.username
+            : "Unknown";
+
+    String role = (admin != null && admin.role != null)
+            ? admin.role.name()
+            : "Unknown";
+
+    String top    = "╔════════════════════════════════════════════════════════════╗";
+    String mid    = "║                                                            ║";
+    String sep    = "╠════════════════════════════════════════════════════════════╣";
+    String bottom = "╚════════════════════════════════════════════════════════════╝";
 
     System.out.println(SOFTGRAY + top + RESET);
 
-    // Centered Title line
-    String title = "ADMIN DASHBOARD";
     System.out.println(SOFTGRAY + "║" + RESET
-            + PINK + BOLD + centerText(title, 38) + RESET
+            + PINK + BOLD + centerText(" ADMIN DASHBOARD ", 60) + RESET
+            + SOFTGRAY + "║" + RESET);
+
+    System.out.println(SOFTGRAY + "║" + RESET
+            + LAVENDER + centerText("E-Commerce Order Fulfillment Automation System", 60) + RESET
+            + SOFTGRAY + "║" + RESET);
+
+    System.out.println(SOFTGRAY + sep + RESET);
+
+    System.out.println(SOFTGRAY + "║" + RESET
+            + MINT + centerText("Logged in as: " + username + " (" + role + ")", 60) + RESET
             + SOFTGRAY + "║" + RESET);
 
     System.out.println(SOFTGRAY + mid + RESET);
 
-    // Info line: Logged in as
-    String info = "Logged in as: " + admin.username + " (" + admin.role + ")";
-    System.out.println(SOFTGRAY + "║" + RESET
-            + LAVENDER + centerText(info, 38) + RESET
-            + SOFTGRAY + "║" + RESET);
-
     System.out.println(SOFTGRAY + bottom + RESET);
 }
 private String centerText(String text, int width) {
+
     if (text == null) text = "";
-    if (text.length() >= width) return text.substring(0, width);
+    text = text.trim();
 
-    int left = (width - text.length()) / 2;
-    int right = width - text.length() - left;
+    int len = text.length();
 
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < left; i++) sb.append(' ');
-    sb.append(text);
-    for (int i = 0; i < right; i++) sb.append(' ');
-    return sb.toString();
+    if (len >= width) {
+        return text.substring(0, width);
+    }
+
+    int left = (width - len) / 2;
+    int right = width - len - left;
+
+    String result = "";
+
+    for (int i = 0; i < left; i++) {
+        result += " ";
+    }
+
+    result += text;
+
+    for (int i = 0; i < right; i++) {
+        result += " ";
+    }
+
+    return result;
 }
 private void printRoleSummary(Admin admin) {
     printTitle("Quick Summary");
@@ -139,130 +171,156 @@ private int countLowStock(int threshold) {
     }
     return c;
 }
+private void printFooter(String message) {
+    System.out.println();
+    System.out.println(SOFTGRAY + "────────────────────────────────────────────────────────────" + RESET);
+    System.out.println(MINT + centerText(message, 60) + RESET);
+}
+private void printSection(String text) {
+    System.out.println();
+    System.out.println(PINK + BOLD + ">> " + text + RESET);
+    System.out.println(SOFTGRAY + "────────────────────────────────────────────────────────────" + RESET);
+}
+private void printMenuOption(int num, String text, boolean enabled) {
+    String label = "[" + num + "] ";
+
+    if (enabled) {
+        System.out.println(LAVENDER + label + RESET + MINT + text + RESET);
+    } else {
+        System.out.println(LAVENDER + label + RESET + ROSE + text + " (Restricted)" + RESET);
+    }
+}
 
     /** Admin Dashboard menu loop handling all features */
  public void adminDashboard(BufferedReader console) throws Exception {
-
-    // Always refresh current admin (in case index changes later)
-    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
-      printDashboardBox(currentAdmin);
-      printLine();
     while (true) {
+        // Refresh current admin every loop
+        Admin currentAdmin = dp.admins[dp.currentAdminIndex];
 
-        // refresh current admin each loop (safe)
-        currentAdmin = dp.admins[dp.currentAdminIndex];
+        // Safe role flags
+        boolean isAdmin = currentAdmin != null && currentAdmin.role == Role.ADMIN;
+        boolean isManager = currentAdmin != null && currentAdmin.role == Role.MANAGER;
+        boolean canManageStock = isAdmin || isManager;
+
+        // ===== DASHBOARD HEADER =====
+        printDashboardBox(currentAdmin);
         printRoleSummary(currentAdmin);
         printLine();
+
         // ===== MENU HEADER =====
-        System.out.print("\n" + LAVENDER + BOLD + "____________________Menu:____________________" + RESET + "\n");
+        System.out.println();
+        System.out.println(LAVENDER + BOLD + "==================== MAIN MENU ====================" + RESET);
 
         // ===== ORDER MANAGEMENT =====
-        System.out.print(PINK + BOLD + "ORDER MANAGEMENT" + RESET + "\n");
-        System.out.print(LAVENDER + " 1." + RESET + " " + MINT + "Accept New Order" + RESET + "\n");
-        System.out.print(LAVENDER + " 2." + RESET + " " + MINT + "Update Order Status" + RESET + "\n");
-        System.out.print(LAVENDER + " 3." + RESET + " " + MINT + "View Order Logs" + RESET + "\n");
-        System.out.print(LAVENDER + " 4." + RESET + " " + MINT + "Search/Filter Orders" + RESET + "\n");
-        System.out.print(LAVENDER + " 5." + RESET + " " + MINT + "Generate Receipt" + RESET + "\n");
+        printSection("ORDER MANAGEMENT");
+        printMenuOption(1, "Accept New Order", true);
+        printMenuOption(2, "Update Order Status", true);
+        printMenuOption(3, "View Order Logs", true);
+        printMenuOption(4, "Search / Filter Orders", true);
+        printMenuOption(5, "Generate Receipt", true);
 
         // ===== PRODUCT & STOCK =====
-        System.out.print("\n" + PINK + BOLD + "PRODUCT & STOCK" + RESET + "\n");
-        System.out.print(LAVENDER + " 6." + RESET + " " + MINT + "Advanced Product Filter" + RESET + "\n");
-
-        // Admin/Manager
-        if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
-            System.out.print(LAVENDER + " 7." + RESET + " " + MINT + "Manage Products (Add/Edit/Delete)" + RESET + "\n");
-            System.out.print(LAVENDER + " 8." + RESET + " " + MINT + "Low Stock Alerts" + RESET + "\n");
-            System.out.print(LAVENDER + " 9." + RESET + " " + MINT + "Restock Product" + RESET + "\n");
-            System.out.print(LAVENDER + "10." + RESET + " " + MINT + "Export Stock Report" + RESET + "\n");
-        } else {
-            // show restricted in peach (professional)
-            System.out.print(LAVENDER + " 7." + RESET + " " + ROSE + "Manage Products (Admin/Manager only)" + RESET + "\n");
-            System.out.print(LAVENDER + " 8." + RESET + " " + ROSE + "Low Stock Alerts (Admin/Manager only)" + RESET + "\n");
-            System.out.print(LAVENDER + " 9." + RESET + " " + ROSE + "Restock Product (Admin/Manager only)" + RESET + "\n");
-            System.out.print(LAVENDER + "10." + RESET + " " + ROSE + "Export Stock Report (Admin/Manager only)" + RESET + "\n");
-        }
+        printSection("PRODUCT & STOCK");
+        printMenuOption(6, "Advanced Product Filter", true);
+        printMenuOption(7, "Manage Products (Add/Edit/Delete)", canManageStock);
+        printMenuOption(8, "Low Stock Alerts", canManageStock);
+        printMenuOption(9, "Restock Product", canManageStock);
+        printMenuOption(10, "Export Stock Report", canManageStock);
 
         // ===== OPERATIONS =====
-        System.out.print("\n" + PINK + BOLD + "OPERATIONS" + RESET + "\n");
-        System.out.print(LAVENDER + "11." + RESET + " " + MINT + "Reorder Previous Order" + RESET + "\n");
-        System.out.print(LAVENDER + "12." + RESET + " " + MINT + "Retry Failed Order" + RESET + "\n");
-        System.out.print(LAVENDER + "13." + RESET + " " + MINT + "Simulation Mode" + RESET + "\n");
-        System.out.print(LAVENDER + "14." + RESET + " " + MINT + "Load Test Data" + RESET + "\n");
-        System.out.print(LAVENDER + "15." + RESET + " " + MINT + "System Health Check" + RESET + "\n");
-        System.out.print(LAVENDER + "16." + RESET + " " + MINT + "Show Order Timeline" + RESET + "\n");
-        System.out.print(LAVENDER + "17." + RESET + " " + MINT + "Auto Cancel Stale Orders" + RESET + "\n");
-      
+        printSection("OPERATIONS");
+        printMenuOption(11, "Reorder Previous Order", true);
+        printMenuOption(12, "Retry Failed Order", true);
+        printMenuOption(13, "Simulation Mode", true);
+        printMenuOption(14, "Load Test Data", true);
+        printMenuOption(15, "System Health Check", true);
+        printMenuOption(16, "Show Order Timeline", true);
+        printMenuOption(17, "Auto Cancel Stale Orders", true);
+
         // ===== ADMIN ONLY =====
-        System.out.print("\n" + PINK + BOLD + "SYSTEM (ADMIN ONLY)" + RESET + "\n");
-        if (currentAdmin.role == Role.ADMIN) {
-            System.out.print(LAVENDER + "18." + RESET + " " + MINT + "Bulk Import Orders" + RESET + "\n");
-            System.out.print(LAVENDER + "19." + RESET + " " + MINT + "Archive Delivered Orders" + RESET + "\n");
-            System.out.print(LAVENDER + "20." + RESET + " " + MINT + "Clear Logs" + RESET + "\n");
-            System.out.print(LAVENDER + "21." + RESET + " " + MINT + "Add New Admin" + RESET + "\n");
-            System.out.print(LAVENDER + "22." + RESET + " " + MINT + "Change Admin Password" + RESET + "\n");
-            System.out.print(LAVENDER + "23." + RESET + " " + MINT + "Generate Report" + RESET + "\n");
-            System.out.print(LAVENDER+"24."+RESET+" " + MINT+ "Delete ALL Order History" + RESET + "\n");
-            System.out.print(LAVENDER+"25."+RESET+" " + MINT + "Restore Order History (Archive)" + RESET + "\n");
-            System.out.print(LAVENDER+"26."+RESET +" "+ MINT + "Undo Last Restore" + RESET + "\n");
+        printSection("SYSTEM (ADMIN ONLY)");
+        printMenuOption(18, "Bulk Import Orders", isAdmin);
+        printMenuOption(19, "Archive Delivered Orders", isAdmin);
+        printMenuOption(20, "Clear Logs", isAdmin);
+        printMenuOption(21, "Add New Admin", isAdmin);
+        printMenuOption(22, "Change Admin Password", isAdmin);
+        printMenuOption(23, "Generate Report", isAdmin);
+        printMenuOption(24, "Delete ALL Order History", isAdmin);
+        printMenuOption(25, "Restore Order History (Archive)", isAdmin);
+        printMenuOption(26, "Undo Last Restore", isAdmin);
 
+        System.out.println();
+        System.out.println(LAVENDER + "[0] " + RESET + MINT + "Exit" + RESET);
 
-        } else {
-            System.out.print(LAVENDER + "18." + RESET + " " + ROSE + "Bulk Import Orders (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "19." + RESET + " " + ROSE + "Archive Delivered Orders (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "20." + RESET + " " + ROSE + "Clear Logs (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "21." + RESET + " " + ROSE + "Add New Admin (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "22." + RESET + " " + ROSE + "Change Admin Password (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "23." + RESET + " " + ROSE + "Generate Report (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER+"24."+RESET +" "+ ROSE + "Delete ALL Order History(Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER+"25."+RESET + " "+ROSE + "Restore Order History(Admin Only)" + RESET + "\n");
-            System.out.print(LAVENDER+"26."+RESET + " "+ROSE + "Undo Last Restore(Admin Only)" + RESET + "\n");
-
-
-        }
-       
-        // ===== EXIT =====
-        System.out.print("\n" + LAVENDER + " 0." + RESET + " " + ROSE + "Exit" + RESET + "\n");
-        printLine();
-        System.out.print(PINK + BOLD + "Please select an option → " + RESET);
+        printFooter("System Ready • Awaiting Command");
+        System.out.print(SOFTGRAY + "Please select an option: " + RESET);
 
         String choice = console.readLine();
         if (choice == null) choice = "";
         choice = choice.trim();
-        System.out.print("\n");
+
+        System.out.println();
         if (!choice.equals("")) {
-        System.out.println(MINT + "You selected option: " + choice + RESET);
-        printLine();   // optional but looks professional
+            System.out.println(MINT + "You selected option: " + choice + RESET);
+            printLine();
         }
+
         switch (choice) {
-            case "1": acceptNewOrder(console); break;
-            case "2": handleStatusUpdate(console); break;
+            case "1":
+                acceptNewOrder(console);
+                break;
+
+            case "2":
+                handleStatusUpdate(console);
+                break;
 
             case "3":
-                System.out.println(PINK + BOLD + "==== Available Orders (Sorted by Date) ====" + RESET);
-                printLine();
+                printTitle("Available Orders (Sorted by Date)");
+
                 Order[] sortedOrders = Arrays.copyOf(dp.orders, dp.orderCount);
-                Arrays.sort(sortedOrders, Comparator.comparing(o -> o.date));
+                Arrays.sort(sortedOrders, Comparator.comparing(
+                        o -> (o == null || o.date == null) ? "" : o.date
+                ));
 
                 for (Order order : sortedOrders) {
                     if (order != null) {
-                        System.out.println(SOFTGRAY + order.orderId + RESET + SOFTGRAY + " | Date: " + RESET + MINT + order.date + RESET + SOFTGRAY + " | Status: " + RESET + LAVENDER + order.status + RESET);
+                        String status = (order.status == null) ? "(Unknown)" : order.status;
+                        String date = (order.date == null) ? "(No Date)" : order.date;
+
+                        System.out.println(
+                                SOFTGRAY + order.orderId + RESET +
+                                SOFTGRAY + " | Date: " + RESET + MINT + date + RESET +
+                                SOFTGRAY + " | Status: " + RESET + LAVENDER + status + RESET
+                        );
                     }
                 }
 
                 System.out.print(LAVENDER + "Enter Order ID to view logs: " + RESET);
                 String logId = console.readLine();
                 if (logId != null && !logId.trim().equals("")) {
-                    logId = normalizeOrderId(logId.trim());
-                    log.viewLogsByOrder(logId);
+                    Order target = findOrderById(logId.trim());
+                    if (target != null) {
+                        log.viewLogsByOrder(target.orderId);
+                    } else {
+                        System.out.println(ROSE + "Order not found." + RESET);
+                    }
                 }
                 break;
 
-            case "4": handleOrderSearch(console); break;
-            case "5": generateReceipt(console); break;
-            case "6": handleAdvancedFilter(console); break;
+            case "4":
+                handleOrderSearch(console);
+                break;
+
+            case "5":
+                generateReceipt(console);
+                break;
+
+            case "6":
+                handleAdvancedFilter(console);
+                break;
 
             case "7":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
+                if (canManageStock) {
                     handleProductManagement(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
@@ -270,7 +328,7 @@ private int countLowStock(int threshold) {
                 break;
 
             case "8":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
+                if (canManageStock) {
                     showLowStockAlerts();
                 } else {
                     System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
@@ -278,7 +336,7 @@ private int countLowStock(int threshold) {
                 break;
 
             case "9":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
+                if (canManageStock) {
                     handleRestock(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
@@ -286,42 +344,64 @@ private int countLowStock(int threshold) {
                 break;
 
             case "10":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
+                if (canManageStock) {
                     exportStockReport();
                 } else {
                     System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
                 }
                 break;
-            case "11": handleReorder(console); break;
-            case "12": retryCancelledOrder(console); break;
-            case "13": runSimulation(console); break;
+
+            case "11":
+                handleReorder(console);
+                break;
+
+            case "12":
+                retryCancelledOrder(console);
+                break;
+
+            case "13":
+                runSimulation(console);
+                break;
+
             case "14":
                 System.out.print(LAVENDER + "Enter test data filename (e.g. testdata.txt): " + RESET);
                 String file = console.readLine();
                 if (file == null) file = "";
                 file = file.trim();
+
                 if (!file.equals("")) {
                     dp.loadTestDataFromFile(file);
                     dp.saveAll();
+
                     System.out.print(MINT + "Loaded test data successfully\n" + RESET);
                     System.out.print(SOFTGRAY + "-> " + dp.productCount + " products loaded.\n" + RESET);
                     System.out.print(SOFTGRAY + "-> " + dp.orderCount + " orders loaded.\n" + RESET);
                     System.out.print(SOFTGRAY + "-> " + dp.adminCount + " admins loaded.\n" + RESET);
                 }
                 break;
-            case "15": systemHealthCheck(); break;
-            case "16": showOrderTimeline(console); break;
-            case "17": autoCancelStaleOrders(2); break;
+
+            case "15":
+                systemHealthCheck();
+                break;
+
+            case "16":
+                showOrderTimeline(console);
+                break;
+
+            case "17":
+                autoCancelStaleOrders(2);
+                break;
+
             case "18":
-                if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     importOrdersFromFile(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
                 break;
-            
+
             case "19":
-                if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     archiveDeliveredOrders(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
@@ -329,44 +409,47 @@ private int countLowStock(int threshold) {
                 break;
 
             case "20":
-                if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     clearLogs(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
                 break;
+
             case "21":
-                if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     addNewAdmin(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
-                break; 
-            
+                break;
+
             case "22":
-                if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     changeAdminPassword(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
                 break;
-    
+
             case "23":
-                if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     generateReport();
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
                 break;
-            
+
             case "24":
-                  if (currentAdmin.role == Role.ADMIN) {
+                if (isAdmin) {
                     deleteAllOrderHistory(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
-                break;case "25":
-                  if (currentAdmin.role == Role.ADMIN) {
+                break;
+
+            case "25":
+                if (isAdmin) {
                     restoreOrdersFromArchive(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
@@ -374,62 +457,150 @@ private int countLowStock(int threshold) {
                 break;
 
             case "26":
-                  if (currentAdmin.role == Role.ADMIN) {
-                      undoLastRestore(console);
+                if (isAdmin) {
+                    undoLastRestore(console);
                 } else {
                     System.out.println(ROSE + "Restricted: Admin only." + RESET);
                 }
-                break;    
+                break;
 
-  
             case "0":
                 System.out.print(LAVENDER + "Exiting Admin Dashboard..." + RESET + "\n");
-                System.out.print(LAVENDER+ "Thank you for using E-commerce Order Fulfillment Automation System" + RESET + "\n");
+                System.out.print(LAVENDER + "Thank you for using E-commerce Order Fulfillment Automation System\n" + RESET);
                 return;
 
             default:
-                System.out.print(ROSE + "Invalid option. Please try again." + RESET + "\n");
+                System.out.print(ROSE + "Invalid option. Please try again.\n" + RESET);
                 break;
         }
 
         printLine();
     }
-}
-private void addNewAdmin(BufferedReader console) throws Exception {
-    // Only allow current admin to add new admin if they have the ADMIN role
+}private void addNewAdmin(BufferedReader console) throws Exception {
     Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+
     if (currentAdmin == null || !currentAdmin.hasPermission(Role.ADMIN)) {
-        System.out.print(ROSE+"Permission denied. Only admins can add new admins."+RESET+"\n");
+        System.out.print(ROSE + "Permission denied. Only admins can add new admins.\n" + RESET);
         return;
     }
 
-    // Proceed with adding the new admin
-    System.out.print(SOFTGRAY+"Enter new admin username: "+RESET);
-    String username = console.readLine().trim();
+    printTitle("Add New Admin");
 
-    System.out.print(SOFTGRAY+"Enter new admin password: "+RESET);
-    String password = console.readLine().trim();
+    System.out.print(SOFTGRAY + "Enter new admin username: " + RESET);
+    String username = console.readLine();
+    if (username == null) username = "";
+    username = username.trim();
 
-    System.out.print(SOFTGRAY+"Enter role (ADMIN, MANAGER, SUPPORT): "+RESET);
-    String roleStr = console.readLine().trim().toUpperCase();
-    Role role = Role.valueOf(roleStr);
+    if (username.equals("")) {
+        System.out.print(ROSE + "Username cannot be empty.\n" + RESET);
+        return;
+    }
 
-    // Hash the password before saving
+    // Check duplicate username
+    for (int i = 0; i < dp.adminCount; i++) {
+        Admin a = dp.admins[i];
+        if (a != null && a.username != null && a.username.equalsIgnoreCase(username)) {
+            System.out.print(ROSE + "Username already exists. Choose another username.\n" + RESET);
+            return;
+        }
+    }
+
+    System.out.print(SOFTGRAY + "Enter new admin password: " + RESET);
+    String password = console.readLine();
+    if (password == null) password = "";
+    password = password.trim();
+
+    if (password.equals("")) {
+        System.out.print(ROSE + "Password cannot be empty.\n" + RESET);
+        return;
+    }
+
+    System.out.print(SOFTGRAY + "Enter role (ADMIN, MANAGER, SUPPORT): " + RESET);
+    String roleStr = console.readLine();
+    if (roleStr == null) roleStr = "";
+    roleStr = roleStr.trim().toUpperCase();
+
+    Role role;
+    try {
+        role = Role.valueOf(roleStr);
+    } catch (IllegalArgumentException e) {
+        System.out.print(ROSE + "Invalid role. Allowed roles: ADMIN, MANAGER, SUPPORT.\n" + RESET);
+        return;
+    }
+
     String hashedPassword = Admin.hashPassword(password);
-
-    // Create new admin object
     Admin newAdmin = new Admin(username, hashedPassword, role);
 
-    // Add new admin to the list
     dp.addAdmin(newAdmin);
-
-    // Save the updated admin list to file
     dp.saveAll();
+
     printLine();
-    System.out.println(MINT+"New admin added successfully."+RESET+"\n");
+    System.out.println(MINT + "New admin added successfully." + RESET);
+    System.out.println(SOFTGRAY + "Username: " + username + RESET);
+    System.out.println(SOFTGRAY + "Role: " + role.name() + RESET);
 }
 
-private void handleOrderSearch(BufferedReader console) throws Exception {
+private String formatOrderStatus(String status) {
+    if (status == null) return "(UNKNOWN)";
+
+    String s = status.trim().toUpperCase();
+
+    if ("DELIVERED".equals(s)) return LAVENDER + s + RESET;
+    if ("CANCELLED".equals(s)) return ROSE + s + RESET;
+    if ("PENDING".equals(s)) return MINT + s + RESET;
+    if ("PACKED".equals(s)) return MINT + s + RESET;
+    if ("SHIPPED".equals(s)) return MINT + s + RESET;
+    if ("OUT_FOR_DELIVERY".equals(s)) return MINT + s + RESET;
+
+    return s;
+}
+private void printOrderSummaryLine(Order o, boolean includeDateAndPayment) {
+    if (o == null) return;
+
+    String orderId = (o.orderId == null || o.orderId.trim().equals("")) ? "(Unknown)" : o.orderId;
+    String date = (o.date == null || o.date.trim().equals("")) ? "(N/A)" : o.date;
+    String payment = (o.paymentMode == null || o.paymentMode.trim().equals("")) ? "(N/A)" : o.paymentMode;
+    String rawStatus = (o.status == null) ? "" : o.status.trim().toUpperCase();
+    String statusStr = formatOrderStatus(rawStatus);
+    int total = safeOrderTotal(o);
+
+    if (includeDateAndPayment) {
+        System.out.print("- " + orderId
+                + " | Date: " + date
+                + " | Payment: " + payment
+                + " | Status: " + statusStr
+                + " | Total: BDT " + total);
+    } else {
+        System.out.print("- " + orderId
+                + " | Status: " + statusStr
+                + " | Total: BDT " + total);
+    }
+
+    if ("CANCELLED".equals(rawStatus) &&
+            o.cancelReason != null &&
+            !o.cancelReason.trim().equals("")) {
+        System.out.print(ROSE + " | CancelReason: " + o.cancelReason.trim() + RESET);
+    }
+
+    System.out.print("\n");
+}
+private void promptAndShowOrderDetails(BufferedReader console) throws Exception {
+    System.out.print(SOFTGRAY + "Enter Order ID to view details (or press Enter to skip): " + RESET);
+    String selId = console.readLine();
+    if (selId == null) selId = "";
+    selId = selId.trim();
+
+    if (!selId.equals("")) {
+        Order target = findOrderById(selId);
+
+        if (target != null) {
+            printLine();
+            viewOrderDetails(target);
+        } else {
+            System.out.print(ROSE + "Order " + normalizeOrderId(selId) + " not found.\n" + RESET);
+        }
+    }
+}private void handleOrderSearch(BufferedReader console) throws Exception {
     showOrdersPreview();
 
     System.out.print(SOFTGRAY + "Enter Order ID or Status to search (or press Enter for advanced filter): " + RESET);
@@ -444,130 +615,71 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
         System.out.print(SOFTGRAY + "Enter Status to filter (or press Enter for any): " + RESET);
         String statusFilter = console.readLine();
         if (statusFilter == null) statusFilter = "";
-        statusFilter = statusFilter.trim();
+        statusFilter = statusFilter.trim().toUpperCase();
 
         System.out.print(SOFTGRAY + "Enter Payment Mode to filter (or press Enter for any): " + RESET);
         String paymentFilter = console.readLine();
         if (paymentFilter == null) paymentFilter = "";
-        paymentFilter = paymentFilter.trim();
+        paymentFilter = paymentFilter.trim().toUpperCase();
 
         System.out.print(SOFTGRAY + "Enter Date to filter (YYYY-MM-DD, or press Enter for any): " + RESET);
         String dateFilter = console.readLine();
         if (dateFilter == null) dateFilter = "";
         dateFilter = dateFilter.trim();
 
-        String statusFilterUC = statusFilter.toUpperCase();
-        String paymentFilterUC = paymentFilter.toUpperCase();
-
         Order[] results = new Order[dp.orderCount];
         int count = 0;
+
         printLine();
 
         for (int i = 0; i < dp.orderCount; i++) {
             Order o = dp.orders[i];
             if (o == null) continue;
 
-            if (!statusFilterUC.equals("") && (o.status == null || !o.status.toUpperCase().equals(statusFilterUC))) {
-                continue;
-            }
-            if (!paymentFilterUC.equals("") && (o.paymentMode == null || !o.paymentMode.toUpperCase().equals(paymentFilterUC))) {
-                continue;
-            }
-            if (!dateFilter.equals("") && (o.date == null || !o.date.equals(dateFilter))) {
-                continue;
-            }
+            String status = (o.status == null) ? "" : o.status.trim().toUpperCase();
+            String payment = (o.paymentMode == null) ? "" : o.paymentMode.trim().toUpperCase();
+            String date = (o.date == null) ? "" : o.date.trim();
+
+            if (!statusFilter.equals("") && !status.equals(statusFilter)) continue;
+            if (!paymentFilter.equals("") && !payment.equals(paymentFilter)) continue;
+            if (!dateFilter.equals("") && !date.equals(dateFilter)) continue;
 
             results[count++] = o;
         }
 
         if (count == 0) {
-            System.out.print(ROSE + "No orders found matching the given criteria." + RESET + "\n");
-        } else {
-            String statusCrit = statusFilter.equals("") ? "Any" : statusFilter;
-            String payCrit = paymentFilter.equals("") ? "Any" : paymentFilter;
-            String dateCrit = dateFilter.equals("") ? "Any" : dateFilter;
-
-            System.out.print(SOFTGRAY + "Orders matching filters - Status: " + RESET + statusCrit
-                    + SOFTGRAY + ", Payment: " + RESET + payCrit
-                    + SOFTGRAY + ", Date: " + RESET + dateCrit + ":\n" + RESET);
-
-            for (int i = 0; i < count; i++) {
-                Order o = results[i];
-
-                // ✅ Status color (added PACKED + OUT_FOR_DELIVERY)
-                String statusStr = o.status;
-                if ("DELIVERED".equals(statusStr)) statusStr = LAVENDER + statusStr + RESET;
-                else if ("CANCELLED".equals(statusStr)) statusStr = ROSE + statusStr + RESET;
-                else if ("PENDING".equals(statusStr)) statusStr = MINT + statusStr + RESET;
-                else if ("SHIPPED".equals(statusStr)) statusStr = MINT + statusStr + RESET;
-                else if ("PACKED".equals(statusStr)) statusStr = MINT + statusStr + RESET;
-                else if ("OUT_FOR_DELIVERY".equals(statusStr)) statusStr = MINT+ statusStr + RESET;
-
-                int total = safeOrderTotal(o); // ✅ FIX total 0 issue
-
-                System.out.print("- " + o.orderId + " | Date: " + o.date
-                        + " | Payment: " + o.paymentMode
-                        + " | Status: " + statusStr
-                        + " | Total: BDT " + total);
-
-                if ("CANCELLED".equals(o.status) && o.cancelReason != null && !o.cancelReason.equals("")) {
-                    System.out.print(ROSE + " | CancelReason: " + o.cancelReason + RESET);
-                }
-                System.out.print("\n");
-            }
-
-            printLine();
-            System.out.print(SOFTGRAY + "Enter Order ID to view details (or press Enter to skip): " + RESET);
-            String selId = console.readLine();
-            if (selId == null) selId = "";
-            selId = selId.trim();
-
-            // ✅ STRICT: must type exact ID like 01001 (no normalizeOrderId)
-            if (!selId.equals("")) {
-                Order target = null;
-                for (int i = 0; i < dp.orderCount; i++) {
-                    Order o = dp.orders[i];
-                    if (o != null && o.orderId.equalsIgnoreCase(selId)) {
-                        target = o;
-                        break;
-                    }
-                }
-                if (target != null) viewOrderDetails(target);
-                else System.out.print(ROSE + "Order " + selId + " not found in results.\n" + RESET);
-            }
+            System.out.print(ROSE + "No orders found matching the given criteria.\n" + RESET);
+            return;
         }
+
+        String statusCrit = statusFilter.equals("") ? "Any" : statusFilter;
+        String payCrit = paymentFilter.equals("") ? "Any" : paymentFilter;
+        String dateCrit = dateFilter.equals("") ? "Any" : dateFilter;
+
+        System.out.print(SOFTGRAY + "Orders matching filters - Status: " + RESET + statusCrit
+                + SOFTGRAY + ", Payment: " + RESET + payCrit
+                + SOFTGRAY + ", Date: " + RESET + dateCrit + ":\n" + RESET);
+
+        for (int i = 0; i < count; i++) {
+            printOrderSummaryLine(results[i], true);
+        }
+
+        printLine();
+        promptAndShowOrderDetails(console);
         return;
     }
 
     // ===========================
     // STANDARD SEARCH MODE
     // ===========================
-
-    String q = query.trim();
-    String idTry=normalizeOrderId(q);
-
-    // ✅ STRICT ID RULE:
-    // Remove this old behavior:
-    // if (!q.startsWith("O") && isNumeric(q)) q = "O" + q;
-    // Now user must type EXACT orderId (01001), not 1001.
-
-    // Try exact Order ID match
-    Order found = null;
-    for (int i = 0; i < dp.orderCount; i++) {
-        Order o = dp.orders[i];
-        if (o != null && o.orderId != null && o.orderId.equalsIgnoreCase(idTry)) {
-            found = o;
-            break;
-        }
-    }
+    Order found = findOrderById(query);
 
     if (found != null) {
         viewOrderDetails(found);
         return;
     }
 
-    // Otherwise treat input as status query
-    String statusQuery = q;
+    String statusQuery = query.toUpperCase();
     Order[] results = new Order[dp.orderCount];
     int count = 0;
 
@@ -575,101 +687,84 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
         Order o = dp.orders[i];
         if (o == null || o.status == null) continue;
 
-        if (o.status.toUpperCase().contains(statusQuery)) {
+        String status = o.status.trim().toUpperCase();
+        if (status.contains(statusQuery)) {
             results[count++] = o;
         }
     }
 
     if (count == 0) {
         System.out.print(ROSE + "No orders found matching \"" + query + "\".\n" + RESET);
-    } else {
-        System.out.print("Orders with status containing \"" + query + "\":\n");
+        return;
+    }
 
-        for (int i = 0; i < count; i++) {
-            Order o = results[i];
+    System.out.print(SOFTGRAY + "Orders with status containing \"" + query + "\":\n" + RESET);
 
-            String statusStr = o.status;
-            if ("DELIVERED".equals(statusStr)) statusStr = LAVENDER + statusStr + RESET;
-            else if ("CANCELLED".equals(statusStr)) statusStr = ROSE + statusStr + RESET;
-            else if ("PENDING".equals(statusStr)) statusStr = MINT + statusStr + RESET;
-            else if ("SHIPPED".equals(statusStr)) statusStr = MINT + statusStr + RESET;
-            else if ("PACKED".equals(statusStr)) statusStr = MINT + statusStr + RESET;
-            else if ("OUT_FOR_DELIVERY".equals(statusStr)) statusStr = MINT + statusStr + RESET;
+    for (int i = 0; i < count; i++) {
+        printOrderSummaryLine(results[i], false);
+    }
 
-            int total = safeOrderTotal(o); // ✅ FIX total 0 issue
+    printLine();
+    promptAndShowOrderDetails(console);
+}
+private Order findOrderById(String inputId) {
+    if (inputId == null) return null;
 
-            System.out.print(SOFTGRAY + "- " + o.orderId + " | Status: " + statusStr + " | Total: BDT " + total + RESET);
+    inputId = normalizeOrderId(inputId.trim());
+    if (inputId.equals("")) return null;
 
-            if (o.cancelReason != null && !o.cancelReason.equals("")) {
-                System.out.print(ROSE + " | CancelReason: " + o.cancelReason + RESET);
-            }
-            System.out.print("\n");
-        }
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null || o.orderId == null) continue;
 
-        System.out.print(SOFTGRAY + "Enter Order ID to view details (or press Enter to skip): " + RESET);
-        String selId = console.readLine();
-        if (selId == null) selId = "";
-        selId = selId.trim();
-
-        // ✅ STRICT ID (no normalizeOrderId)
-        if (!selId.equals("")) {
-            Order target = null;
-            for (int i = 0; i < dp.orderCount; i++) {
-                Order o = dp.orders[i];
-                if (o != null && o.orderId.equalsIgnoreCase(selId)) {
-                    target = o;
-                    break;
-                }
-            }
-            if (target != null) viewOrderDetails(target);
-            else System.out.print(ROSE + "Order " + selId + " not found in results.\n" + RESET);
+        String storedId = normalizeOrderId(o.orderId.trim());
+        if (storedId.equalsIgnoreCase(inputId)) {
+            return o;
         }
     }
+    return null;
 }
   /** Feature 6: Manually progress an order status through the workflow (PENDING -> PACKED -> SHIPPED -> OUT_FOR_DELIVERY -> DELIVERED) */
-    private void handleStatusUpdate(BufferedReader console) throws Exception {
+private void handleStatusUpdate(BufferedReader console) throws Exception {
     showOrdersForStatusUpdate();
-    System.out.print(SOFTGRAY+"Enter Order ID to update status: "+RESET);
+
+    System.out.print(SOFTGRAY + "Enter Order ID to update status: " + RESET);
     String id = console.readLine();
     if (id == null) id = "";
     id = id.trim();
+
     if (id.equals("")) {
-        System.out.print(ROSE+"Order ID cannot be empty.\n"+RESET);
+        System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
         return;
     }
-    id = normalizeOrderId(id);
-    // Find the order by ID
-    Order order = null;
-    for (int i = 0; i < dp.orderCount; i++) {
-        Order o = dp.orders[i];
-        if (o != null && o.orderId.equalsIgnoreCase(id)) {
-            order = o;
-            break;
-        }
-    }
+
+    Order order = findOrderById(id);
+
     if (order == null) {
-        System.out.print(ROSE+"Order " + id + " not found.\n"+RESET);
+        System.out.print(ROSE + "Order " + normalizeOrderId(id) + " not found.\n" + RESET);
         return;
     }
-    String currentStatus = order.status;
-    // If order already delivered or cancelled, no further updates allowed
+
+    String currentStatus = (order.status == null) ? "" : order.status.trim().toUpperCase();
+
     if (currentStatus.equals("DELIVERED") || currentStatus.equals("CANCELLED")) {
-        System.out.print(ROSE+"Order " + id + " is " + currentStatus + "; status cannot be changed.\n"+RESET);
+        System.out.print(ROSE + "Order " + order.orderId + " is " + currentStatus + "; status cannot be changed.\n" + RESET);
         return;
     }
-    // If order is PENDING, attempt to process it (inventory check & payment)
+
     if (currentStatus.equals("PENDING")) {
         boolean processed = processPendingOrder(order, console);
+
         if (!processed) {
-            // If processing failed, order status is now CANCELLED (reason set in processPendingOrder)
-            System.out.print(ROSE+"Order processing failed. Status updated to CANCELLED ("+ order.cancelReason + ").\n"+RESET);
+            System.out.print(ROSE + "Order processing failed. Status updated to CANCELLED (" 
+                    + order.cancelReason + ").\n" + RESET);
             dp.saveOrders();
             return;
         }
-        // If processing succeeded, the order status is now PACKED
-        currentStatus = order.status;
+
+        currentStatus = (order.status == null) ? "" : order.status.trim().toUpperCase();
     }
-    // Determine the next status in the workflow sequence
+
     String nextStatus = null;
     if (currentStatus.equals("PACKED")) {
         nextStatus = "SHIPPED";
@@ -678,23 +773,26 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
     } else if (currentStatus.equals("OUT_FOR_DELIVERY")) {
         nextStatus = "DELIVERED";
     }
+
     if (nextStatus == null) {
-        System.out.print("No further status transition available for " + currentStatus + ".\n");
+        System.out.print(ROSE + "No further status transition available for " + currentStatus + ".\n" + RESET);
         return;
     }
-    // Update order status to the next stage
+
     order.status = nextStatus;
+
     if (nextStatus.equals("SHIPPED")) {
-        // Assign a tracking ID once the order is shipped
-        order.trackingId = "TRK" + order.orderId.substring(1);  // e.g., O1005 -> TRK1005
+        String normalizedId = normalizeOrderId(order.orderId);
+        order.trackingId = "TRK" + normalizedId;
     }
-    // Persist the updated orders list to file
+
     dp.saveOrders();
     log.write(order.orderId, "Status changed to " + nextStatus);
-    System.out.print(MINT+"Order " + order.orderId + " status updated to " + nextStatus + ".\n"+RESET);
+
+    System.out.print(MINT + "Order " + order.orderId + " status updated to " + nextStatus + ".\n" + RESET);
 }
   /** Feature 5 & 8: Reorder a previous order (copy its items into a new order and process it) */
- private void handleReorder(BufferedReader console) throws Exception {
+private void handleReorder(BufferedReader console) throws Exception {
     showReorderPreview();
 
     System.out.print(SOFTGRAY + "Enter Order ID to reorder: " + RESET);
@@ -707,34 +805,13 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
         return;
     }
 
-    oldId = normalizeOrderId(oldId);
-
-    // Find the original order
-    Order original = null;
-    for (int i = 0; i < dp.orderCount; i++) {
-        if (dp.orders[i] == null) continue;
-
-        String storedId = dp.orders[i].orderId;
-        if (storedId == null) continue;
-
-        storedId = normalizeOrderId(storedId.trim());
-
-        if (storedId.equalsIgnoreCase(oldId)) {
-            original = dp.orders[i];
-            break;
-        }
-    }
+    Order original = findOrderById(oldId);
 
     if (original == null) {
-        System.out.print(ROSE + "Order " + oldId + " not found.\n" + RESET);
+        System.out.print(ROSE + "Order " + normalizeOrderId(oldId) + " not found.\n" + RESET);
         return;
     }
-    if (original.status != null && original.status.equalsIgnoreCase("CANCELLED")) {
-    System.out.print(ROSE + "Cancelled orders cannot be reordered.\n" + RESET);
-    return;
-    }   
 
-    // Create a new order with the same items
     Order newOrder = new Order();
     newOrder.orderId = dp.generateOrderId();
     newOrder.date = currentDateString();
@@ -743,17 +820,14 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
             ? "COD"
             : original.paymentMode;
 
-    // Copy each item from original
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
         newOrder.addItem(new Item(it.productId, it.quantity));
     }
 
-    // Process the new order through inventory & payment
     boolean success = processPendingOrder(newOrder, console);
 
-    // Add the new order to system records
     dp.orders[dp.orderCount++] = newOrder;
 
     if (!success) {
@@ -762,7 +836,7 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
     } else {
         System.out.print(MINT + "Reorder successful! New Order ID: " +
                 newOrder.orderId + " (Status: " + newOrder.status + ").\n" + RESET);
-        log.write(newOrder.orderId, "Reordered from " + oldId);
+        log.write(newOrder.orderId, "Reordered from " + normalizeOrderId(oldId));
     }
 }
         /** Feature 6 (continued): View or filter products by brand or category */
@@ -896,239 +970,387 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
     return src.substring(start, end);
 }
  /** Feature 11: Simulation mode to generate and process orders in various scenarios */
-  private void runSimulation(BufferedReader console) throws Exception {
-    System.out.print(SOFTGRAY+"Simulation scenarios:\n"+RESET);
-    System.out.print(SOFTGRAY+"1. Successful order\n"+RESET);
-    System.out.print(SOFTGRAY+"2. Payment failure scenario\n"+RESET);
-    System.out.print(SOFTGRAY+"3. Inventory shortage scenario\n"+RESET);
-    System.out.print(SOFTGRAY+"4. Random order scenario\n"+RESET);
-    System.out.print(SOFTGRAY+"Choose scenario (1-4): "+RESET);
+ private void runSimulation(BufferedReader console) throws Exception {
+    printTitle("Simulation Mode");
+
+    System.out.print(SOFTGRAY + "Simulation scenarios:\n" + RESET);
+    System.out.print(LAVENDER + "[1] " + RESET + "Successful order\n");
+    System.out.print(LAVENDER + "[2] " + RESET + "Payment failure scenario\n");
+    System.out.print(LAVENDER + "[3] " + RESET + "Inventory shortage scenario\n");
+    System.out.print(LAVENDER + "[4] " + RESET + "Random order scenario\n");
+    System.out.print(SOFTGRAY + "Choose scenario (1-4): " + RESET);
+
     String opt = console.readLine();
     if (opt == null) opt = "";
     opt = opt.trim();
+
     if (!opt.matches("[1-4]")) {
-        System.out.print(ROSE+"Invalid scenario selection.\n"+RESET);
+        System.out.print(ROSE + "Invalid scenario selection.\n" + RESET);
         return;
     }
-    // Create a simulated order
+
+    if (dp.productCount == 0) {
+        System.out.print(ROSE + "No products available for simulation.\n" + RESET);
+        return;
+    }
+
+    if (dp.orderCount >= dp.orders.length) {
+        System.out.print(ROSE + "Cannot create simulation order: order storage is full.\n" + RESET);
+        return;
+    }
+
     Order simOrder = new Order();
     simOrder.orderId = dp.generateOrderId();
     simOrder.date = currentDateString();
-    simOrder.status = "PENDING";  // Default status
+    simOrder.status = "PENDING";
+    simOrder.address = "Simulated Address";
 
-    // Build order based on scenario choice
-    if (opt.equals("2")) {
-        // Scenario 2: Payment failure – ensure total triggers a decline (simulate by prompting N)
-        Product p = dp.products[0];
+    boolean shouldProcess = true;
+    String scenarioName = "";
+
+    if (opt.equals("1")) {
+        scenarioName = "Successful Order";
+
+        Product p = findFirstAvailableProduct();
         if (p == null) {
-            System.out.print(ROSE+"No products available for simulation.\n"+RESET);
+            System.out.print(ROSE + "No in-stock product available for successful simulation.\n" + RESET);
             return;
         }
+
+        simOrder.addItem(new Item(p.productId, 1));
+        simOrder.paymentMode = "COD";
+    }
+
+    else if (opt.equals("2")) {
+        scenarioName = "Payment Failure";
+
+        Product p = findFirstAvailableProduct();
+        if (p == null) {
+            System.out.print(ROSE + "No in-stock product available for payment failure simulation.\n" + RESET);
+            return;
+        }
+
         simOrder.addItem(new Item(p.productId, 1));
         simOrder.paymentMode = "MockCard";
-        simOrder.status = "CANCELLED"; // Simulate failure
-        simOrder.cancelReason = "Payment Failure (MockCard)";
-    } else if (opt.equals("3")) {
-        // Scenario 3: Inventory shortage – order more than available stock of a product
-        Product p = null;
-        for (int i = 0; i < dp.productCount; i++) {
-            if (dp.products[i] != null && dp.products[i].stock > 0 && dp.products[i].stock < 10) {
-                p = dp.products[i];
-                break;
-            }
-        }
+
+        // Let processing happen so the payment flow decides result
+    }
+
+    else if (opt.equals("3")) {
+        scenarioName = "Inventory Shortage";
+
+        Product p = findLowOrAnyProduct();
         if (p == null) {
-            p = dp.products[0];
-        }
-        int largeQty = (p.stock == 0 ? 5 : p.stock + 5);
-        simOrder.addItem(new Item(p.productId, largeQty));
-        simOrder.paymentMode = "COD";
-        // Mark the order as cancelled due to inventory shortage
-        simOrder.status = "CANCELLED"; // Simulate cancellation
-        simOrder.cancelReason = "Inventory Shortage";
-    } else {
-        // Scenario 1 or 4: Successful or Random order – pick 1-2 random items within stock
-        if (dp.productCount == 0) {
-            System.out.print(ROSE+"No products available to simulate order.\n"+RESET);
+            System.out.print(ROSE + "No product available for inventory shortage simulation.\n" + RESET);
             return;
         }
-        Product p1 = dp.products[0];
+
+        int shortageQty = (p.stock <= 0) ? 5 : p.stock + 5;
+        simOrder.addItem(new Item(p.productId, shortageQty));
+        simOrder.paymentMode = "COD";
+
+        // Let processing fail naturally due to insufficient stock
+    }
+
+    else if (opt.equals("4")) {
+        scenarioName = "Random Order";
+
+        Product p1 = findFirstAvailableProduct();
+        if (p1 == null) {
+            System.out.print(ROSE + "No in-stock product available for random simulation.\n" + RESET);
+            return;
+        }
+
         simOrder.addItem(new Item(p1.productId, 1));
-        if (opt.equals("4") && dp.productCount > 1) {
-            Product p2 = dp.products[1];
+
+        Product p2 = findSecondDifferentAvailableProduct(p1.productId);
+        if (p2 != null) {
             simOrder.addItem(new Item(p2.productId, 1));
         }
-        simOrder.paymentMode = "COD";
-        // Successful order – set the status as "DELIVERED"
-        simOrder.status = "DELIVERED"; // Mark as delivered for successful order
+
+        simOrder.paymentMode = Math.random() < 0.5 ? "COD" : "MockCard";
     }
-    simOrder.address = "SimulatedAddress";
 
-    // Process the simulated order
-     processPendingOrder(simOrder, console);
+    if (shouldProcess) {
+        processPendingOrder(simOrder, console);
+    }
 
-
-    // Add to system records (orders.txt)
     dp.orders[dp.orderCount++] = simOrder;
-    // Log to orders.txt
     dp.saveOrders();
-    System.out.print(MINT+"Simulation Order " + simOrder.orderId + " created (Status: " + simOrder.status + ").\n"+RESET);
-    // Log to log.txt
-    log.write(simOrder.orderId, "Simulation order with status: " + simOrder.status);
+
+    System.out.print(MINT + "Simulation Order " + simOrder.orderId
+            + " created successfully.\n" + RESET);
+    System.out.print(SOFTGRAY + "Scenario: " + scenarioName + "\n" + RESET);
+    System.out.print(SOFTGRAY + "Status: " + simOrder.status + "\n" + RESET);
+
+    if (simOrder.cancelReason != null && !simOrder.cancelReason.trim().equals("")) {
+        System.out.print(ROSE + "Reason: " + simOrder.cancelReason + "\n" + RESET);
+    }
+
+    log.write(simOrder.orderId, "Simulation order created [" + scenarioName + "] with status: " + simOrder.status);
+}
+private Product findFirstAvailableProduct() {
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p != null && p.stock > 0) {
+            return p;
+        }
+    }
+    return null;
+}
+private Product findLowOrAnyProduct() {
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p != null && p.stock > 0 && p.stock < 10) {
+            return p;
+        }
+    }
+    return findFirstAvailableProduct();
+}
+private Product findSecondDifferentAvailableProduct(String excludeProductId) {
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p != null && p.stock > 0 && !p.productId.equalsIgnoreCase(excludeProductId)) {
+            return p;
+        }
+    }
+    return null;
 }
    /** Feature 8: Retry processing a failed (cancelled) order by creating a fresh attempt */
-    private void retryCancelledOrder(BufferedReader console) throws Exception {
-            // ✅ Show cancelled orders first
-        printTitle("Cancelled Orders:");
-         boolean found = false;
+ private void retryCancelledOrder(BufferedReader console) throws Exception {
+    printTitle("Cancelled Orders:");
+    boolean found = false;
 
-        for (int i = 0; i < dp.orderCount; i++) {
-             Order o = dp.orders[i];
-        if (o != null && o.status.equals("CANCELLED")) {
-            System.out.print("- " + o.orderId +
-                             " | Reason: " + o.cancelReason + "\n");
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null) continue;
+
+        if ("CANCELLED".equalsIgnoreCase(o.status == null ? "" : o.status.trim())) {
+            String reason = (o.cancelReason == null || o.cancelReason.trim().equals(""))
+                    ? "(No reason recorded)"
+                    : o.cancelReason.trim();
+
+            System.out.print("- " + o.orderId + " | Reason: " + reason + "\n");
             found = true;
         }
     }
 
     if (!found) {
-        System.out.print(ROSE+"No cancelled orders to retry.\n"+RESET);
+        System.out.print(ROSE + "No cancelled orders to retry.\n" + RESET);
         return;
     }
-        System.out.print(SOFTGRAY+"Enter Cancelled Order ID to retry: "+RESET);
-        String cid = console.readLine();
-        if (cid == null) cid = "";
-        cid = cid.trim();
-        if (cid.equals("")) {
-            System.out.print(ROSE+"Order ID cannot be empty.\n"+RESET);
-            return;
-        }
-        cid = normalizeOrderId(cid);
-        // Find the cancelled order
-        Order original = null;
-        for (int i = 0; i < dp.orderCount; i++) {
-            Order o = dp.orders[i];
-            if (o != null && o.orderId.equalsIgnoreCase(cid) && o.status.equals("CANCELLED")) {
-                original = o;
-                break;
-            }
-        }
-        if (original == null) {
-            System.out.print(ROSE+"Order " + cid + " not found in cancelled list.\n"+RESET);
-            return;
-        }
-        // Use handleReorder logic to attempt the order again (with same items)
-        Order retryOrder = new Order();
-        retryOrder.orderId = dp.generateOrderId();
-        retryOrder.date = currentDateString();
-        retryOrder.address = original.address;
-        retryOrder.paymentMode = original.paymentMode.equals("") ? "COD" : original.paymentMode;
-        for (int j = 0; j < original.itemCount; j++) {
-            Item it = original.items[j];
-            if (it == null) continue;
-            retryOrder.addItem(new Item(it.productId, it.quantity));
-        }
-        boolean success = processPendingOrder(retryOrder, console);
-        dp.orders[dp.orderCount++] = retryOrder;
-        if (success) {
-            System.out.print(MINT+"Order " + retryOrder.orderId + " reprocessed successfully (Status: " + retryOrder.status + ").\n"+RESET);
-            log.write(retryOrder.orderId, "Retry successful for " + cid);
-        } else {
-            System.out.print(ROSE+"Retry order failed (" + retryOrder.cancelReason + "). New Order ID: " + retryOrder.orderId + "\n"+RESET);
-        }
+
+    System.out.print(SOFTGRAY + "Enter Cancelled Order ID to retry: " + RESET);
+    String cid = console.readLine();
+    if (cid == null) cid = "";
+    cid = cid.trim();
+
+    if (cid.equals("")) {
+        System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
+        return;
     }
+
+    Order original = findOrderById(cid);
+
+    if (original == null || !"CANCELLED".equalsIgnoreCase(original.status == null ? "" : original.status.trim())) {
+        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " not found in cancelled list.\n" + RESET);
+        return;
+    }
+
+    Order retryOrder = new Order();
+    retryOrder.orderId = dp.generateOrderId();
+    retryOrder.date = currentDateString();
+    retryOrder.address = original.address;
+    retryOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
+            ? "COD"
+            : original.paymentMode.trim();
+
+    for (int j = 0; j < original.itemCount; j++) {
+        Item it = original.items[j];
+        if (it == null) continue;
+        retryOrder.addItem(new Item(it.productId, it.quantity));
+    }
+
+    boolean success = processPendingOrder(retryOrder, console);
+    dp.orders[dp.orderCount++] = retryOrder;
+
+    if (success) {
+        System.out.print(MINT + "Order " + retryOrder.orderId +
+                " reprocessed successfully (Status: " + retryOrder.status + ").\n" + RESET);
+        log.write(retryOrder.orderId, "Retry successful for " + normalizeOrderId(cid));
+    } else {
+        System.out.print(ROSE + "Retry order failed (" + retryOrder.cancelReason +
+                "). New Order ID: " + retryOrder.orderId + "\n" + RESET);
+    }
+}
  /** Feature 12: Archive delivered orders older than N days (moves them to archive_orders.txt and removes from active list) */
-    private void archiveDeliveredOrders(BufferedReader console) throws Exception {
-        System.out.print(SOFTGRAY+"Archive delivered orders older than how many days? "+RESET);
-        String daysStr = console.readLine();
-        if (daysStr == null) daysStr = "";
-        daysStr = daysStr.trim();
-        int N = DataPersistence.toInt(daysStr);
-        if (N <= 0) {
-            System.out.print(ROSE+"Invalid number of days.\n"+RESET);
-            return;
-        }
-        String todayStr = currentDateString();
-        // Convert date to a simple numeric day count (approximate)
-        int todayCount = dateToDayCount(todayStr);
-        FileWriter fw = new FileWriter(dp.path("archive_orders.txt"), true);
-        int archivedCount = 0;
-        // Use a new array to store remaining orders after archiving
-        Order[] remaining = new Order[dp.orders.length];
-        int remCount = 0;
+  private void archiveDeliveredOrders(BufferedReader console) throws Exception {
+    printTitle("Archive Delivered Orders");
+
+    System.out.print(SOFTGRAY + "Archive delivered orders older than how many days? " + RESET);
+    String daysStr = console.readLine();
+    if (daysStr == null) daysStr = "";
+    daysStr = daysStr.trim();
+
+    int days = DataPersistence.toInt(daysStr);
+    if (days <= 0) {
+        System.out.print(ROSE + "Invalid number of days.\n" + RESET);
+        return;
+    }
+
+    if (dp.orderCount == 0) {
+        System.out.print(ROSE + "No orders available to archive.\n" + RESET);
+        return;
+    }
+
+    String todayStr = currentDateString();
+    int todayCount = dateToDayCount(todayStr);
+
+    Order[] remaining = new Order[dp.orders.length];
+    int remainingCount = 0;
+    int archivedCount = 0;
+
+    try (FileWriter fw = new FileWriter(dp.path("archive_orders.txt"), true)) {
         for (int i = 0; i < dp.orderCount; i++) {
             Order o = dp.orders[i];
             if (o == null) continue;
-            if (o.status.equals("DELIVERED")) {
-                // Calculate age in days
-                int orderDayCount = dateToDayCount(o.date);
-                int age = todayCount - orderDayCount;
-                if (age > N) {
-                    // Write order record to archive file
-                    fw.write(o.toRecord() + "\n");
-                    archivedCount++;
-                    // Skip adding it to remaining active orders (effectively removing it)
-                    log.write(o.orderId, "Archived after delivery (age " + age + " days)");
-                    continue;
+
+            String status = (o.status == null) ? "" : o.status.trim().toUpperCase();
+            String date = (o.date == null) ? "" : o.date.trim();
+
+            boolean shouldArchive = false;
+            int age = 0;
+
+            if ("DELIVERED".equals(status) && !date.equals("")) {
+                int orderDayCount = dateToDayCount(date);
+                age = todayCount - orderDayCount;
+
+                if (age > days) {
+                    shouldArchive = true;
                 }
             }
-            // Keep order in the remaining list if not archived
-            remaining[remCount++] = o;
+
+            if (shouldArchive) {
+                fw.write(o.toRecord() + "\n");
+                archivedCount++;
+                log.write(o.orderId, "Archived after delivery (age " + age + " days)");
+            } else {
+                remaining[remainingCount++] = o;
+            }
         }
-        fw.close();
-        // Replace the active orders list with the remaining orders
-        dp.orders = remaining;
-        dp.orderCount = remCount;
-        System.out.print(MINT+"Archived " + archivedCount + " delivered orders (older than " + N + " days).\n"+RESET);
-    }  
+    }
+
+    dp.orders = remaining;
+    dp.orderCount = remainingCount;
+    dp.saveOrders();
+
+    if (archivedCount == 0) {
+        System.out.print(ROSE + "No delivered orders older than " + days + " days were found.\n" + RESET);
+    } else {
+        System.out.print(MINT + "Archived " + archivedCount
+                + " delivered order(s) older than " + days + " days.\n" + RESET);
+    }
+} 
      /** Feature 20: Change password for the currently logged-in admin account */
-    private void changeAdminPassword(BufferedReader console) throws Exception {
-        System.out.print(SOFTGRAY+"Enter current password: "+RESET);
-        String currentPass = console.readLine();
-        if (currentPass == null) currentPass = "";
-        currentPass = currentPass.trim();
-        Admin admin = dp.admins[dp.currentAdminIndex];
-        if (!admin.passHash.equals(Admin.hashPassword(currentPass))) {
-            System.out.print(ROSE+"Current password is incorrect.\n"+RESET);
-            return;
-        }
-        System.out.print(SOFTGRAY+"Enter new password: "+RESET);
-        String newPass1 = console.readLine();
-        if (newPass1 == null) newPass1 = "";
-        newPass1 = newPass1.trim();
-        System.out.print(SOFTGRAY+"Confirm new password: "+RESET);
-        String newPass2 = console.readLine();
-        if (newPass2 == null) newPass2 = "";
-        newPass2 = newPass2.trim();
-        if (!newPass1.equals(newPass2) || newPass1.equals("")) {
-            System.out.print(ROSE+"Password mismatch or empty. Password not changed.\n"+RESET);
-            return;
-        }
-        // Update password hash and save to file immediately
-        admin.passHash = Admin.hashPassword(newPass1);
-        dp.saveAll();
-        log.write("ADMIN", "Password changed");
-        System.out.print(MINT+"Admin password changed successfully.\n"+RESET);
+  private void changeAdminPassword(BufferedReader console) throws Exception {
+    printTitle("Change Admin Password");
+
+    Admin admin = dp.admins[dp.currentAdminIndex];
+    if (admin == null) {
+        System.out.print(ROSE + "No logged-in admin found.\n" + RESET);
+        return;
     }
 
+    System.out.print(SOFTGRAY + "Enter current password: " + RESET);
+    String currentPass = console.readLine();
+    if (currentPass == null) currentPass = "";
+    currentPass = currentPass.trim();
+
+    if (currentPass.equals("")) {
+        System.out.print(ROSE + "Current password cannot be empty.\n" + RESET);
+        return;
+    }
+
+    String currentHash = Admin.hashPassword(currentPass);
+    if (admin.passHash == null || !admin.passHash.equals(currentHash)) {
+        System.out.print(ROSE + "Current password is incorrect.\n" + RESET);
+        return;
+    }
+
+    System.out.print(SOFTGRAY + "Enter new password: " + RESET);
+    String newPass1 = console.readLine();
+    if (newPass1 == null) newPass1 = "";
+    newPass1 = newPass1.trim();
+
+    if (newPass1.equals("")) {
+        System.out.print(ROSE + "New password cannot be empty.\n" + RESET);
+        return;
+    }
+
+    if (newPass1.length() < 4) {
+        System.out.print(ROSE + "New password must be at least 4 characters long.\n" + RESET);
+        return;
+    }
+
+    System.out.print(SOFTGRAY + "Confirm new password: " + RESET);
+    String newPass2 = console.readLine();
+    if (newPass2 == null) newPass2 = "";
+    newPass2 = newPass2.trim();
+
+    if (!newPass1.equals(newPass2)) {
+        System.out.print(ROSE + "Password confirmation does not match.\n" + RESET);
+        return;
+    }
+
+    String newHash = Admin.hashPassword(newPass1);
+
+    if (admin.passHash.equals(newHash)) {
+        System.out.print(ROSE + "New password must be different from the current password.\n" + RESET);
+        return;
+    }
+
+    admin.passHash = newHash;
+    dp.saveAll();
+
+    String adminName = (admin.username == null || admin.username.trim().equals(""))
+            ? "ADMIN"
+            : admin.username.trim();
+
+    log.write(adminName, "Password changed");
+    System.out.print(MINT + "Admin password changed successfully.\n" + RESET);
+}
     /** Feature 14: Clear all logs (logs.txt) after confirmation */
-    private void clearLogs(BufferedReader console) throws Exception {
-        System.out.print(ANSI_Yellow+"Are you sure you want to clear all logs? (Y/N): "+RESET);
-        String confirm = console.readLine();
-        if (confirm == null) confirm = "";
-        confirm = confirm.trim();
-        if (!confirm.equalsIgnoreCase("Y") && !confirm.equalsIgnoreCase("YES")) {
-            System.out.print(ROSE+"Log clearance cancelled.\n"+RESET);
-            return;
-        }
-        // Overwrite logs.txt with nothing
-        FileWriter fw = new FileWriter(dp.path("logs.txt"), false);
-        fw.write("");
-        fw.close();
-        System.out.print(MINT+"All logs cleared.\n"+RESET);
+private void clearLogs(BufferedReader console) throws Exception {
+    printTitle("Clear Logs");
+
+    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+    if (currentAdmin == null || currentAdmin.role != Role.ADMIN) {
+        System.out.print(ROSE + "Permission denied. Only admins can clear logs.\n" + RESET);
+        return;
     }
 
+    String adminName = (currentAdmin.username == null || currentAdmin.username.trim().equals(""))
+            ? "Admin"
+            : currentAdmin.username.trim();
+
+System.out.print(ANSI_Yellow + "Type CLEAR to confirm log deletion: " + RESET);
+String confirm = console.readLine();
+if (confirm == null) confirm = "";
+confirm = confirm.trim();
+
+if (!confirm.equalsIgnoreCase("CLEAR")) {
+    System.out.print(ROSE + "Log clearance cancelled.\n" + RESET);
+    return;
+}
+
+    try (FileWriter fw = new FileWriter(dp.path("logs.txt"), false)) {
+        fw.write("");
+    }
+
+    System.out.print(MINT + "All logs cleared successfully by " + adminName + ".\n" + RESET);
+}
     /** Feature 16: Generate a receipt text file for a delivered order */
+/** Feature 16: Generate a receipt text file for a delivered order */
 private void generateReceipt(BufferedReader console) throws Exception {
     showOrdersPreview();
 
@@ -1142,40 +1364,30 @@ private void generateReceipt(BufferedReader console) throws Exception {
         return;
     }
 
-    rid = normalizeOrderId(rid);
-
-    Order order = null;
-    for (int i = 0; i < dp.orderCount; i++) {
-        if (dp.orders[i] != null && dp.orders[i].orderId.equalsIgnoreCase(rid)) {
-            order = dp.orders[i];
-            break;
-        }
-    }
+    Order order = findOrderById(rid);
 
     if (order == null) {
-        System.out.print(ROSE + "Order " + rid + " not found.\n" + RESET);
+        System.out.print(ROSE + "Order " + normalizeOrderId(rid) + " not found.\n" + RESET);
         return;
     }
 
-    // ✅ safer status check
-    if (!"DELIVERED".equalsIgnoreCase(order.status)) {
+    if (order.status == null || !"DELIVERED".equalsIgnoreCase(order.status.trim())) {
         System.out.print(ROSE + "Receipt can only be generated for delivered orders.\n" + RESET);
         return;
     }
 
-    // Create receipt file with order details
     String filename = "receipt_" + order.orderId + ".txt";
     FileWriter fw = new FileWriter(dp.path(filename), false);
 
     fw.write("Receipt for Order " + order.orderId + "\n");
 
-    // ✅ safe address check
-    String addr = (order.address == null || order.address.trim().equals("")) ? "(Not Provided)" : order.address.trim();
+    String addr = (order.address == null || order.address.trim().equals(""))
+            ? "(Not Provided)"
+            : order.address.trim();
     fw.write("Address: " + addr + "\n");
 
     fw.write("Status: " + order.status + "\n");
 
-    // ✅ tracking id logic that actually makes sense for DELIVERED receipts
     if (order.trackingId != null && !order.trackingId.trim().equals("")) {
         fw.write("Tracking ID: " + order.trackingId.trim() + "\n");
     } else {
@@ -1188,8 +1400,8 @@ private void generateReceipt(BufferedReader console) throws Exception {
         if (it == null) continue;
 
         Product p = dp.findProductById(it.productId);
-        String itemName = (p != null ? p.name : it.productId);
-        int priceEach = (p != null ? p.price : 0);
+        String itemName = (p != null) ? p.name : it.productId;
+        int priceEach = (p != null) ? p.price : 0;
 
         fw.write("- " + itemName + " (x" + it.quantity + " @ BDT " + priceEach + " each)\n");
     }
@@ -1202,280 +1414,458 @@ private void generateReceipt(BufferedReader console) throws Exception {
 
     System.out.print(MINT + "Receipt generated: " + filename + "\n" + RESET);
 }
-
   /** Feature 14: Increase stock of an existing product (restock) */
-    private void handleRestock(BufferedReader console) throws Exception {
-        showRestockPreview();
-        System.out.print(SOFTGRAY+"Enter Product ID to restock: "+RESET);
-        String pid = console.readLine();
-        if (pid == null) pid = "";
-        pid = pid.trim();
-        if (pid.equals("")) {
-            System.out.print(ROSE+"Product ID cannot be empty.\n"+RESET);
-            return;
-        }
-        Product product = dp.findProductById(pid);
-        if (product == null) {
-            System.out.print(ROSE+"Product " + pid + " not found.\n"+RESET);
-            return;
-        }
-        System.out.print(SOFTGRAY+"Enter quantity to add: "+RESET);
-        String qtyStr = console.readLine();
-        if (qtyStr == null) qtyStr = "";
-        qtyStr = qtyStr.trim();
-        int addQty = DataPersistence.toInt(qtyStr);
-        if (addQty <= 0) {
-            System.out.print(ROSE+"Invalid quantity.\n"+RESET);
-            return;
-        }
-        product.stock += addQty;
-        System.out.print(MINT+"Product " + product.productId + " restocked. New stock: " + product.stock + "\n"+RESET);
-        dp.saveProducts();
-        log.write("ADMIN", "Restocked " + product.productId + " (+" + addQty + ")");
+  private void handleRestock(BufferedReader console) throws Exception {
+    printTitle("Restock Product");
+
+    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+    boolean allowed = currentAdmin != null &&
+            (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER);
+
+    if (!allowed) {
+        System.out.print(ROSE + "Permission denied. Only Admin or Manager can restock products.\n" + RESET);
+        return;
     }
+
+    showRestockPreview();
+
+    System.out.print(SOFTGRAY + "Enter Product ID to restock: " + RESET);
+    String pid = console.readLine();
+    if (pid == null) pid = "";
+    pid = pid.trim();
+
+    if (pid.equals("")) {
+        System.out.print(ROSE + "Product ID cannot be empty.\n" + RESET);
+        return;
+    }
+
+    Product product = dp.findProductById(pid);
+    if (product == null) {
+        System.out.print(ROSE + "Product " + pid + " not found.\n" + RESET);
+        return;
+    }
+
+    System.out.print(SOFTGRAY + "Enter quantity to add: " + RESET);
+    String qtyStr = console.readLine();
+    if (qtyStr == null) qtyStr = "";
+    qtyStr = qtyStr.trim();
+
+    int addQty = DataPersistence.toInt(qtyStr);
+    if (addQty <= 0) {
+        System.out.print(ROSE + "Invalid quantity. Please enter a positive number.\n" + RESET);
+        return;
+    }
+
+    int oldStock = product.stock;
+    product.stock += addQty;
+
+    dp.saveProducts();
+
+    String actor = (currentAdmin.username == null || currentAdmin.username.trim().equals(""))
+            ? "ADMIN"
+            : currentAdmin.username.trim();
+
+    log.write(actor, "Restocked " + product.productId + " (+" + addQty + "), stock: " + oldStock + " -> " + product.stock);
+
+    System.out.print(MINT + "Product restocked successfully.\n" + RESET);
+    System.out.print(SOFTGRAY + "Product ID: " + RESET + product.productId + "\n");
+    System.out.print(SOFTGRAY + "Product Name: " + RESET + product.name + "\n");
+    System.out.print(SOFTGRAY + "Previous Stock: " + RESET + oldStock + "\n");
+    System.out.print(SOFTGRAY + "Added Quantity: " + RESET + addQty + "\n");
+    System.out.print(SOFTGRAY + "New Stock: " + RESET + product.stock + "\n");
+}
     
-    private String padRight(String s, int width) {
+   private String padRight(String s, int width) {
     if (s == null) s = "";
-    if (s.length() >= width) return s.substring(0, width - 1) + "…";
-    String out = s;
-    while (out.length() < width) out += " ";
-    return out;
+
+    if (width <= 0) return "";
+
+    if (s.length() > width) {
+        return (width == 1) ? "…" : s.substring(0, width - 1) + "…";
+    }
+
+    return String.format("%-" + width + "s", s);
 }
 private String formatMoney(int n) {
-    // simple (no commas). If you want commas, tell me.
-    return "BDT " + n;
+    return String.format("BDT %,d", n);
 }
-
 private void printProductTable(Product[] list, int count, String title) {
-    System.out.println(PINK + BOLD + "\n" + title + RESET);
-    printLine();
+    printTitle(title);
 
-    if (count == 0) {
+    if (list == null || count <= 0) {
         System.out.println(ROSE + "No products found." + RESET);
         printLine();
         return;
     }
 
-    // Header
-    System.out.print(LAVENDER
-            + padRight("ID", 8)
+    String headerColor = LAVENDER + BOLD;
+    String divider = "────────────────────────────────────────────────────────────────────────────────────────────────────";
+
+    System.out.println(
+            headerColor
+            + padRight("#", 5)
+            + padRight("ID", 10)
             + padRight("Name", 26)
-            + padRight("Brand", 14)
-            + padRight("Category", 16)
-            + padRight("Price", 12)
-            + padRight("Stock", 8)
-            + RESET + "\n");
+            + padRight("Brand", 16)
+            + padRight("Category", 18)
+            + padRight("Price", 14)
+            + padRight("Stock", 10)
+            + RESET
+    );
 
-    System.out.println(SOFTGRAY
-            + "----------------------------------------------------------------------------------------"
-            + RESET);
+    System.out.println(SOFTGRAY + divider + RESET);
 
-    // Rows
+    boolean hasRows = false;
+
     for (int i = 0; i < count; i++) {
         Product p = list[i];
         if (p == null) continue;
 
-        String stockColor = (p.stock <= 5) ? ROSE : MINT;
+        hasRows = true;
 
-        System.out.print(
-                SOFTGRAY + padRight(p.productId, 8) + RESET +
-                padRight(p.name, 26) +
-                padRight(p.brand, 14) +
-                padRight(p.category, 16) +
-                padRight(formatMoney(p.price), 12) +
-                stockColor + padRight(String.valueOf(p.stock), 8) + RESET +
-                "\n"
+        String productId = (p.productId == null || p.productId.trim().equals("")) ? "(N/A)" : p.productId.trim();
+        String name = (p.name == null || p.name.trim().equals("")) ? "(Unnamed)" : p.name.trim();
+        String brand = (p.brand == null || p.brand.trim().equals("")) ? "(N/A)" : p.brand.trim();
+        String category = (p.category == null || p.category.trim().equals("")) ? "(N/A)" : p.category.trim();
+
+        String stockText = String.valueOf(p.stock);
+        String stockColor;
+
+        if (p.stock <= 0) {
+            stockColor = ROSE;
+            stockText = "OUT";
+        } else if (p.stock <= 5) {
+            stockColor = ANSI_Yellow;
+        } else {
+            stockColor = MINT;
+        }
+
+        System.out.println(
+                SOFTGRAY + padRight(String.valueOf(i + 1), 5) + RESET
+                + SOFTGRAY + padRight(productId, 10) + RESET
+                + padRight(name, 26)
+                + padRight(brand, 16)
+                + padRight(category, 18)
+                + padRight(formatMoney(p.price), 14)
+                + stockColor + padRight(stockText, 10) + RESET
         );
+    }
+
+    if (!hasRows) {
+        System.out.println(ROSE + "No products found." + RESET);
     }
 
     printLine();
 }
-
   /** Feature 23: Manage products (Add, Edit, Delete products) */
+/** Feature 23: Manage products (Add, Edit, Delete products) */
 private void handleProductManagement(BufferedReader console) throws Exception {
-    System.out.print(SOFTGRAY+"Choose action - [A]dd, [E]dit, [D]elete: "+RESET);
+    printTitle("Product Management");
+
+    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+    boolean allowed = currentAdmin != null &&
+            (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER);
+
+    if (!allowed) {
+        System.out.print(ROSE + "Permission denied. Only Admin or Manager can manage products.\n" + RESET);
+        return;
+    }
+
+    String actor = (currentAdmin.username == null || currentAdmin.username.trim().equals(""))
+            ? "ADMIN"
+            : currentAdmin.username.trim();
+
+    System.out.print(SOFTGRAY + "Choose action - [A]dd, [E]dit, [D]elete: " + RESET);
     String action = console.readLine();
     if (action == null) action = "";
     action = action.trim().toUpperCase();
 
+    // ===========================
+    // ADD PRODUCT
+    // ===========================
     if (action.equals("A")) {
-        // Add new product
         if (dp.productCount >= dp.products.length) {
-            System.out.print(ROSE+"Product list is full, cannot add more products.\n"+RESET);
+            System.out.print(ROSE + "Product list is full, cannot add more products.\n" + RESET);
             return;
         }
 
-        // ✅ Ask category FIRST (needed to generate ID)
-        System.out.print(SOFTGRAY+"Enter Category (Smartphone/Laptop/Home Appliance/Accessories/Power Bank): "+RESET);
+        System.out.print(SOFTGRAY + "Enter Category (Smartphone/Laptop/Home Appliance/Accessories/Power Bank): " + RESET);
         String category = console.readLine();
         if (category == null) category = "";
         category = category.trim();
+
         if (category.equals("")) {
-            System.out.print(ROSE+"Category cannot be empty.\n"+RESET);
+            System.out.print(ROSE + "Category cannot be empty.\n" + RESET);
             return;
         }
 
-        // ✅ Auto-generate Product ID based on category
         String newId = dp.generateProductIdByCategory(category);
-
-        // ✅ Safety: if somehow exists, regenerate (rare case)
         while (dp.findProductById(newId) != null) {
             newId = dp.generateProductIdByCategory(category);
         }
 
-        System.out.print(MINT+"Auto Generated Product ID: "+ newId +"\n"+RESET);
+        System.out.print(MINT + "Auto Generated Product ID: " + newId + "\n" + RESET);
 
-        System.out.print(SOFTGRAY+"Enter Brand: "+RESET);
+        System.out.print(SOFTGRAY + "Enter Brand: " + RESET);
         String brand = console.readLine();
         if (brand == null) brand = "";
         brand = brand.trim();
 
-        System.out.print(SOFTGRAY+"Enter Product Name: "+RESET);
+        System.out.print(SOFTGRAY + "Enter Product Name: " + RESET);
         String name = console.readLine();
         if (name == null) name = "";
         name = name.trim();
 
-        System.out.print(SOFTGRAY+"Enter Price: "+RESET);
+        System.out.print(SOFTGRAY + "Enter Price: " + RESET);
         String priceStr = console.readLine();
         if (priceStr == null) priceStr = "";
         priceStr = priceStr.trim();
 
-        System.out.print(SOFTGRAY+"Enter Initial Stock: "+RESET);
+        System.out.print(SOFTGRAY + "Enter Initial Stock: " + RESET);
         String stockStr = console.readLine();
         if (stockStr == null) stockStr = "";
         stockStr = stockStr.trim();
 
-        if (category.equals("") || brand.equals("") || name.equals("")) {
-            System.out.print(ROSE+"Fields cannot be empty. Product not added.\n"+RESET);
+        if (brand.equals("") || name.equals("")) {
+            System.out.print(ROSE + "Brand and Product Name cannot be empty.\n" + RESET);
             return;
         }
 
         int price = DataPersistence.toInt(priceStr);
         int stock = DataPersistence.toInt(stockStr);
 
-        dp.products[dp.productCount++] = new Product(newId, category, brand, name, price, stock);
-        dp.saveProducts(); // ✅ save immediately
-        System.out.print(MINT+"Product " + newId + " added successfully.\n"+RESET);
-        log.write("ADMIN", "Added product " + newId);
+        if (price <= 0) {
+            System.out.print(ROSE + "Invalid price. Price must be greater than 0.\n" + RESET);
+            return;
+        }
 
-    } else if (action.equals("E")) {
-        // Edit existing product
-         showProductsPreview2();
-        System.out.print(SOFTGRAY+"Enter Product ID to edit: "+RESET);
+        if (stock < 0) {
+            System.out.print(ROSE + "Invalid stock. Stock cannot be negative.\n" + RESET);
+            return;
+        }
+
+        Product newProduct = new Product(newId, category, brand, name, price, stock);
+        dp.products[dp.productCount++] = newProduct;
+        dp.saveProducts();
+
+        System.out.print(MINT + "Product " + newId + " added successfully.\n" + RESET);
+        log.write(actor, "Added product " + newId + " [" + name + "]");
+        return;
+    }
+
+    // ===========================
+    // EDIT PRODUCT
+    // ===========================
+    if (action.equals("E")) {
+        showProductsPreview2();
+
+        System.out.print(SOFTGRAY + "Enter Product ID to edit: " + RESET);
         String editId = console.readLine();
         if (editId == null) editId = "";
         editId = editId.trim();
+
         if (editId.equals("")) {
-            System.out.print(ROSE+"Product ID cannot be empty.\n"+RESET);
-            return;
-        }
-        Product product = dp.findProductById(editId);
-        if (product == null) {
-            System.out.print(ROSE+"Product " + editId + " not found.\n"+RESET);
+            System.out.print(ROSE + "Product ID cannot be empty.\n" + RESET);
             return;
         }
 
-        System.out.print(SOFTGRAY+"Edit field - [N]ame, [P]rice, [S]tock: "+RESET);
+        Product product = dp.findProductById(editId);
+        if (product == null) {
+            System.out.print(ROSE + "Product " + editId + " not found.\n" + RESET);
+            return;
+        }
+
+        System.out.print(SOFTGRAY + "Edit field - [N]ame, [P]rice, [S]tock, [B]rand, [C]ategory: " + RESET);
         String field = console.readLine();
         if (field == null) field = "";
         field = field.trim().toUpperCase();
 
         if (field.equals("N")) {
-            System.out.print(SOFTGRAY+"Enter new Name: "+RESET);
+            System.out.print(SOFTGRAY + "Enter new Name: " + RESET);
             String newName = console.readLine();
             if (newName == null) newName = "";
             newName = newName.trim();
-            if (!newName.equals("")) {
-                product.name = newName;
-                dp.saveProducts();
-                System.out.print(MINT+"Product " + product.productId + " name updated.\n"+RESET);
-                log.write("ADMIN", "Edited product " + product.productId + " (Name changed)");
+
+            if (newName.equals("")) {
+                System.out.print(ROSE + "Name cannot be empty.\n" + RESET);
+                return;
             }
-        } else if (field.equals("P")) {
-            System.out.print(SOFTGRAY+"Enter new Price: "+RESET);
+
+            String oldName = product.name;
+            product.name = newName;
+            dp.saveProducts();
+
+            System.out.print(MINT + "Product " + product.productId + " name updated.\n" + RESET);
+            log.write(actor, "Edited product " + product.productId + " (Name: " + oldName + " -> " + newName + ")");
+            return;
+        }
+
+        if (field.equals("P")) {
+            System.out.print(SOFTGRAY + "Enter new Price: " + RESET);
             String newPriceStr = console.readLine();
             if (newPriceStr == null) newPriceStr = "";
             newPriceStr = newPriceStr.trim();
+
             int newPrice = DataPersistence.toInt(newPriceStr);
-            if (newPrice > 0) {
-                product.price = newPrice;
-                dp.saveProducts();
-                System.out.print(MINT+"Product " + product.productId + " price updated.\n"+RESET);
-                log.write("ADMIN", "Edited product " + product.productId + " (Price changed)");
+            if (newPrice <= 0) {
+                System.out.print(ROSE + "Invalid price.\n" + RESET);
+                return;
             }
-        } else if (field.equals("S")) {
-            System.out.print(SOFTGRAY+"Enter new Stock value: "+RESET);
+
+            int oldPrice = product.price;
+            product.price = newPrice;
+            dp.saveProducts();
+
+            System.out.print(MINT + "Product " + product.productId + " price updated.\n" + RESET);
+            log.write(actor, "Edited product " + product.productId + " (Price: " + oldPrice + " -> " + newPrice + ")");
+            return;
+        }
+
+        if (field.equals("S")) {
+            System.out.print(SOFTGRAY + "Enter new Stock value: " + RESET);
             String newStockStr = console.readLine();
             if (newStockStr == null) newStockStr = "";
             newStockStr = newStockStr.trim();
+
             int newStock = DataPersistence.toInt(newStockStr);
-            if (newStock >= 0) {
-                product.stock = newStock;
-                dp.saveProducts();
-                System.out.print(MINT+"Product " + product.productId + " stock updated.\n"+RESET);
-                log.write("ADMIN", "Edited product " + product.productId + " (Stock adjusted)");
+            if (newStock < 0) {
+                System.out.print(ROSE + "Invalid stock. Stock cannot be negative.\n" + RESET);
+                return;
             }
-        } else {
-            System.out.print(ROSE+"Invalid field selection.\n"+RESET);
+
+            int oldStock = product.stock;
+            product.stock = newStock;
+            dp.saveProducts();
+
+            System.out.print(MINT + "Product " + product.productId + " stock updated.\n" + RESET);
+            log.write(actor, "Edited product " + product.productId + " (Stock: " + oldStock + " -> " + newStock + ")");
+            return;
         }
 
-    } else if (action.equals("D")) {
-         showProductsPreview2();
-        // Delete a product
-        System.out.print(SOFTGRAY+"Enter Product ID to delete: "+RESET);
+        if (field.equals("B")) {
+            System.out.print(SOFTGRAY + "Enter new Brand: " + RESET);
+            String newBrand = console.readLine();
+            if (newBrand == null) newBrand = "";
+            newBrand = newBrand.trim();
+
+            if (newBrand.equals("")) {
+                System.out.print(ROSE + "Brand cannot be empty.\n" + RESET);
+                return;
+            }
+
+            String oldBrand = product.brand;
+            product.brand = newBrand;
+            dp.saveProducts();
+
+            System.out.print(MINT + "Product " + product.productId + " brand updated.\n" + RESET);
+            log.write(actor, "Edited product " + product.productId + " (Brand: " + oldBrand + " -> " + newBrand + ")");
+            return;
+        }
+
+        if (field.equals("C")) {
+            System.out.print(SOFTGRAY + "Enter new Category: " + RESET);
+            String newCategory = console.readLine();
+            if (newCategory == null) newCategory = "";
+            newCategory = newCategory.trim();
+
+            if (newCategory.equals("")) {
+                System.out.print(ROSE + "Category cannot be empty.\n" + RESET);
+                return;
+            }
+
+            String oldCategory = product.category;
+            product.category = newCategory;
+            dp.saveProducts();
+
+            System.out.print(MINT + "Product " + product.productId + " category updated.\n" + RESET);
+            log.write(actor, "Edited product " + product.productId + " (Category: " + oldCategory + " -> " + newCategory + ")");
+            return;
+        }
+
+        System.out.print(ROSE + "Invalid field selection.\n" + RESET);
+        return;
+    }
+
+    // ===========================
+    // DELETE PRODUCT
+    // ===========================
+    if (action.equals("D")) {
+        showProductsPreview2();
+
+        System.out.print(SOFTGRAY + "Enter Product ID to delete: " + RESET);
         String delId = console.readLine();
         if (delId == null) delId = "";
         delId = delId.trim();
+
         if (delId.equals("")) {
-            System.out.print(ROSE+"Product ID cannot be empty.\n"+RESET);
+            System.out.print(ROSE + "Product ID cannot be empty.\n" + RESET);
             return;
         }
 
         int idx = -1;
+        Product target = null;
+
         for (int i = 0; i < dp.productCount; i++) {
-            if (dp.products[i] != null && dp.products[i].productId.equals(delId)) {
+            Product p = dp.products[i];
+            if (p != null && p.productId != null && p.productId.equalsIgnoreCase(delId)) {
                 idx = i;
+                target = p;
                 break;
             }
         }
-        if (idx == -1) {
-            System.out.print(ROSE+"Product " + delId + " not found.\n"+RESET);
+
+        if (idx == -1 || target == null) {
+            System.out.print(ROSE + "Product " + delId + " not found.\n" + RESET);
             return;
         }
 
-        System.out.print(ANSI_Yellow+"Are you sure you want to delete " + delId + "? (Y/N): "+RESET);
+        System.out.print(ANSI_Yellow + "Are you sure you want to delete " + target.productId + " (" + target.name + ")? (Y/N): " + RESET);
         String conf = console.readLine();
         if (conf == null) conf = "";
         conf = conf.trim().toUpperCase();
+
         if (!conf.equals("Y") && !conf.equals("YES")) {
-            System.out.print(ROSE+"Deletion cancelled.\n"+RESET);
+            System.out.print(ROSE + "Deletion cancelled.\n" + RESET);
             return;
         }
 
         for (int j = idx; j < dp.productCount - 1; j++) {
-            dp.products[j] = dp.products[j+1];
+            dp.products[j] = dp.products[j + 1];
         }
+
         dp.products[dp.productCount - 1] = null;
         dp.productCount--;
 
         dp.saveProducts();
-        System.out.print(MINT+"Product " + delId + " deleted.\n"+RESET);
-        log.write("ADMIN", "Deleted product " + delId);
 
-    } else {
-        System.out.print(ROSE+"Invalid action.\n"+RESET);
+        System.out.print(MINT + "Product " + target.productId + " deleted successfully.\n" + RESET);
+        log.write(actor, "Deleted product " + target.productId + " [" + target.name + "]");
+        return;
     }
+
+    System.out.print(ROSE + "Invalid action.\n" + RESET);
 }
 /** Process a PENDING order through inventory check, reservation, invoice generation, and payment simulation */
 private boolean processPendingOrder(Order order, BufferedReader console) throws Exception {
-    if (order == null || !order.status.equals("PENDING")) return false;
+    if (order == null) return false;
 
-    boolean inventoryOK = true;
+    String currentStatus = (order.status == null) ? "" : order.status.trim().toUpperCase();
+    if (!"PENDING".equals(currentStatus)) return false;
 
-    // Step 1: Pre-check all items without modifying stock
+    if (order.itemCount <= 0) {
+        order.status = "CANCELLED";
+        order.cancelReason = "No items in order";
+        log.write(order.orderId, "Order cancelled - " + order.cancelReason);
+        return false;
+    }
+
+    // ===========================
+    // Step 1: Validate all items and stock first
+    // ===========================
     for (int i = 0; i < order.itemCount; i++) {
         Item it = order.items[i];
         if (it == null) continue;
+
         Product prod = dp.findProductById(it.productId);
         if (prod == null) {
             order.status = "CANCELLED";
@@ -1483,113 +1873,181 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
             log.write(order.orderId, "Order cancelled - " + order.cancelReason);
             return false;
         }
+
+        if (it.quantity <= 0) {
+            order.status = "CANCELLED";
+            order.cancelReason = "Invalid quantity for " + it.productId;
+            log.write(order.orderId, "Order cancelled - " + order.cancelReason);
+            return false;
+        }
+
         if (prod.stock < it.quantity) {
-            inventoryOK = false;
+            order.status = "CANCELLED";
             order.cancelReason = "Inventory Shortage: " + it.productId;
-            break;
+            log.write(order.orderId, "Order cancelled - " + order.cancelReason);
+            return false;
         }
     }
 
-    if (!inventoryOK) {
-        order.status = "CANCELLED";
-        log.write(order.orderId, "Order cancelled -" + order.cancelReason);
-        return false;
-    }
-
+    // ===========================
     // Step 2: Reserve stock
+    // ===========================
     for (int i = 0; i < order.itemCount; i++) {
         Item it = order.items[i];
+        if (it == null) continue;
+
         Product prod = dp.findProductById(it.productId);
         if (prod != null) {
             prod.stock -= it.quantity;
         }
     }
-    log.write(order.orderId, "Inventory OK – stock reserved");
+    dp.saveProducts();
+    log.write(order.orderId, "Inventory OK - stock reserved");
 
-    // Step 3: Calculate total price
+    // ===========================
+    // Step 3: Calculate total
+    // ===========================
     int total = 0;
     for (int i = 0; i < order.itemCount; i++) {
         Item it = order.items[i];
+        if (it == null) continue;
+
         Product prod = dp.findProductById(it.productId);
-        int price = (prod != null ? prod.price : 0);
+        int price = (prod != null) ? prod.price : 0;
         total += price * it.quantity;
     }
     order.totalAmount = total;
 
-    // Step 4: Simulate payment
+    // ===========================
+    // Step 4: Process payment
+    // ===========================
     boolean paymentSuccess;
+    String paymentMode = (order.paymentMode == null) ? "" : order.paymentMode.trim();
+
     if (console == null) {
-        paymentSuccess = order.paymentMode.equalsIgnoreCase("COD");
-        if (order.paymentMode.equalsIgnoreCase("COD")) {
-        log.write(order.orderId, "PAYMENT OK (COD)");
-       } else {
-        log.write(order.orderId, "PAYMENT FAIL (Auto decline for simulation)");
-        paymentSuccess = false;
-    }
+        // Simulation mode
+        if ("COD".equalsIgnoreCase(paymentMode)) {
+            paymentSuccess = true;
+            log.write(order.orderId, "PAYMENT OK (COD)");
+        } else {
+            paymentSuccess = false;
+            log.write(order.orderId, "PAYMENT FAIL (Auto decline for simulation)");
+        }
     } else {
         paymentSuccess = paymentService.processPayment(order, console);
     }
 
+    // ===========================
     // Step 5: Rollback stock if payment fails
+    // ===========================
     if (!paymentSuccess) {
         for (int i = 0; i < order.itemCount; i++) {
             Item it = order.items[i];
+            if (it == null) continue;
+
             Product prod = dp.findProductById(it.productId);
             if (prod != null) {
                 prod.stock += it.quantity;
             }
         }
+
+        dp.saveProducts();
         order.status = "CANCELLED";
         order.cancelReason = "Payment Declined";
         log.write(order.orderId, "Order cancelled - " + order.cancelReason);
         return false;
     }
 
-    // Step 6: Mark as PACKED and generate properly formatted invoice
+    // ===========================
+    // Step 6: Mark as PACKED
+    // ===========================
     order.status = "PACKED";
     log.write(order.orderId, "Status changed to PACKED");
 
-    try {
-        // ✅ Format: INV-YYYYMM-####
-        String ym = order.date.substring(0, 7).replace("-", ""); // "202602"
-        String orderNum = order.orderId.substring(1); // drop 'O' → "1005"
-        String invoiceId = "INV-" + ym + "-" + orderNum;
-
-        FileWriter fw = new FileWriter(dp.path("invoices.txt"), true);
-        fw.write(invoiceId + "|BDT " + order.totalAmount + "\n");
-        fw.close();
-
-        // (Optional) Show invoice ID to admin
-        System.out.print("Invoice generated: " + invoiceId + "\n");
-    } catch (Exception e) {
-        // Ignore invoice errors silently
-    }
+    // ===========================
+    // Step 7: Generate invoice
+    // ===========================
+    generateInvoice(order);
 
     return true;
 }
- /** View detailed information of an order (internal helper) */
-    private void viewOrderDetails(Order order) {
-        System.out.print(LAVENDER+"Order ID: " + order.orderId + "\n"+RESET);
-        System.out.print(LAVENDER+"Date: " + order.date + "\n"+RESET);
-        System.out.print(LAVENDER+"Status: " + order.status + "\n"+RESET);
-        if (order.status.equalsIgnoreCase("CANCELLED")) {
-            System.out.print(ROSE+"Cancel Reason: " + (order.cancelReason.equals("") ? "(None)" : order.cancelReason) + "\n"+RESET);
+private void generateInvoice(Order order) {
+    if (order == null) return;
+
+    try {
+        String datePart = "UNKNOWN";
+        if (order.date != null && order.date.length() >= 7) {
+            datePart = order.date.substring(0, 7).replace("-", "");
         }
-        if (order.trackingId != null && !order.trackingId.equals("")) {
-            System.out.print(LAVENDER+"Tracking ID: " + order.trackingId + "\n"+RESET);
+
+        String orderPart = normalizeOrderId(order.orderId);
+        if (orderPart == null || orderPart.trim().equals("")) {
+            orderPart = "0000";
         }
-        System.out.print(LAVENDER+"Address: " + (order.address.equals("") ? "(Not provided)" : order.address) + "\n"+RESET);
-        System.out.print(LAVENDER+"Payment Mode: " + (order.paymentMode.equals("") ? "(N/A)" : order.paymentMode) + "\n"+RESET);
-        System.out.print(LAVENDER+"Total Amount: BDT " + order.totalAmount + "\n"+RESET);
-        System.out.print("Items:\n");
-        for (int i = 0; i < order.itemCount; i++) {
-            Item it = order.items[i];
-            if (it == null) continue;
-            Product p = dp.findProductById(it.productId);
-            String itemName = (p != null ? p.name : it.productId);
-            System.out.print(LAVENDER+"- " + itemName + " (x" + it.quantity + ")\n"+RESET);
+
+        String invoiceId = "INV-" + datePart + "-" + orderPart;
+
+        try (FileWriter fw = new FileWriter(dp.path("invoices.txt"), true)) {
+            fw.write(invoiceId + "|BDT " + order.totalAmount + "\n");
         }
+
+        System.out.print(MINT + "Invoice generated: " + invoiceId + "\n" + RESET);
+        log.write(order.orderId, "Invoice generated: " + invoiceId);
+
+    } catch (Exception e) {
+        log.write(order.orderId, "Invoice generation failed");
     }
+}
+ /** View detailed information of an order (internal helper) */
+private void viewOrderDetails(Order order) {
+    if (order == null) {
+        System.out.print(ROSE + "Order details not available.\n" + RESET);
+        return;
+    }
+
+    String orderId = (order.orderId == null || order.orderId.trim().equals("")) ? "(Unknown)" : order.orderId.trim();
+    String date = (order.date == null || order.date.trim().equals("")) ? "(Unknown)" : order.date.trim();
+    String status = (order.status == null || order.status.trim().equals("")) ? "(Unknown)" : order.status.trim();
+    String cancelReason = (order.cancelReason == null || order.cancelReason.trim().equals("")) ? "(None)" : order.cancelReason.trim();
+    String trackingId = (order.trackingId == null || order.trackingId.trim().equals("")) ? "" : order.trackingId.trim();
+    String address = (order.address == null || order.address.trim().equals("")) ? "(Not provided)" : order.address.trim();
+    String paymentMode = (order.paymentMode == null || order.paymentMode.trim().equals("")) ? "(N/A)" : order.paymentMode.trim();
+
+    System.out.print(LAVENDER + "Order ID: " + orderId + "\n" + RESET);
+    System.out.print(LAVENDER + "Date: " + date + "\n" + RESET);
+    System.out.print(LAVENDER + "Status: " + status + "\n" + RESET);
+
+    if ("CANCELLED".equalsIgnoreCase(status)) {
+        System.out.print(ROSE + "Cancel Reason: " + cancelReason + "\n" + RESET);
+    }
+
+    if (!trackingId.equals("")) {
+        System.out.print(LAVENDER + "Tracking ID: " + trackingId + "\n" + RESET);
+    }
+
+    System.out.print(LAVENDER + "Address: " + address + "\n" + RESET);
+    System.out.print(LAVENDER + "Payment Mode: " + paymentMode + "\n" + RESET);
+    System.out.print(LAVENDER + "Total Amount: BDT " + order.totalAmount + "\n" + RESET);
+    System.out.print("Items:\n");
+
+    boolean hasItems = false;
+    for (int i = 0; i < order.itemCount; i++) {
+        Item it = order.items[i];
+        if (it == null) continue;
+
+        hasItems = true;
+        Product p = dp.findProductById(it.productId);
+        String itemName = (p != null && p.name != null && !p.name.trim().equals(""))
+                ? p.name.trim()
+                : it.productId;
+
+        System.out.print(LAVENDER + "- " + itemName + " (x" + it.quantity + ")\n" + RESET);
+    }
+
+    if (!hasItems) {
+        System.out.print(ROSE + "- No items found\n" + RESET);
+    }
+}
      /** Feature 17: Generate a report of revenue and cancellations, write to report.txt */
     private void generateReport() throws Exception {
         int totalOrders = dp.orderCount;
@@ -1698,154 +2156,318 @@ private String normalizeOrderId(String input) {
     }
 
     /** Helper: convert a YYYY-MM-DD date string to an approximate day count for comparison */
-    private int dateToDayCount(String dateStr) {
-        if (dateStr == null || dateStr.length() == 0) return 0;
-        String[] parts = dateStr.split("-");
-        if (parts.length < 3) return 0;
-        int y = DataPersistence.toInt(parts[0]);
-        int m = DataPersistence.toInt(parts[1]);
-        int d = DataPersistence.toInt(parts[2]);
-        // approximate: year*360 + month*30 + day
-        return y * 360 + m * 30 + d;
-    }
-    
-    /** 
- * Accept a new order from the admin by manually inputting order details.
- * This will generate a new Order ID, collect product selections, and process the order.
- */
-private void acceptNewOrder(BufferedReader console) throws Exception {
-    // 1. Auto-generate Order ID and initialize a new Order
-    String newId = dp.generateOrderId();
-    Order newOrder = new Order();
-    newOrder.orderId = newId;
-    newOrder.date = currentDateString();  // set current date (YYYY-MM-DD)
-    System.out.print(LAVENDER+"New Order ID: " + newOrder.orderId + "\n"+RESET);
+  private int dateToDayCount(String dateStr) {
+    if (dateStr == null || dateStr.length() != 10) return 0;
 
-    // 2. Display product catalog (Product ID, Name, Stock)
+    // Format assumed: YYYY-MM-DD
+    int year =
+            (dateStr.charAt(0) - '0') * 1000 +
+            (dateStr.charAt(1) - '0') * 100 +
+            (dateStr.charAt(2) - '0') * 10 +
+            (dateStr.charAt(3) - '0');
+
+    int month =
+            (dateStr.charAt(5) - '0') * 10 +
+            (dateStr.charAt(6) - '0');
+
+    int day =
+            (dateStr.charAt(8) - '0') * 10 +
+            (dateStr.charAt(9) - '0');
+
+    return year * 360 + month * 30 + day;
+}
+  
+private void acceptNewOrder(BufferedReader console) throws Exception {
+    printTitle("Accept New Order");
+
+    if (dp.orderCount >= dp.orders.length) {
+        System.out.print(ROSE + "Order list is full. Cannot accept more orders.\n" + RESET);
+        return;
+    }
+
+    if (dp.productCount == 0) {
+        System.out.print(ROSE + "No products available. Cannot create order.\n" + RESET);
+        return;
+    }
+
+    // 1. Create new order
+    Order newOrder = new Order();
+    newOrder.orderId = dp.generateOrderId();
+    newOrder.date = currentDateString();
+    newOrder.status = "PENDING";
+
+    System.out.print(LAVENDER + "New Order ID: " + newOrder.orderId + "\n" + RESET);
+
+    // 2. Show product catalog
     printTitle("Product Catalog");
     for (int i = 0; i < dp.productCount; i++) {
         Product prod = dp.products[i];
         if (prod == null) continue;
-        System.out.print(LAVENDER+prod.productId + " - " + prod.name + " (Stock: " + prod.stock + ")\n"+RESET);
+
+        String stockColor = (prod.stock <= 0) ? ROSE : (prod.stock <= 5 ? ANSI_Yellow : MINT);
+
+        System.out.print(
+                LAVENDER + prod.productId + RESET
+                + " - " + MINT + prod.name + RESET
+                + SOFTGRAY + " | Brand: " + RESET + prod.brand
+                + SOFTGRAY + " | Price: " + RESET + formatMoney(prod.price)
+                + SOFTGRAY + " | Stock: " + RESET + stockColor + prod.stock + RESET
+                + "\n"
+        );
     }
     printLine();
-    // 3. Allow admin to select 1–3 products and specify quantities
-    System.out.print(SOFTGRAY+"How many different products in this order? (1-10): "+RESET);
+
+    // 3. Ask how many different products
+    System.out.print(SOFTGRAY + "How many different products in this order? (1-10): " + RESET);
     String countStr = console.readLine();
     if (countStr == null) countStr = "";
     countStr = countStr.trim();
-    int itemCount = DataPersistence.toInt(countStr);
-    if (itemCount < 1 || itemCount > 10) {
-        System.out.print(ROSE+"Invalid number of products. Order cancelled.\n"+RESET);
+
+    int requestedItemCount = DataPersistence.toInt(countStr);
+    if (requestedItemCount < 1 || requestedItemCount > 10) {
+        System.out.print(ROSE + "Invalid number of products. Order cancelled.\n" + RESET);
         return;
     }
-    for (int i = 1; i <= itemCount; i++) {
-        System.out.print(SOFTGRAY+"Enter Product ID for item " + i + ": "+RESET);
+
+    // 4. Add items
+    for (int i = 1; i <= requestedItemCount; i++) {
+        System.out.print(SOFTGRAY + "Enter Product ID for item " + i + ": " + RESET);
         String pid = console.readLine();
         if (pid == null) pid = "";
         pid = pid.trim();
+
         if (pid.equals("")) {
-            System.out.print(ROSE+"Product ID cannot be empty. Order cancelled.\n"+RESET);
+            System.out.print(ROSE + "Product ID cannot be empty. Order cancelled.\n" + RESET);
             return;
         }
+
         Product product = dp.findProductById(pid);
         if (product == null) {
-            System.out.print(ROSE+"Product " + pid + " not found. Order cancelled.\n"+RESET);
+            System.out.print(ROSE + "Product " + pid + " not found. Order cancelled.\n" + RESET);
             return;
         }
-        System.out.print(SOFTGRAY+"Enter quantity for " + product.name + ": "+RESET);
+
+        System.out.print(SOFTGRAY + "Enter quantity for " + product.name + ": " + RESET);
         String qtyStr = console.readLine();
         if (qtyStr == null) qtyStr = "";
         qtyStr = qtyStr.trim();
+
         int qty = DataPersistence.toInt(qtyStr);
         if (qty <= 0) {
-            System.out.print(ROSE+"Invalid quantity. Order cancelled.\n"+RESET);
+            System.out.print(ROSE + "Invalid quantity. Order cancelled.\n" + RESET);
             return;
         }
-        // Add the selected item to the order
-        if (!newOrder.addItem(new Item(product.productId, qty))) {
-            System.out.print(ROSE+"Failed to add item " + product.productId + ". Order cancelled.\n"+RESET);
-            return;
+
+        // Merge quantity if product already added
+        boolean merged = false;
+        for (int j = 0; j < newOrder.itemCount; j++) {
+            Item existing = newOrder.items[j];
+            if (existing != null && existing.productId.equalsIgnoreCase(product.productId)) {
+                existing.quantity += qty;
+                merged = true;
+                break;
+            }
+        }
+
+        if (!merged) {
+            if (!newOrder.addItem(new Item(product.productId, qty))) {
+                System.out.print(ROSE + "Failed to add item " + product.productId + ". Order cancelled.\n" + RESET);
+                return;
+            }
         }
     }
 
-    // 4. Ask for shipping address and payment mode
-    System.out.print(SOFTGRAY+"Enter shipping address: "+RESET);
+    if (newOrder.itemCount <= 0) {
+        System.out.print(ROSE + "Order has no valid items. Order cancelled.\n" + RESET);
+        return;
+    }
+
+    // 5. Shipping address
+    System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
     String address = console.readLine();
     if (address == null) address = "";
     address = address.trim();
+
     if (address.equals("")) {
-        System.out.print(ROSE+"Address cannot be empty. Order cancelled.\n"+RESET);
+        System.out.print(ROSE + "Address cannot be empty. Order cancelled.\n" + RESET);
         return;
     }
     newOrder.address = address;
-    System.out.print(SOFTGRAY+"Enter payment mode (COD or MockCard): "+RESET);
+
+    // 6. Payment mode
+    System.out.print(SOFTGRAY + "Enter payment mode (COD or MockCard): " + RESET);
     String paymentMode = console.readLine();
     if (paymentMode == null) paymentMode = "";
     paymentMode = paymentMode.trim();
-    if (paymentMode.equalsIgnoreCase("")) {
-        System.out.print(ROSE+"Payment mode cannot be empty. Order cancelled.\n"+RESET);
+
+    if (!paymentMode.equalsIgnoreCase("COD") && !paymentMode.equalsIgnoreCase("MockCard")) {
+        System.out.print(ROSE + "Invalid payment mode. Use COD or MockCard. Order cancelled.\n" + RESET);
         return;
     }
-    newOrder.paymentMode = paymentMode;  // e.g., "COD" or "MockCard"
+    newOrder.paymentMode = paymentMode;
+    printTitle("Order Summary");
+    for (int i = 0; i < newOrder.itemCount; i++) {
+    Item it = newOrder.items[i];
+    if (it == null) continue;
 
-    // 5. Log the order creation and process the order through existing workflow
-    log.write(newOrder.orderId, "Order created via admin interface (pending)");  // Log creation event
+    Product p = dp.findProductById(it.productId);
+    String name = (p != null) ? p.name : it.productId;
+
+    System.out.println("- " + name + " x" + it.quantity);
+}
+System.out.println("Address: " + newOrder.address);
+System.out.println("Payment: " + newOrder.paymentMode);
+printLine();
+
+    // 7. Log creation
+    log.write(newOrder.orderId, "Order created via admin interface (pending)");
+
+    // 8. Process order
     boolean processed = processPendingOrder(newOrder, console);
-    // (processPendingOrder will handle inventory check, payment processing, and update order status)
 
-    // 6. Add the new order to system records
+    // 9. Store order
     dp.orders[dp.orderCount++] = newOrder;
+    dp.saveOrders();
 
-    // 7. Output result and log outcome
+    // 10. Final result
     if (!processed) {
-        // If processing failed, the order status is now "CANCELLED" (cancelReason set by processPendingOrder)
-        System.out.print(ROSE+"Order processing failed. Order ID: " + newOrder.orderId  + " is CANCELLED (" + newOrder.cancelReason + ").\n"+RESET);
-        // (The cancellation reason and status change have been logged by processPendingOrder)
+        System.out.print(ROSE + "Order processing failed.\n" + RESET);
+        System.out.print(ROSE + "Order ID: " + newOrder.orderId + "\n" + RESET);
+        System.out.print(ROSE + "Final Status: " + newOrder.status + "\n" + RESET);
+        System.out.print(ROSE + "Reason: " + newOrder.cancelReason + "\n" + RESET);
     } else {
-        // If processing succeeded, the order status is now "PACKED"
-        System.out.print(MINT+"New order accepted and processed successfully! New Order ID: " + newOrder.orderId + " (Status: " + newOrder.status + ").\n"+RESET);
-        // (Inventory reservation and payment confirmation have been logged, and status set to PACKED)
+        System.out.print(MINT + "New order accepted and processed successfully!\n" + RESET);
+        System.out.print(SOFTGRAY + "Order ID: " + RESET + newOrder.orderId + "\n");
+        System.out.print(SOFTGRAY + "Status: " + RESET + newOrder.status + "\n");
+        System.out.print(SOFTGRAY + "Total: " + RESET + formatMoney(newOrder.totalAmount) + "\n");
     }
 }
 private void systemHealthCheck() {
-    System.out.print(PINK + BOLD + "System Health Check\n" + RESET);
+    printTitle("System Health Check");
+
+    int delivered = 0;
+    int cancelled = 0;
+    int pending = 0;
+    int packed = 0;
+    int shipped = 0;
+    int outForDelivery = 0;
+
+    int inStock = 0;
+    int lowStock = 0;
+    int outOfStock = 0;
+
+    // Analyze orders
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null || o.status == null) continue;
+
+        String status = o.status.trim().toUpperCase();
+
+        if ("DELIVERED".equals(status)) delivered++;
+        else if ("CANCELLED".equals(status)) cancelled++;
+        else if ("PENDING".equals(status)) pending++;
+        else if ("PACKED".equals(status)) packed++;
+        else if ("SHIPPED".equals(status)) shipped++;
+        else if ("OUT_FOR_DELIVERY".equals(status)) outForDelivery++;
+    }
+
+    // Analyze products
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p == null) continue;
+
+        if (p.stock <= 0) {
+            outOfStock++;
+        } else if (p.stock <= 5) {
+            lowStock++;
+        } else {
+            inStock++;
+        }
+    }
+
+    System.out.println(MINT + "Data Summary" + RESET);
+    printLine();
+    System.out.println(SOFTGRAY + "Orders loaded:   " + RESET + dp.orderCount);
+    System.out.println(SOFTGRAY + "Products loaded: " + RESET + dp.productCount);
+    System.out.println(SOFTGRAY + "Admins loaded:   " + RESET + dp.adminCount);
+
+    System.out.println();
+    System.out.println(MINT + "Order Status Summary" + RESET);
+    printLine();
+    System.out.println(SOFTGRAY + "Pending:          " + RESET + pending);
+    System.out.println(SOFTGRAY + "Packed:           " + RESET + packed);
+    System.out.println(SOFTGRAY + "Shipped:          " + RESET + shipped);
+    System.out.println(SOFTGRAY + "Out for Delivery: " + RESET + outForDelivery);
+    System.out.println(SOFTGRAY + "Delivered:        " + RESET + delivered);
+    System.out.println(SOFTGRAY + "Cancelled:        " + RESET + cancelled);
+
+    System.out.println();
+    System.out.println(MINT + "Inventory Summary" + RESET);
+    printLine();
+    System.out.println(SOFTGRAY + "In-stock products:   " + RESET + inStock);
+
+    if (lowStock > 0) {
+        System.out.println(ANSI_Yellow + "Low-stock products:  " + lowStock + RESET);
+    } else {
+        System.out.println(MINT + "Low-stock products:  0" + RESET);
+    }
+
+    if (outOfStock > 0) {
+        System.out.println(ROSE + "Out-of-stock items:  " + outOfStock + RESET);
+    } else {
+        System.out.println(MINT + "Out-of-stock items:  0" + RESET);
+    }
+
+    System.out.println();
+    System.out.println(MINT + "System Status" + RESET);
     printLine();
 
-    System.out.print(MINT + "Orders loaded: " + RESET + dp.orderCount + "\n");
-    System.out.print(MINT + "Products loaded: " + RESET + dp.productCount + "\n");
-    System.out.print(MINT + "Admins loaded: " + RESET + dp.adminCount + "\n");
-
-    int low = countLowStock(5);
-    if (low > 0) {
-        System.out.print(ANSI_Yellow + "Low stock products: " + low + RESET + "\n");
+    if (dp.orderCount == 0 && dp.productCount == 0) {
+        System.out.println(ROSE + "Warning: No operational data loaded." + RESET);
+    } else if (outOfStock > 0 || lowStock > 0) {
+        System.out.println(ANSI_Yellow + "System is operational, but inventory needs attention." + RESET);
     } else {
-        System.out.print(MINT + "No low stock products" + RESET + "\n");
+        System.out.println(MINT + "System is operational and healthy." + RESET);
     }
 
     printLine();
 }
 
 private void showOrderTimeline(BufferedReader console) throws Exception {
-    showTimelinePreview();   
-    System.out.print("Enter Order ID for timeline: ");
+    showTimelinePreview();
+
+    System.out.print(SOFTGRAY + "Enter Order ID for timeline: " + RESET);
     String id = console.readLine();
     if (id == null) id = "";
     id = id.trim();
-    if (id.equals("")) return;
 
-    id = normalizeOrderId(id);
+    if (id.equals("")) {
+        System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
+        return;
+    }
 
-    System.out.print(PINK + BOLD + "Timeline for " + id + "\n" + RESET);
+    // Find the real order first
+    Order order = findOrderById(id);
+
+    if (order == null) {
+        System.out.print(ROSE + "Order " + normalizeOrderId(id) + " not found.\n" + RESET);
+        return;
+    }
+
+    String realOrderId = order.orderId;
+
+    System.out.print(PINK + BOLD + "Timeline for " + realOrderId + "\n" + RESET);
     printLine();
 
     BufferedReader br = null;
     boolean found = false;
+
     try {
         br = new BufferedReader(new FileReader(dp.path("logs.txt")));
         String line;
+
         while ((line = br.readLine()) != null) {
-            if (line.contains(id)) {
+            if (line != null && line.contains(realOrderId)) {
                 found = true;
                 System.out.print(SOFTGRAY + "- " + RESET + line + "\n");
             }
@@ -1857,40 +2479,70 @@ private void showOrderTimeline(BufferedReader console) throws Exception {
     }
 
     if (!found) {
-        System.out.print(ROSE + "No timeline entries found for " + id + RESET + "\n");
+        System.out.print(ROSE + "No timeline entries found for " + realOrderId + ".\n" + RESET);
     }
+
     printLine();
 }
 
 private void autoCancelStaleOrders(int days) throws Exception {
-    java.time.LocalDate today = java.time.LocalDate.now();
-    int cancelled = 0;
+    printTitle("Auto Cancel Stale Orders");
+
+    if (days <= 0) {
+        System.out.print(ROSE + "Invalid number of days. Must be greater than 0.\n" + RESET);
+        return;
+    }
+
+    String todayStr = currentDateString();
+    int todayCount = dateToDayCount(todayStr);
+
+    int cancelledCount = 0;
+    int invalidDateCount = 0;
 
     for (int i = 0; i < dp.orderCount; i++) {
         Order o = dp.orders[i];
         if (o == null) continue;
-        if (!"PENDING".equals(o.status)) continue;
 
-        try {
-            java.time.LocalDate d = java.time.LocalDate.parse(o.date); // expects YYYY-MM-DD
-            long diff = java.time.temporal.ChronoUnit.DAYS.between(d, today);
-            if (diff >= days) {
-                o.status = "CANCELLED";
-                cancelled++;
-                // if you have workflow log:
-                // log.write(o.orderId, "AUTO_CANCEL", "Order stale (" + diff + " days)");
-            }
-        } catch (Exception ex) {
-            // ignore bad date format
+        String status = (o.status == null) ? "" : o.status.trim().toUpperCase();
+        String dateStr = (o.date == null) ? "" : o.date.trim();
+
+        if (!"PENDING".equals(status)) continue;
+
+        if (dateStr.equals("")) {
+            invalidDateCount++;
+            continue;
+        }
+
+        int orderDay = dateToDayCount(dateStr);
+        if (orderDay == 0) {
+            invalidDateCount++;
+            continue;
+        }
+
+        int diff = todayCount - orderDay;
+
+        if (diff >= days) {
+            o.status = "CANCELLED";
+            o.cancelReason = "Auto-cancelled: stale pending order (" + diff + " days old)";
+            cancelledCount++;
+
+            log.write(o.orderId, "Auto-cancelled after " + diff + " days in PENDING status");
+            System.out.print(ROSE + "Cancelled: " + o.orderId + " (age: " + diff + " days)\n" + RESET);
         }
     }
 
-    if (cancelled > 0) {
-        dp.saveAll();
-        System.out.print(MINT + "Auto-cancelled " + cancelled + " stale PENDING orders.\n" + RESET);
+    if (cancelledCount > 0) {
+        dp.saveOrders();
+        System.out.print(MINT + "Auto-cancelled " + cancelledCount + " stale PENDING order(s).\n" + RESET);
     } else {
         System.out.print(ROSE + "No stale PENDING orders found.\n" + RESET);
     }
+
+    if (invalidDateCount > 0) {
+        System.out.print(ANSI_Yellow + "Skipped " + invalidDateCount + " order(s) due to invalid date format.\n" + RESET);
+    }
+
+    printLine();
 }
 
 
@@ -1937,22 +2589,30 @@ private void showOrdersForStatusUpdate() {
 
     printLine();
 }
-private int computeOrderTotal(Order o) {
-    if (o == null) return 0;
+private int computeOrderTotal(Order order) {
+    if (order == null || order.items == null || order.itemCount <= 0) {
+        return 0;
+    }
+
     int total = 0;
 
-    for (int i = 0; i < o.itemCount; i++) {
-        Item it = o.items[i];
-        if (it == null) continue;
+    for (int i = 0; i < order.itemCount; i++) {
+        Item item = order.items[i];
+        if (item == null) continue;
 
-        Product p = dp.findProductById(it.productId);
-        if (p != null) {
-            total += p.price * it.quantity;
+        Product product = dp.findProductById(item.productId);
+        if (product == null) continue;
+
+        int price = product.price;
+        int qty = item.quantity;
+
+        if (qty > 0 && price > 0) {
+            total += price * qty;
         }
     }
+
     return total;
 }
-
 private void showOrdersPreview() {
     System.out.println(PINK + BOLD + "\nOrders List (Preview)" + RESET);
     printLine();
@@ -2067,30 +2727,51 @@ private void printProductSummary() {
     printLine();
 }
 
-private int safeOrderTotal(Order o) {
-    if (o == null) return 0;
-    if (o.totalAmount > 0) return o.totalAmount; // already correct
+private int safeOrderTotal(Order order) {
+    if (order == null) return 0;
+
+    // If total was already calculated, reuse it
+    if (order.totalAmount > 0) {
+        return order.totalAmount;
+    }
 
     int total = 0;
-    for (int i = 0; i < o.itemCount; i++) {
-        Item it = o.items[i];
-        if (it == null) continue;
-        Product p = dp.findProductById(it.productId);
-        if (p != null) total += p.price * it.quantity;
+
+    if (order.items == null || order.itemCount <= 0) {
+        return 0;
     }
-    return total; // computed even if stored total is 0
+
+    for (int i = 0; i < order.itemCount; i++) {
+        Item item = order.items[i];
+        if (item == null) continue;
+
+        Product product = dp.findProductById(item.productId);
+        if (product == null) continue;
+
+        int price = product.price;
+        int qty = item.quantity;
+
+        if (price > 0 && qty > 0) {
+            total += price * qty;
+        }
+    }
+
+    return total;
 }
 
 private void showRestockPreview() {
-    System.out.println(PINK + BOLD + "\nProducts Needing Restock" + RESET);
-    printLine();
+    printTitle("Products Needing Restock");
 
-    System.out.printf(LAVENDER + "%-8s %-22s %-12s %-10s %-8s" + RESET + "%n",
-            "ID", "Name", "Brand", "Category", "Stock");
-    System.out.println(SOFTGRAY + "------------------------------------------------------------" + RESET);
-
+    int threshold = 5;
     int lowCount = 0;
-    int threshold = 5; // ✅ change this if you want (ex: 10)
+
+    System.out.printf(
+            LAVENDER + "%-10s %-24s %-16s %-18s %-10s" + RESET + "%n",
+            "ID", "Name", "Brand", "Category", "Stock"
+    );
+    System.out.println(
+            SOFTGRAY + "--------------------------------------------------------------------------------" + RESET
+    );
 
     for (int i = 0; i < dp.productCount; i++) {
         Product p = dp.products[i];
@@ -2099,20 +2780,38 @@ private void showRestockPreview() {
         if (p.stock <= threshold) {
             lowCount++;
 
-            String stockColor = (p.stock == 0) ? ROSE : ANSI_Yellow; // 0 = red, low = peach
+            String productId = (p.productId == null || p.productId.trim().equals("")) ? "(N/A)" : p.productId.trim();
+            String name = (p.name == null || p.name.trim().equals("")) ? "(Unnamed)" : p.name.trim();
+            String brand = (p.brand == null || p.brand.trim().equals("")) ? "(N/A)" : p.brand.trim();
+            String category = (p.category == null || p.category.trim().equals("")) ? "(N/A)" : p.category.trim();
 
-            System.out.printf("%-8s %-22s %-12s %-10s %s%-8d%s%n",
-                    p.productId,
-                    trimTo(p.name, 22),
-                    trimTo(p.brand, 12),
-                    trimTo(p.category, 10),
-                    stockColor, p.stock, RESET
+            String stockText;
+            String stockColor;
+
+            if (p.stock <= 0) {
+                stockText = "OUT";
+                stockColor = ROSE;
+            } else {
+                stockText = String.valueOf(p.stock);
+                stockColor = ANSI_Yellow;
+            }
+
+            System.out.printf(
+                    "%-10s %-24s %-16s %-18s %s%-10s%s%n",
+                    productId,
+                    trimTo(name, 24),
+                    trimTo(brand, 16),
+                    trimTo(category, 18),
+                    stockColor, stockText, RESET
             );
         }
     }
 
     if (lowCount == 0) {
         System.out.println(MINT + "No products are low in stock right now." + RESET);
+    } else {
+        System.out.println();
+        System.out.println(ANSI_Yellow + "Total products needing attention: " + lowCount + RESET);
     }
 
     printLine();
@@ -2120,10 +2819,10 @@ private void showRestockPreview() {
 
 // small helper so long names don't break your table
 private String trimTo(String s, int max) {
-    if (s == null) return "";
-    s = s.trim();
+    if (s == null) s = "";
+    if (max <= 0) return "";
     if (s.length() <= max) return s;
-    return s.substring(0, max - 3) + "...";
+    return s.substring(0, max - 1) + "…";
 }
 private String buildOrderItemsSummary(Order order) {
     if (order == null || order.itemCount == 0) {
