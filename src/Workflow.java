@@ -694,52 +694,77 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
     System.out.print(MINT+"Order " + order.orderId + " status updated to " + nextStatus + ".\n"+RESET);
 }
   /** Feature 5 & 8: Reorder a previous order (copy its items into a new order and process it) */
-    private void handleReorder(BufferedReader console) throws Exception {
-        showReorderPreview();
-        System.out.print(SOFTGRAY+"Enter Order ID to reorder: "+RESET);
-        String oldId = console.readLine();
-        if (oldId == null) oldId = "";
-        oldId = oldId.trim();
-        if (oldId.equals("")) {
-            System.out.print(ROSE+"Order ID cannot be empty.\n"+RESET);
-            return;
-        }
-        oldId = normalizeOrderId(oldId);
-        // Find the original order
-        Order original = null;
-        for (int i = 0; i < dp.orderCount; i++) {
-            if (dp.orders[i] != null && dp.orders[i].orderId.equalsIgnoreCase(oldId)) {
-                original = dp.orders[i];
-                break;
-            }
-        }
-        if (original == null) {
-            System.out.print(ROSE+"Order " + oldId + " not found.\n"+RESET);
-            return;
-        }
-        // Create a new order with the same items (and same address/payment as original, if available)
-        Order newOrder = new Order();
-        newOrder.orderId = dp.generateOrderId();
-        newOrder.date = currentDateString();
-        newOrder.address = original.address;
-        newOrder.paymentMode = original.paymentMode.equals("") ? "COD" : original.paymentMode;
-        // Copy each item from original
-        for (int j = 0; j < original.itemCount; j++) {
-            Item it = original.items[j];
-            if (it == null) continue;
-            newOrder.addItem(new Item(it.productId, it.quantity));
-        }
-        // Process the new order through inventory & payment
-        boolean success = processPendingOrder(newOrder, console);
-        // Add the new order to system records
-        dp.orders[dp.orderCount++] = newOrder;
-        if (!success) {
-            System.out.print(ROSE+"Reorder created as " + newOrder.orderId + " but failed (" + newOrder.cancelReason + ").\n"+RESET);
-        } else {
-            System.out.print(MINT+"Reorder successful! New Order ID: " + newOrder.orderId + " (Status: " + newOrder.status + ").\n"+RESET);
-            log.write(newOrder.orderId, "Reordered from " + oldId);
+ private void handleReorder(BufferedReader console) throws Exception {
+    showReorderPreview();
+
+    System.out.print(SOFTGRAY + "Enter Order ID to reorder: " + RESET);
+    String oldId = console.readLine();
+    if (oldId == null) oldId = "";
+    oldId = oldId.trim();
+
+    if (oldId.equals("")) {
+        System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
+        return;
+    }
+
+    oldId = normalizeOrderId(oldId);
+
+    // Find the original order
+    Order original = null;
+    for (int i = 0; i < dp.orderCount; i++) {
+        if (dp.orders[i] == null) continue;
+
+        String storedId = dp.orders[i].orderId;
+        if (storedId == null) continue;
+
+        storedId = normalizeOrderId(storedId.trim());
+
+        if (storedId.equalsIgnoreCase(oldId)) {
+            original = dp.orders[i];
+            break;
         }
     }
+
+    if (original == null) {
+        System.out.print(ROSE + "Order " + oldId + " not found.\n" + RESET);
+        return;
+    }
+    if (original.status != null && original.status.equalsIgnoreCase("CANCELLED")) {
+    System.out.print(ROSE + "Cancelled orders cannot be reordered.\n" + RESET);
+    return;
+    }   
+
+    // Create a new order with the same items
+    Order newOrder = new Order();
+    newOrder.orderId = dp.generateOrderId();
+    newOrder.date = currentDateString();
+    newOrder.address = original.address;
+    newOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
+            ? "COD"
+            : original.paymentMode;
+
+    // Copy each item from original
+    for (int j = 0; j < original.itemCount; j++) {
+        Item it = original.items[j];
+        if (it == null) continue;
+        newOrder.addItem(new Item(it.productId, it.quantity));
+    }
+
+    // Process the new order through inventory & payment
+    boolean success = processPendingOrder(newOrder, console);
+
+    // Add the new order to system records
+    dp.orders[dp.orderCount++] = newOrder;
+
+    if (!success) {
+        System.out.print(ROSE + "Reorder created as " + newOrder.orderId +
+                " but failed (" + newOrder.cancelReason + ").\n" + RESET);
+    } else {
+        System.out.print(MINT + "Reorder successful! New Order ID: " +
+                newOrder.orderId + " (Status: " + newOrder.status + ").\n" + RESET);
+        log.write(newOrder.orderId, "Reordered from " + oldId);
+    }
+}
         /** Feature 6 (continued): View or filter products by brand or category */
     private void handleAdvancedFilter(BufferedReader console) throws Exception {
         showProductsPreview2();
