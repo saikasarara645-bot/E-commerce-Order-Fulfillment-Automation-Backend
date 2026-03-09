@@ -7,3 +7,16 @@ Order 00002 - Status changed to SHIPPED
 Order ADMIN - Edited product L203 (Price changed)
 Order ADMIN - Restocked M101 (+22)
 Order 00003 - Order cancelled -Inventory Shortage: M102
+Order 00003 - Order cancelled -Inventory Shortage: M102
+Order 00004 - Order cancelled -Inventory Shortage: M102
+Order ADMIN - Restocked M102 (+20)
+Order 00003 - Order created via admin interface (pending)
+Order 00003 - Inventory OK – stock reserved
+Order 00003 - PAYMENT FAIL (Unknown payment mode: C)
+Order 00003 - Order cancelled - Payment Declined
+Order 00004 - Order created via admin interface (pending)
+Order 00004 - Inventory OK – stock reserved
+Order 00004 - PAYMENT OK (Cash on Delivery)
+Order 00004 - Status changed to PACKED
+Order O0002 - Status changed to OUT_FOR_DELIVERY
+Order O0002 - Status changed to DELIVERED
