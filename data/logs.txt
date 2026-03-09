@@ -31,3 +31,4 @@ Order 00006 - Inventory OK – stock reserved
 Order 00006 - PAYMENT OK (MockCard approved)
 Order 00006 - Status changed to PACKED
 Order 00006 - Order accepted and moved to PACKED
+Order 00007 - Order created via admin interface (PENDING)

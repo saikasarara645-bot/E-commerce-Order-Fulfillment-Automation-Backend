@@ -86,8 +86,8 @@ public class Workflow {
 }
 private void printSection(String text) {
     System.out.println();
-    System.out.println(PINK + BOLD + ">> " + text + RESET);
-    System.out.println(SOFTGRAY + "────────────────────────────────────────────────────────────" + RESET);
+    System.out.println(PINK + BOLD + ">>" + text + RESET);
+    printLine();
 }
 private void printMenuOption(int num, String text, boolean enabled) {
     String label = "[" + num + "] ";
@@ -101,29 +101,37 @@ private void printMenuOption(int num, String text, boolean enabled) {
 private void printFooter(String message) {
     if (message == null) message = "";
     System.out.println();
-    System.out.println(SOFTGRAY + "────────────────────────────────────────────────────────────" + RESET);
+    printLine();
     System.out.println(MINT + centerText(message, 60) + RESET);
 }
 private String centerText(String text, int width) {
 
     if (text == null) text = "";
 
-    text = text.trim();
+    text = text.trim();              // 1
 
-    if (text.length() >= width) {
-        return text.substring(0, width);
+    int len = text.length();         // 2
+
+    if (len >= width) {
+        return text.substring(0, width);   // 3
     }
 
-    int leftPadding = (width - text.length()) / 2;
-    int rightPadding = width - text.length() - leftPadding;
+    int left = (width - len) / 2;
+    int right = width - len - left;
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder();   // 4
 
-    for (int i = 0; i < leftPadding; i++) sb.append(' ');
-    sb.append(text);
-    for (int i = 0; i < rightPadding; i++) sb.append(' ');
+    for (int i = 0; i < left; i++) {
+        sb.append(" ");
+    }
 
-    return sb.toString();
+    sb.append(text);                          // 5
+
+    for (int i = 0; i < right; i++) {
+        sb.append(" ");
+    }
+
+    return sb.toString();                    
 }
 private void printRoleSummary(Admin admin) {
     printTitle("Quick Summary");
@@ -195,7 +203,7 @@ private int countLowStock(int threshold) {
 
         printAdminMenu(currentAdmin);
 
-        printFooter("System Ready • Awaiting Command");
+        printFooter("System Ready . Awaiting Command");
         System.out.print(SOFTGRAY + "Please select an option: " + RESET);
 
         String choice = console.readLine();
@@ -225,7 +233,7 @@ private void printAdminMenu(Admin currentAdmin) {
     boolean isAdmin = currentAdmin.role == Role.ADMIN;
     boolean isManager = currentAdmin.role == Role.MANAGER;
     boolean canManageStock = isAdmin || isManager;
-
+    System.out.println();
     System.out.println(LAVENDER + BOLD + "==================== MENU ====================" + RESET);
 
     // ORDER MANAGEMENT
