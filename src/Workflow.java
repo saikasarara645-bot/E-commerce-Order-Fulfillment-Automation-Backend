@@ -669,6 +669,9 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
 }
 
     /** Feature 6: Manually progress an order status through the workflow (PENDING -> PACKED -> SHIPPED -> OUT_FOR_DELIVERY -> DELIVERED) */
+/** Feature 6: Manually progress an order status through the workflow
+ *  (PENDING -> PACKED -> SHIPPED -> OUT_FOR_DELIVERY -> DELIVERED)
+ */
 private void handleStatusUpdate(BufferedReader console) throws Exception {
     showOrdersForStatusUpdate();
 
@@ -691,30 +694,42 @@ private void handleStatusUpdate(BufferedReader console) throws Exception {
 
     String currentStatus = (order.status == null) ? "" : order.status.trim().toUpperCase();
 
-    if (currentStatus.equals("DELIVERED") || currentStatus.equals("CANCELLED")) {
+    // Already finished / blocked orders
+    if ("DELIVERED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
         System.out.print(ROSE + "Order " + order.orderId + " is " + currentStatus + "; status cannot be changed.\n" + RESET);
         return;
     }
 
-    if (currentStatus.equals("PENDING")) {
-        boolean processed = processPendingOrder(order, console);
+    // =========================
+    // CASE 1: PENDING -> process acceptance
+    // =========================
+    if ("PENDING".equals(currentStatus)) {
+        boolean accepted = processPendingOrder(order, console);
 
-        if (!processed) {
-            System.out.print(ROSE + "Order processing failed. Status updated to CANCELLED (" 
+        dp.saveOrders();
+
+        if (!accepted) {
+            System.out.print(ROSE + "Order processing failed. Status updated to CANCELLED ("
                     + order.cancelReason + ").\n" + RESET);
-            dp.saveOrders();
             return;
         }
 
-        currentStatus = (order.status == null) ? "" : order.status.trim().toUpperCase();
+        // If accepted, order is now PACKED and should stop here
+        log.write(order.orderId, "Order accepted and moved to PACKED");
+        System.out.print(MINT + "Order " + order.orderId + " accepted successfully. Status updated to PACKED.\n" + RESET);
+        return;
     }
 
+    // =========================
+    // CASE 2: Normal manual transitions
+    // =========================
     String nextStatus = null;
-    if (currentStatus.equals("PACKED")) {
+
+    if ("PACKED".equals(currentStatus)) {
         nextStatus = "SHIPPED";
-    } else if (currentStatus.equals("SHIPPED")) {
+    } else if ("SHIPPED".equals(currentStatus)) {
         nextStatus = "OUT_FOR_DELIVERY";
-    } else if (currentStatus.equals("OUT_FOR_DELIVERY")) {
+    } else if ("OUT_FOR_DELIVERY".equals(currentStatus)) {
         nextStatus = "DELIVERED";
     }
 
@@ -725,7 +740,7 @@ private void handleStatusUpdate(BufferedReader console) throws Exception {
 
     order.status = nextStatus;
 
-    if (nextStatus.equals("SHIPPED")) {
+    if ("SHIPPED".equals(nextStatus)) {
         String normalizedId = normalizeOrderId(order.orderId);
         order.trackingId = "TRK" + normalizedId;
     }

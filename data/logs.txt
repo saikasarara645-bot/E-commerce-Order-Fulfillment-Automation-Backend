@@ -20,3 +20,8 @@ Order 00004 - PAYMENT OK (Cash on Delivery)
 Order 00004 - Status changed to PACKED
 Order O0002 - Status changed to OUT_FOR_DELIVERY
 Order O0002 - Status changed to DELIVERED
+Order 00005 - Order created via admin interface (PENDING)
+Order 00005 - Inventory OK – stock reserved
+Order 00005 - PAYMENT OK (Cash on Delivery)
+Order 00005 - Status changed to PACKED
+Order 00005 - Status changed to SHIPPED
