@@ -41,9 +41,9 @@ public class Workflow {
         return Admin.authenticate(dp, console);
     }
     
-    private void printLine() {
-    System.out.println(SOFTGRAY + "────────────────────────────────────────" + RESET);
-    }
+   private void printLine() {
+    System.out.println(SOFTGRAY + "════════════════════════════════════════════════════════════" + RESET);
+}
 
     private void printTitle(String text) {
     printLine();
@@ -51,39 +51,78 @@ public class Workflow {
     printLine();
     }
     private void printDashboardBox(Admin admin) {
-    String top    = "╔══════════════════════════════════════╗";
-    String mid    = "║                                      ║";
-    String bottom = "╚══════════════════════════════════════╝";
+
+    int width = 60; // inner width of box
+
+    String username = (admin != null && admin.username != null)
+            ? admin.username : "Unknown";
+
+    String role = (admin != null && admin.role != null)
+            ? admin.role.name() : "Unknown";
+
+    String top    = "╔════════════════════════════════════════════════════════════╗";
+    String mid    = "║                                                            ║";
+    String sep    = "╠════════════════════════════════════════════════════════════╣";
+    String bottom = "╚════════════════════════════════════════════════════════════╝";
 
     System.out.println(SOFTGRAY + top + RESET);
 
-    // Centered Title line
-    String title = "ADMIN DASHBOARD";
     System.out.println(SOFTGRAY + "║" + RESET
-            + PINK + BOLD + centerText(title, 38) + RESET
+            + PINK + BOLD + centerText("** ADMIN DASHBOARD **", width) + RESET
+            + SOFTGRAY + "║" + RESET);
+
+    System.out.println(SOFTGRAY + "║" + RESET
+            + LAVENDER + centerText("E-Commerce Order Fulfillment Automation System", width) + RESET
+            + SOFTGRAY + "║" + RESET);
+
+    System.out.println(SOFTGRAY + sep + RESET);
+
+    System.out.println(SOFTGRAY + "║" + RESET
+            + MINT + centerText("Logged in as: " + username + " (" + role + ")", width) + RESET
             + SOFTGRAY + "║" + RESET);
 
     System.out.println(SOFTGRAY + mid + RESET);
-
-    // Info line: Logged in as
-    String info = "Logged in as: " + admin.username + " (" + admin.role + ")";
-    System.out.println(SOFTGRAY + "║" + RESET
-            + LAVENDER + centerText(info, 38) + RESET
-            + SOFTGRAY + "║" + RESET);
-
     System.out.println(SOFTGRAY + bottom + RESET);
 }
-private String centerText(String text, int width) {
-    if (text == null) text = "";
-    if (text.length() >= width) return text.substring(0, width);
+private void printSection(String text) {
+    System.out.println();
+    System.out.println(PINK + BOLD + ">> " + text + RESET);
+    System.out.println(SOFTGRAY + "────────────────────────────────────────────────────────────" + RESET);
+}
+private void printMenuOption(int num, String text, boolean enabled) {
+    String label = "[" + num + "] ";
 
-    int left = (width - text.length()) / 2;
-    int right = width - text.length() - left;
+    if (enabled) {
+        System.out.println(LAVENDER + label + RESET + MINT + text + RESET);
+    } else {
+        System.out.println(LAVENDER + label + RESET + ROSE + text + " (Restricted)" + RESET);
+    }
+}
+private void printFooter(String message) {
+    if (message == null) message = "";
+    System.out.println();
+    System.out.println(SOFTGRAY + "────────────────────────────────────────────────────────────" + RESET);
+    System.out.println(MINT + centerText(message, 60) + RESET);
+}
+private String centerText(String text, int width) {
+
+    if (text == null) text = "";
+
+    text = text.trim();
+
+    if (text.length() >= width) {
+        return text.substring(0, width);
+    }
+
+    int leftPadding = (width - text.length()) / 2;
+    int rightPadding = width - text.length() - leftPadding;
 
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < left; i++) sb.append(' ');
+
+    for (int i = 0; i < leftPadding; i++) sb.append(' ');
     sb.append(text);
-    for (int i = 0; i < right; i++) sb.append(' ');
+    for (int i = 0; i < rightPadding; i++) sb.append(' ');
+
     return sb.toString();
 }
 private void printRoleSummary(Admin admin) {
@@ -144,260 +183,233 @@ private int countLowStock(int threshold) {
 
 
 
-    /** Admin Dashboard menu loop handling all features */
  public void adminDashboard(BufferedReader console) throws Exception {
 
-    // Always refresh current admin (in case index changes later)
-    Admin currentAdmin = dp.admins[dp.currentAdminIndex];
-      printDashboardBox(currentAdmin);
-      printLine();
     while (true) {
 
-        // refresh current admin each loop (safe)
-        currentAdmin = dp.admins[dp.currentAdminIndex];
+        Admin currentAdmin = dp.admins[dp.currentAdminIndex];
+
+        printDashboardBox(currentAdmin);
         printRoleSummary(currentAdmin);
         printLine();
-        // ===== MENU HEADER =====
-        System.out.print("\n" + LAVENDER + BOLD + "____________________Menu:____________________" + RESET + "\n");
 
-        // ===== ORDER MANAGEMENT =====
-        System.out.print(PINK + BOLD + "ORDER MANAGEMENT" + RESET + "\n");
-        System.out.print(LAVENDER + " 1." + RESET + " " + MINT + "Accept New Order" + RESET + "\n");
-        System.out.print(LAVENDER + " 2." + RESET + " " + MINT + "Update Order Status" + RESET + "\n");
-        System.out.print(LAVENDER + " 3." + RESET + " " + MINT + "View Order Logs" + RESET + "\n");
-        System.out.print(LAVENDER + " 4." + RESET + " " + MINT + "Search/Filter Orders" + RESET + "\n");
-        System.out.print(LAVENDER + " 5." + RESET + " " + MINT + "Generate Receipt" + RESET + "\n");
+        printAdminMenu(currentAdmin);
 
-        // ===== PRODUCT & STOCK =====
-        System.out.print("\n" + PINK + BOLD + "PRODUCT & STOCK" + RESET + "\n");
-        System.out.print(LAVENDER + " 6." + RESET + " " + MINT + "Advanced Product Filter" + RESET + "\n");
-
-        // Admin/Manager
-        if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
-            System.out.print(LAVENDER + " 7." + RESET + " " + MINT + "Manage Products (Add/Edit/Delete)" + RESET + "\n");
-            System.out.print(LAVENDER + " 8." + RESET + " " + MINT + "Low Stock Alerts" + RESET + "\n");
-            System.out.print(LAVENDER + " 9." + RESET + " " + MINT + "Restock Product" + RESET + "\n");
-            System.out.print(LAVENDER + "10." + RESET + " " + MINT + "Export Stock Report" + RESET + "\n");
-        } else {
-            // show restricted in peach (professional)
-            System.out.print(LAVENDER + " 7." + RESET + " " + ROSE + "Manage Products (Admin/Manager only)" + RESET + "\n");
-            System.out.print(LAVENDER + " 8." + RESET + " " + ROSE + "Low Stock Alerts (Admin/Manager only)" + RESET + "\n");
-            System.out.print(LAVENDER + " 9." + RESET + " " + ROSE + "Restock Product (Admin/Manager only)" + RESET + "\n");
-            System.out.print(LAVENDER + "10." + RESET + " " + ROSE + "Export Stock Report (Admin/Manager only)" + RESET + "\n");
-        }
-
-        // ===== OPERATIONS =====
-        System.out.print("\n" + PINK + BOLD + "OPERATIONS" + RESET + "\n");
-        System.out.print(LAVENDER + "11." + RESET + " " + MINT + "Reorder Previous Order" + RESET + "\n");
-        System.out.print(LAVENDER + "12." + RESET + " " + MINT + "Retry Failed Order" + RESET + "\n");
-        System.out.print(LAVENDER + "13." + RESET + " " + MINT + "Simulation Mode" + RESET + "\n");
-        System.out.print(LAVENDER + "14." + RESET + " " + MINT + "Load Test Data" + RESET + "\n");
-        System.out.print(LAVENDER + "15." + RESET + " " + MINT + "System Health Check" + RESET + "\n");
-        System.out.print(LAVENDER + "16." + RESET + " " + MINT + "Show Order Timeline" + RESET + "\n");
-        System.out.print(LAVENDER + "17." + RESET + " " + MINT + "Auto Cancel Stale Orders" + RESET + "\n");
-      
-        // ===== ADMIN ONLY =====
-        System.out.print("\n" + PINK + BOLD + "SYSTEM (ADMIN ONLY)" + RESET + "\n");
-        if (currentAdmin.role == Role.ADMIN) {
-            System.out.print(LAVENDER + "18." + RESET + " " + MINT + "Bulk Import Orders" + RESET + "\n");
-            System.out.print(LAVENDER + "19." + RESET + " " + MINT + "Archive Delivered Orders" + RESET + "\n");
-            System.out.print(LAVENDER + "20." + RESET + " " + MINT + "Clear Logs" + RESET + "\n");
-            System.out.print(LAVENDER + "21." + RESET + " " + MINT + "Add New Admin" + RESET + "\n");
-            System.out.print(LAVENDER + "22." + RESET + " " + MINT + "Change Admin Password" + RESET + "\n");
-            System.out.print(LAVENDER + "23." + RESET + " " + MINT + "Generate Report" + RESET + "\n");
-            System.out.print(LAVENDER+"24."+RESET+" " + MINT+ "Delete ALL Order History" + RESET + "\n");
-            System.out.print(LAVENDER+"25."+RESET+" " + MINT + "Restore Order History (Archive)" + RESET + "\n");
-            System.out.print(LAVENDER+"26."+RESET +" "+ MINT + "Undo Last Restore" + RESET + "\n");
-
-
-        } else {
-            System.out.print(LAVENDER + "18." + RESET + " " + ROSE + "Bulk Import Orders (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "19." + RESET + " " + ROSE + "Archive Delivered Orders (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "20." + RESET + " " + ROSE + "Clear Logs (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "21." + RESET + " " + ROSE + "Add New Admin (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "22." + RESET + " " + ROSE + "Change Admin Password (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER + "23." + RESET + " " + ROSE + "Generate Report (Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER+"24."+RESET +" "+ ROSE + "Delete ALL Order History(Admin only)" + RESET + "\n");
-            System.out.print(LAVENDER+"25."+RESET + " "+ROSE + "Restore Order History(Admin Only)" + RESET + "\n");
-            System.out.print(LAVENDER+"26."+RESET + " "+ROSE + "Undo Last Restore(Admin Only)" + RESET + "\n");
-
-
-        }
-       
-        // ===== EXIT =====
-        System.out.print("\n" + LAVENDER + " 0." + RESET + " " + ROSE + "Exit" + RESET + "\n");
-        printLine();
-        System.out.print(PINK + BOLD + "Please select an option → " + RESET);
+        printFooter("System Ready • Awaiting Command");
+        System.out.print(SOFTGRAY + "Please select an option: " + RESET);
 
         String choice = console.readLine();
         if (choice == null) choice = "";
         choice = choice.trim();
-        System.out.print("\n");
+
+        System.out.println();
+
         if (!choice.equals("")) {
-        System.out.println(MINT + "You selected option: " + choice + RESET);
-        printLine();   // optional but looks professional
+            System.out.println(MINT + "You selected option: " + choice + RESET);
+            printLine();
         }
-        switch (choice) {
-            case "1": acceptNewOrder(console); break;
-            case "2": handleStatusUpdate(console); break;
 
-            case "3":
-                System.out.println(PINK + BOLD + "==== Available Orders (Sorted by Date) ====" + RESET);
-                printLine();
-                Order[] sortedOrders = Arrays.copyOf(dp.orders, dp.orderCount);
-                Arrays.sort(sortedOrders, Comparator.comparing(o -> o.date));
+        if (choice.equals("0")) {
+            System.out.println(LAVENDER + "Exiting Admin Dashboard..." + RESET);
+            System.out.println(LAVENDER + "Thank you for using E-commerce Order Fulfillment Automation System" + RESET);
+            return;
+        }
 
-                for (Order order : sortedOrders) {
-                    if (order != null) {
-                        System.out.println(SOFTGRAY + order.orderId + RESET + SOFTGRAY + " | Date: " + RESET + MINT + order.date + RESET + SOFTGRAY + " | Status: " + RESET + LAVENDER + order.status + RESET);
-                    }
-                }
+        handleDashboardChoice(choice, console, currentAdmin);
 
-                System.out.print(LAVENDER + "Enter Order ID to view logs: " + RESET);
-                String logId = console.readLine();
-                if (logId != null && !logId.trim().equals("")) {
-                    logId = normalizeOrderId(logId.trim());
-                    log.viewLogsByOrder(logId);
-                }
-                break;
+        printLine();
+    }
+}
+private void printAdminMenu(Admin currentAdmin) {
 
-            case "4": handleOrderSearch(console); break;
-            case "5": generateReceipt(console); break;
-            case "6": handleAdvancedFilter(console); break;
+    boolean isAdmin = currentAdmin.role == Role.ADMIN;
+    boolean isManager = currentAdmin.role == Role.MANAGER;
+    boolean canManageStock = isAdmin || isManager;
 
-            case "7":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
-                    handleProductManagement(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
-                }
-                break;
+    System.out.println(LAVENDER + BOLD + "==================== MENU ====================" + RESET);
 
-            case "8":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
-                    showLowStockAlerts();
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
-                }
-                break;
+    // ORDER MANAGEMENT
+    printSection("ORDER MANAGEMENT");
+    printMenuOption(1,"Accept New Order",true);
+    printMenuOption(2,"Update Order Status",true);
+    printMenuOption(3,"View Order Logs",true);
+    printMenuOption(4,"Search/Filter Orders",true);
+    printMenuOption(5,"Generate Receipt",true);
 
-            case "9":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
-                    handleRestock(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
-                }
-                break;
+    // PRODUCT
+    printSection("PRODUCT & STOCK");
+    printMenuOption(6,"Advanced Product Filter",true);
+    printMenuOption(7,"Manage Products",canManageStock);
+    printMenuOption(8,"Low Stock Alerts",canManageStock);
+    printMenuOption(9,"Restock Product",canManageStock);
+    printMenuOption(10,"Export Stock Report",canManageStock);
 
-            case "10":
-                if (currentAdmin.role == Role.ADMIN || currentAdmin.role == Role.MANAGER) {
-                    exportStockReport();
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin/Manager only." + RESET);
-                }
-                break;
-            case "11": handleReorder(console); break;
-            case "12": retryCancelledOrder(console); break;
-            case "13": runSimulation(console); break;
-            case "14":
-                System.out.print(LAVENDER + "Enter test data filename (e.g. testdata.txt): " + RESET);
+    // OPERATIONS
+    printSection("OPERATIONS");
+    printMenuOption(11,"Reorder Previous Order",true);
+    printMenuOption(12,"Retry Failed Order",true);
+    printMenuOption(13,"Simulation Mode",true);
+    printMenuOption(14,"Load Test Data",true);
+    printMenuOption(15,"System Health Check",true);
+    printMenuOption(16,"Show Order Timeline",true);
+    printMenuOption(17,"Auto Cancel Stale Orders",true);
+
+    // ADMIN ONLY
+    printSection("SYSTEM (ADMIN ONLY)");
+    printMenuOption(18,"Bulk Import Orders",isAdmin);
+    printMenuOption(19,"Archive Delivered Orders",isAdmin);
+    printMenuOption(20,"Clear Logs",isAdmin);
+    printMenuOption(21,"Add New Admin",isAdmin);
+    printMenuOption(22,"Change Admin Password",isAdmin);
+    printMenuOption(23,"Generate Report",isAdmin);
+    printMenuOption(24,"Delete ALL Order History",isAdmin);
+    printMenuOption(25,"Restore Order History",isAdmin);
+    printMenuOption(26,"Undo Last Restore",isAdmin);
+
+    System.out.println();
+    System.out.println(LAVENDER + "[0] Exit" + RESET);
+}
+private void handleDashboardChoice(String choice, BufferedReader console, Admin admin) throws Exception {
+
+    boolean isAdmin = admin.role == Role.ADMIN;
+    boolean canManageStock = admin.role == Role.ADMIN || admin.role == Role.MANAGER;
+
+    switch(choice) {
+
+        case "1": acceptNewOrder(console); break;
+        case "2": handleStatusUpdate(console); break;
+
+        case "3":
+            showOrderLogsMenu(console);
+            break;
+
+        case "4": handleOrderSearch(console); break;
+        case "5": generateReceipt(console); break;
+        case "6": handleAdvancedFilter(console); break;
+
+        case "7":
+            if(canManageStock) handleProductManagement(console);
+            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            break;
+
+        case "8":
+            if(canManageStock) showLowStockAlerts();
+            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            break;
+
+        case "9":
+            if(canManageStock) handleRestock(console);
+            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            break;
+
+        case "10":
+            if(canManageStock) exportStockReport();
+            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            break;
+
+        case "11": handleReorder(console); break;
+        case "12": retryCancelledOrder(console); break;
+        case "13": runSimulation(console); break;
+        case "14":
+            System.out.print(LAVENDER + "Enter test data filename (e.g. testdata.txt): " + RESET);
                 String file = console.readLine();
                 if (file == null) file = "";
                 file = file.trim();
+
                 if (!file.equals("")) {
                     dp.loadTestDataFromFile(file);
                     dp.saveAll();
+
                     System.out.print(MINT + "Loaded test data successfully\n" + RESET);
                     System.out.print(SOFTGRAY + "-> " + dp.productCount + " products loaded.\n" + RESET);
                     System.out.print(SOFTGRAY + "-> " + dp.orderCount + " orders loaded.\n" + RESET);
                     System.out.print(SOFTGRAY + "-> " + dp.adminCount + " admins loaded.\n" + RESET);
                 }
                 break;
-            case "15": systemHealthCheck(); break;
-            case "16": showOrderTimeline(console); break;
-            case "17": autoCancelStaleOrders(2); break;
-            case "18":
-                if (currentAdmin.role == Role.ADMIN) {
-                    importOrdersFromFile(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;
-            
-            case "19":
-                if (currentAdmin.role == Role.ADMIN) {
-                    archiveDeliveredOrders(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;
+        case "15": systemHealthCheck(); break;
+        case "16": showOrderTimeline(console); break;
+        case "17": autoCancelStaleOrders(2); break;
 
-            case "20":
-                if (currentAdmin.role == Role.ADMIN) {
-                    clearLogs(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;
-            case "21":
-                if (currentAdmin.role == Role.ADMIN) {
-                    addNewAdmin(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break; 
-            
-            case "22":
-                if (currentAdmin.role == Role.ADMIN) {
-                    changeAdminPassword(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;
-    
-            case "23":
-                if (currentAdmin.role == Role.ADMIN) {
-                    generateReport();
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;
-            
-            case "24":
-                  if (currentAdmin.role == Role.ADMIN) {
-                    deleteAllOrderHistory(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;case "25":
-                  if (currentAdmin.role == Role.ADMIN) {
-                    restoreOrdersFromArchive(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;
+        case "18":
+            if(isAdmin) importOrdersFromFile(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
 
-            case "26":
-                  if (currentAdmin.role == Role.ADMIN) {
-                      undoLastRestore(console);
-                } else {
-                    System.out.println(ROSE + "Restricted: Admin only." + RESET);
-                }
-                break;    
+        case "19":
+            if(isAdmin) archiveDeliveredOrders(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
 
-  
-            case "0":
-                System.out.print(LAVENDER + "Exiting Admin Dashboard..." + RESET + "\n");
-                System.out.print(LAVENDER+ "Thank you for using E-commerce Order Fulfillment Automation System" + RESET + "\n");
-                return;
+        case "20":
+            if(isAdmin) clearLogs(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
 
-            default:
-                System.out.print(ROSE + "Invalid option. Please try again." + RESET + "\n");
-                break;
-        }
+        case "21":
+            if(isAdmin) addNewAdmin(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
 
-        printLine();
+        case "22":
+            if(isAdmin) changeAdminPassword(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
+
+        case "23":
+            if(isAdmin) generateReport();
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
+
+        case "24":
+            if(isAdmin) deleteAllOrderHistory(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
+
+        case "25":
+            if(isAdmin) restoreOrdersFromArchive(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
+
+        case "26":
+            if(isAdmin) undoLastRestore(console);
+            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            break;
+
+        default:
+            System.out.println(ROSE+"Invalid option."+RESET);
     }
+}
+private void showOrderLogsMenu(BufferedReader console) throws Exception {
+
+    printTitle("Available Orders (Sorted by Date)");
+
+    Order[] sorted = Arrays.copyOf(dp.orders, dp.orderCount);
+    Arrays.sort(sorted, Comparator.comparing(o -> o.date));
+
+    for (Order o : sorted) {
+        if (o != null) {
+            System.out.println(
+                SOFTGRAY + o.orderId + RESET +
+                SOFTGRAY + " | Date: " + RESET + MINT + o.date + RESET +
+                SOFTGRAY + " | Status: " + RESET + LAVENDER + o.status + RESET
+            );
+        }
+    }
+
+    System.out.print(LAVENDER + "Enter Order ID to view logs: " + RESET);
+
+    String id = console.readLine();
+    if (id == null) return;
+
+    id = id.trim();
+    if (id.equals("")) return;
+
+    Order order = findOrderById(id);
+
+    if (order != null)
+        log.viewLogsByOrder(order.orderId);
+    else
+        System.out.println(ROSE+"Order not found."+RESET);
 }
 private void showOrderTimeline(BufferedReader console) throws Exception {
     showTimelinePreview();

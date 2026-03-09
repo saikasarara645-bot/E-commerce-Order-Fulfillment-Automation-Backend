@@ -25,3 +25,9 @@ Order 00005 - Inventory OK – stock reserved
 Order 00005 - PAYMENT OK (Cash on Delivery)
 Order 00005 - Status changed to PACKED
 Order 00005 - Status changed to SHIPPED
+Order O0004 - Status changed to SHIPPED
+Order 00006 - Order created via admin interface (PENDING)
+Order 00006 - Inventory OK – stock reserved
+Order 00006 - PAYMENT OK (MockCard approved)
+Order 00006 - Status changed to PACKED
+Order 00006 - Order accepted and moved to PACKED
