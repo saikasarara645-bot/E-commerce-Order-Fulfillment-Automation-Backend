@@ -1522,7 +1522,7 @@ private void handleProductManagement(BufferedReader console) throws Exception {
 
         int idx = -1;
         for (int i = 0; i < dp.productCount; i++) {
-            if (dp.products[i] != null && dp.products[i].productId.equals(delId)) {
+            if (dp.products[i] != null && dp.products[i].productId.equalsIgnoreCase(delId)) {
                 idx = i;
                 break;
             }

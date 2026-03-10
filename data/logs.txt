@@ -45,3 +45,4 @@ Order O0008 - Status changed to SHIPPED
 Order ADMIN - Deleted product M105
 Order ADMIN - Added product P505
 Order ADMIN - Deleted product P106
+Order ADMIN - Deleted product P505
