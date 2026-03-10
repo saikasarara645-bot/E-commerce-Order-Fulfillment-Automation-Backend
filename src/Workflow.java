@@ -788,7 +788,7 @@ private Order findOrderById(String inputId) {
 }
 
     /** Feature 5 & 8: Reorder a previous order (copy its items into a new order and process it) */
- private void handleReorder(BufferedReader console) throws Exception {
+private void handleReorder(BufferedReader console) throws Exception {
     showReorderPreview();
 
     System.out.print(SOFTGRAY + "Enter Order ID to reorder: " + RESET);
@@ -814,26 +814,30 @@ private Order findOrderById(String inputId) {
     newOrder.address = original.address;
     newOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
             ? "COD"
-            : original.paymentMode;
+            : original.paymentMode.trim();
 
+    // Copy each item from original
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
         newOrder.addItem(new Item(it.productId, it.quantity));
     }
 
-    boolean success = processPendingOrder(newOrder, console);
+    // Keep reorder as PENDING
+    newOrder.status = "PENDING";
+    newOrder.cancelReason = "";
 
+    // Optional: calculate total now, without processing payment/stock
+    newOrder.totalAmount = safeOrderTotal(newOrder);
+
+    // Save new pending order
     dp.orders[dp.orderCount++] = newOrder;
+    dp.saveOrders();
 
-    if (!success) {
-        System.out.print(ROSE + "Reorder created as " + newOrder.orderId +
-                " but failed (" + newOrder.cancelReason + ").\n" + RESET);
-    } else {
-        System.out.print(MINT + "Reorder successful! New Order ID: " +
-                newOrder.orderId + " (Status: " + newOrder.status + ").\n" + RESET);
-        log.write(newOrder.orderId, "Reordered from " + normalizeOrderId(oldId));
-    }
+    log.write(newOrder.orderId, "Reorder created from " + normalizeOrderId(oldId) + " (Status: PENDING)");
+
+    System.out.print(MINT + "Reorder created successfully! New Order ID: "
+            + newOrder.orderId + " (Status: PENDING).\n" + RESET);
 }
     /** Feature 6 (continued): View or filter products by brand or category */
     private void handleAdvancedFilter(BufferedReader console) throws Exception {
@@ -1056,7 +1060,8 @@ private Order findOrderById(String inputId) {
         Order o = dp.orders[i];
         if (o == null) continue;
 
-        if ("CANCELLED".equalsIgnoreCase(o.status == null ? "" : o.status.trim())) {
+        String status = (o.status == null) ? "" : o.status.trim();
+        if ("CANCELLED".equalsIgnoreCase(status)) {
             String reason = (o.cancelReason == null || o.cancelReason.trim().equals(""))
                     ? "(No reason recorded)"
                     : o.cancelReason.trim();
@@ -1102,17 +1107,22 @@ private Order findOrderById(String inputId) {
         retryOrder.addItem(new Item(it.productId, it.quantity));
     }
 
-    boolean success = processPendingOrder(retryOrder, console);
-    dp.orders[dp.orderCount++] = retryOrder;
+    // Keep retry order as PENDING
+    retryOrder.status = "PENDING";
+    retryOrder.cancelReason = "";
+    retryOrder.trackingId = "";
 
-    if (success) {
-        System.out.print(MINT + "Order " + retryOrder.orderId +
-                " reprocessed successfully (Status: " + retryOrder.status + ").\n" + RESET);
-        log.write(retryOrder.orderId, "Retry successful for " + normalizeOrderId(cid));
-    } else {
-        System.out.print(ROSE + "Retry order failed (" + retryOrder.cancelReason +
-                "). New Order ID: " + retryOrder.orderId + "\n" + RESET);
-    }
+    // Optional: calculate total now without processing
+    retryOrder.totalAmount = safeOrderTotal(retryOrder);
+
+    // Save new pending retry order
+    dp.orders[dp.orderCount++] = retryOrder;
+    dp.saveOrders();
+
+    log.write(retryOrder.orderId, "Retry order created from " + normalizeOrderId(cid) + " (Status: PENDING)");
+
+    System.out.print(MINT + "Retry order created successfully! New Order ID: "
+            + retryOrder.orderId + " (Status: PENDING).\n" + RESET);
 }
 
     /** Feature 12: Archive delivered orders older than N days (moves them to archive_orders.txt and removes from active list) */
