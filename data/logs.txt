@@ -46,3 +46,4 @@ Order ADMIN - Deleted product M105
 Order ADMIN - Added product P505
 Order ADMIN - Deleted product P106
 Order ADMIN - Deleted product P505
+Order 00010 - Order created via admin interface (PENDING)

@@ -1835,6 +1835,16 @@ private String normalizeOrderId(String input) {
  * Accept a new order from the admin by manually inputting order details.
  * This will generate a new Order ID, collect product selections, and process the order.
  */
+private String normalizePaymentMode(String input) {
+    if (input == null) return "";
+
+    input = input.trim().toLowerCase();
+
+    if (input.equals("cod")) return "COD";
+    if (input.equals("mockcard")) return "MockCard";
+
+    return "";
+}
 private void acceptNewOrder(BufferedReader console) throws Exception {
     // 1. Auto-generate Order ID and initialize a new Order
     String newId = dp.generateOrderId();
@@ -1907,28 +1917,29 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
     }
 
     // 4. Ask for shipping address
-    System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
-    String address = console.readLine();
-    if (address == null) address = "";
-    address = address.trim();
+   System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
+   String address = console.readLine();
 
-    if (address.equals("")) {
-        System.out.print(ROSE + "Address cannot be empty. Order cancelled.\n" + RESET);
-        return;
-    }
-    newOrder.address = address;
+   if (address == null) address = "";
+   address = capitalizeWords(address);   // <-- automatic capitalization
+
+   if (address.equals("")) {
+    System.out.print(ROSE + "Address cannot be empty.\n" + RESET);
+    return;
+}
+
+newOrder.address = address;
 
     // 5. Ask for payment mode
     System.out.print(SOFTGRAY + "Enter payment mode (COD or MockCard): " + RESET);
     String paymentMode = console.readLine();
-    if (paymentMode == null) paymentMode = "";
-    paymentMode = paymentMode.trim();
+    paymentMode = normalizePaymentMode(paymentMode);
 
-    if (!paymentMode.equalsIgnoreCase("COD") && !paymentMode.equalsIgnoreCase("MockCard")) {
-        System.out.print(ROSE + "Invalid payment mode. Order cancelled.\n" + RESET);
-        return;
-    }
-    newOrder.paymentMode = paymentMode;
+    if (paymentMode.equals("")) {
+    System.out.print(ROSE + "Invalid payment mode. Use COD or MockCard only.\n" + RESET);
+    return;
+}
+  newOrder.paymentMode = paymentMode;
 
     // 6. Show order summary before saving
     printTitle("Order Summary");
