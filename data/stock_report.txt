@@ -1,6 +1,6 @@
 ProductID | Name | Price | Stock
-M101 | Galaxy A14 (4/64) | 2500 | 25
-M102 | Redmi 12 (8/128) | 18999 | 1
+M101 | Galaxy A14 (4/64) | 2500 | 22
+M102 | Redmi 12 (8/128) | 18999 | 21
 M103 | C55 (8/128) | 19500 | 11
 M104 | G21 (6/128) | 17500 | 60
 L201 | Pavilion 15 (i5) | 72000 | 6
@@ -14,10 +14,10 @@ H304 | Rechargeable Fan | 7800 | 6
 A401 | WH-1000XM4 | 32000 | 33
 A402 | Tune 510BT | 7999 | 18
 A403 | Soundcore Q10 | 6999 | 14
-A404 | Crusher Evo | 29000 | 24
+A404 | Crusher Evo | 29000 | 22
 P501 | Mi Power Bank 3 | 2399 | 30
 P502 | PowerCore 20K | 4999 | 12
 P503 | Bipow 20W | 3499 | 18
-P504 | RPP-20 | 2999 | 15
+P504 | RPP-20 | 2999 | 10
 P106 | P2 | 50000 | 90
 M105 | Camon 30 | 25000 | 10

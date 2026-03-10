@@ -1360,6 +1360,26 @@ private void printProductTable(Product[] list, int count, String title) {
 
     printLine();
 }
+private String capitalizeWords(String text) {
+    if (text == null) return "";
+
+    text = text.trim().toLowerCase();
+
+    String[] parts = text.split(" ");
+    StringBuilder result = new StringBuilder();
+
+    for (int i = 0; i < parts.length; i++) {
+        if (parts[i].length() == 0) continue;
+
+        String word = parts[i];
+        String cap = word.substring(0,1).toUpperCase() + word.substring(1);
+
+        if (result.length() > 0) result.append(" ");
+        result.append(cap);
+    }
+
+    return result.toString();
+}
   /** Feature 23: Manage products (Add, Edit, Delete products) */
 private void handleProductManagement(BufferedReader console) throws Exception {
     System.out.print(SOFTGRAY+"Choose action - [A]dd, [E]dit, [D]elete: "+RESET);
@@ -1395,12 +1415,12 @@ private void handleProductManagement(BufferedReader console) throws Exception {
         System.out.print(MINT+"Auto Generated Product ID: "+ newId +"\n"+RESET);
 
         System.out.print(SOFTGRAY+"Enter Brand: "+RESET);
-        String brand = console.readLine();
+       String brand = capitalizeWords(console.readLine());
         if (brand == null) brand = "";
         brand = brand.trim();
 
         System.out.print(SOFTGRAY+"Enter Product Name: "+RESET);
-        String name = console.readLine();
+        String name = capitalizeWords(console.readLine());
         if (name == null) name = "";
         name = name.trim();
 

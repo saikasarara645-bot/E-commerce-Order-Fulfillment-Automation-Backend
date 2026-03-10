@@ -1,0 +1,11 @@
+Receipt for Order O0002
+Address: Tangail
+Status: DELIVERED
+Tracking ID: (Not assigned)
+Items:
+- Galaxy A14 (4/64) (x6 @ BDT 2500 each)
+- Redmi 12 (8/128) (x9 @ BDT 18999 each)
+- C55 (8/128) (x10 @ BDT 19500 each)
+--------------------------------------
+Total Paid: BDT 380991
+Thank you for your purchase!

@@ -32,3 +32,16 @@ Order 00006 - PAYMENT OK (MockCard approved)
 Order 00006 - Status changed to PACKED
 Order 00006 - Order accepted and moved to PACKED
 Order 00007 - Order created via admin interface (PENDING)
+Order 00008 - Order created via admin interface (PENDING)
+Order 00008 - Inventory OK – stock reserved
+Order 00008 - PAYMENT OK (MockCard approved)
+Order 00008 - Status changed to PACKED
+Order 00008 - Order accepted and moved to PACKED
+Order 00009 - Inventory OK – stock reserved
+Order 00009 - PAYMENT FAIL (Unknown payment mode: C)
+Order 00009 - Order cancelled - Payment Declined
+Order 00009 - Order created via admin interface (PENDING)
+Order O0008 - Status changed to SHIPPED
+Order ADMIN - Deleted product M105
+Order ADMIN - Added product P505
+Order ADMIN - Deleted product P106
