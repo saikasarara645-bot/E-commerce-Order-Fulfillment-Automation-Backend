@@ -32,8 +32,8 @@ public class Order {
     }
 
         /** Prepare a text record of this order for saving to file */
- public String toRecord() {
-    // Build items list string as "ProductIDxQty, ProductIDxQty, ..."
+public String toRecord() {
+    // Build items list string as "ProductIDxQty,ProductIDxQty,..."
     StringBuilder itemsPart = new StringBuilder();
     for (int i = 0; i < itemCount; i++) {
         Item it = items[i];
@@ -42,7 +42,7 @@ public class Order {
         itemsPart.append(it.productId).append("x").append(it.quantity);
 
         if (i < itemCount - 1) {
-            itemsPart.append(", ");
+            itemsPart.append(",");
         }
     }
 
@@ -53,16 +53,17 @@ public class Order {
     String statusPart = (status == null ? "" : status);
     String reasonPart = (cancelReason == null ? "" : cancelReason);
     String trackingPart = (trackingId == null ? "" : trackingId);
-
     String simNamePart = (simulationItemName == null ? "" : simulationItemName);
 
+    // Format:
+    // OrderID|Date|Address|PaymentMode|Status|Total|ItemList|CancelReason|TrackingId|IsSimulationOrder|SimulationItemName|SimulationItemPrice
     return orderIdPart + "|" +
            datePart + "|" +
            addressPart + "|" +
            paymentPart + "|" +
            statusPart + "|" +
-           itemsPart.toString() + "|" +
            totalAmount + "|" +
+           itemsPart.toString() + "|" +
            reasonPart + "|" +
            trackingPart + "|" +
            isSimulationOrder + "|" +
