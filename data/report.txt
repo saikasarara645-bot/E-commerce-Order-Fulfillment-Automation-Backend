@@ -1,0 +1,7 @@
+Total Orders: 11
+Completed Orders: 3
+Cancelled Orders: 2
+Total Revenue: BDT 0
+Top 3 Cancellation Reasons:
+1. Payment Failure (MockCard) – 1
+2. Inventory Shortage – 1

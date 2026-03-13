@@ -587,7 +587,7 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
                 String orderId = (o.orderId == null) ? "(Unknown)" : o.orderId;
                 String date = (o.date == null || o.date.trim().equals("")) ? "(N/A)" : o.date;
                 String payment = (o.paymentMode == null || o.paymentMode.trim().equals("")) ? "(N/A)" : o.paymentMode;
-                int total = safeOrderTotal(o);
+                int total = computeOrderTotal(o);
 
                 System.out.print("- " + orderId
                         + " | Date: " + date
@@ -663,7 +663,7 @@ private void handleOrderSearch(BufferedReader console) throws Exception {
             else if ("PACKED".equals(rawStatus)) statusStr = MINT + rawStatus + RESET;
             else if ("OUT_FOR_DELIVERY".equals(rawStatus)) statusStr = MINT + rawStatus + RESET;
 
-            int total = safeOrderTotal(o);
+            int total = computeOrderTotal(o);
             String orderId = (o.orderId == null) ? "(Unknown)" : o.orderId;
 
             System.out.print(SOFTGRAY + "- " + orderId + " | Status: " + statusStr + " | Total: BDT " + total + RESET);
@@ -801,6 +801,11 @@ private void handleReorder(BufferedReader console) throws Exception {
         return;
     }
 
+    if (dp.orderCount >= dp.orders.length) {
+        System.out.print(ROSE + "Order storage is full. Cannot create reorder.\n" + RESET);
+        return;
+    }
+
     Order original = findOrderById(oldId);
 
     if (original == null) {
@@ -816,21 +821,32 @@ private void handleReorder(BufferedReader console) throws Exception {
             ? "COD"
             : original.paymentMode.trim();
 
-    // Copy each item from original
+    // preserve simulation metadata
+    newOrder.isSimulationOrder = original.isSimulationOrder;
+    newOrder.simulationItemName = original.simulationItemName;
+    newOrder.simulationItemPrice = original.simulationItemPrice;
+
+    // copy items
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
         newOrder.addItem(new Item(it.productId, it.quantity));
     }
 
-    // Keep reorder as PENDING
+    if (newOrder.itemCount <= 0) {
+        System.out.print(ROSE + "Original order has no valid items to reorder.\n" + RESET);
+        return;
+    }
+
+    // keep reorder as pending for later processing
     newOrder.status = "PENDING";
     newOrder.cancelReason = "";
+    newOrder.trackingId = "";
 
-    // Optional: calculate total now, without processing payment/stock
-    newOrder.totalAmount = safeOrderTotal(newOrder);
+    // calculate total now
+    newOrder.totalAmount = computeOrderTotal(newOrder);
 
-    // Save new pending order
+    // save new pending order
     dp.orders[dp.orderCount++] = newOrder;
     dp.saveOrders();
 
@@ -838,6 +854,10 @@ private void handleReorder(BufferedReader console) throws Exception {
 
     System.out.print(MINT + "Reorder created successfully! New Order ID: "
             + newOrder.orderId + " (Status: PENDING).\n" + RESET);
+
+    if (newOrder.isSimulationOrder) {
+        System.out.print(ANSI_Yellow + "This is a simulation reorder. Simulation item name and fixed price were preserved.\n" + RESET);
+    }
 }
     /** Feature 6 (continued): View or filter products by brand or category */
     private void handleAdvancedFilter(BufferedReader console) throws Exception {
@@ -970,90 +990,80 @@ private void handleReorder(BufferedReader console) throws Exception {
 }
 
     /** Feature 11: Simulation mode to generate and process orders in various scenarios */
-  private void runSimulation(BufferedReader console) throws Exception {
-    System.out.print(SOFTGRAY+"Simulation scenarios:\n"+RESET);
-    System.out.print(SOFTGRAY+"1. Successful order\n"+RESET);
-    System.out.print(SOFTGRAY+"2. Payment failure scenario\n"+RESET);
-    System.out.print(SOFTGRAY+"3. Inventory shortage scenario\n"+RESET);
-    System.out.print(SOFTGRAY+"4. Random order scenario\n"+RESET);
-    System.out.print(SOFTGRAY+"Choose scenario (1-4): "+RESET);
+ private void runSimulation(BufferedReader console) throws Exception {
+    printTitle("Simulation Mode");
+
+    System.out.print(SOFTGRAY + "Simulation scenarios:\n" + RESET);
+    System.out.print(LAVENDER + "1. " + RESET + "Successful order\n");
+    System.out.print(LAVENDER + "2. " + RESET + "Payment failure scenario\n");
+    System.out.print(LAVENDER + "3. " + RESET + "Inventory shortage scenario\n");
+    System.out.print(LAVENDER + "4. " + RESET + "Random order scenario\n");
+    System.out.print(SOFTGRAY + "Choose scenario (1-4): " + RESET);
+
     String opt = console.readLine();
     if (opt == null) opt = "";
     opt = opt.trim();
-    if (!opt.matches("[1-4]")) {
-        System.out.print(ROSE+"Invalid scenario selection.\n"+RESET);
+
+    if (!opt.equals("1") && !opt.equals("2") && !opt.equals("3") && !opt.equals("4")) {
+        System.out.print(ROSE + "Invalid scenario selection.\n" + RESET);
         return;
     }
-    // Create a simulated order
+
+    if (dp.orderCount >= dp.orders.length) {
+        System.out.print(ROSE + "Order storage is full.\n" + RESET);
+        return;
+    }
+
     Order simOrder = new Order();
     simOrder.orderId = dp.generateOrderId();
     simOrder.date = currentDateString();
-    simOrder.status = "PENDING";  // Default status
+    simOrder.address = "Simulation Address";
+    simOrder.status = "PENDING";
 
-    // Build order based on scenario choice
-    if (opt.equals("2")) {
-        // Scenario 2: Payment failure – ensure total triggers a decline (simulate by prompting N)
-        Product p = dp.products[0];
-        if (p == null) {
-            System.out.print(ROSE+"No products available for simulation.\n"+RESET);
-            return;
-        }
-        simOrder.addItem(new Item(p.productId, 1));
-        simOrder.paymentMode = "MockCard";
-        simOrder.status = "CANCELLED"; // Simulate failure
-        simOrder.cancelReason = "Payment Failure (MockCard)";
-    } else if (opt.equals("3")) {
-        // Scenario 3: Inventory shortage – order more than available stock of a product
-        Product p = null;
-        for (int i = 0; i < dp.productCount; i++) {
-            if (dp.products[i] != null && dp.products[i].stock > 0 && dp.products[i].stock < 10) {
-                p = dp.products[i];
-                break;
-            }
-        }
-        if (p == null) {
-            p = dp.products[0];
-        }
-        int largeQty = (p.stock == 0 ? 5 : p.stock + 5);
-        simOrder.addItem(new Item(p.productId, largeQty));
+    // mark as simulation order
+    simOrder.isSimulationOrder = true;
+    simOrder.simulationItemName = "Simulation Item";
+    simOrder.simulationItemPrice = 9999;
+
+    // use fake item ids for simulation orders
+    if (opt.equals("1")) {
+        simOrder.addItem(new Item("SIM-ITEM-1", 1));
         simOrder.paymentMode = "COD";
-        // Mark the order as cancelled due to inventory shortage
-        simOrder.status = "CANCELLED"; // Simulate cancellation
-        simOrder.cancelReason = "Inventory Shortage";
-    } else {
-        // Scenario 1 or 4: Successful or Random order – pick 1-2 random items within stock
-        if (dp.productCount == 0) {
-            System.out.print(ROSE+"No products available to simulate order.\n"+RESET);
-            return;
-        }
-        Product p1 = dp.products[0];
-        simOrder.addItem(new Item(p1.productId, 1));
-        if (opt.equals("4") && dp.productCount > 1) {
-            Product p2 = dp.products[1];
-            simOrder.addItem(new Item(p2.productId, 1));
-        }
-        simOrder.paymentMode = "COD";
-        // Successful order – set the status as "DELIVERED"
-        simOrder.status = "DELIVERED"; // Mark as delivered for successful order
+        simOrder.totalAmount = simOrder.simulationItemPrice * 1;
+        simOrder.status = "DELIVERED";
     }
-    simOrder.address = "SimulatedAddress";
+    else if (opt.equals("2")) {
+        simOrder.addItem(new Item("SIM-ITEM-1", 1));
+        simOrder.paymentMode = "MockCard";
+        simOrder.totalAmount = simOrder.simulationItemPrice * 1;
+        simOrder.status = "CANCELLED";
+        simOrder.cancelReason = "Payment Failure (Simulation)";
+    }
+    else if (opt.equals("3")) {
+        simOrder.addItem(new Item("SIM-ITEM-1", 3));
+        simOrder.paymentMode = "COD";
+        simOrder.totalAmount = simOrder.simulationItemPrice * 3;
+        simOrder.status = "CANCELLED";
+        simOrder.cancelReason = "Inventory Shortage (Simulation)";
+    }
+    else if (opt.equals("4")) {
+        simOrder.addItem(new Item("SIM-ITEM-1", 2));
+        simOrder.paymentMode = "COD";
+        simOrder.totalAmount = simOrder.simulationItemPrice * 2;
+        simOrder.status = "PACKED";
+    }
 
-    // Process the simulated order
-     processPendingOrder(simOrder, console);
-
-
-    // Add to system records (orders.txt)
     dp.orders[dp.orderCount++] = simOrder;
-    // Log to orders.txt
     dp.saveOrders();
-    System.out.print(MINT+"Simulation Order " + simOrder.orderId + " created (Status: " + simOrder.status + ").\n"+RESET);
-    // Log to log.txt
-    log.write(simOrder.orderId, "Simulation order with status: " + simOrder.status);
-}
 
+    log.write(simOrder.orderId, "Simulation order created with status: " + simOrder.status);
+
+    System.out.print(MINT + "Simulation Order " + simOrder.orderId
+            + " created (Status: " + simOrder.status + ").\n" + RESET);
+}
     /** Feature 8: Retry processing a failed (cancelled) order by creating a fresh attempt */
  private void retryCancelledOrder(BufferedReader console) throws Exception {
-    printTitle("Cancelled Orders:");
+    printTitle("Cancelled Orders");
     boolean found = false;
 
     for (int i = 0; i < dp.orderCount; i++) {
@@ -1076,6 +1086,11 @@ private void handleReorder(BufferedReader console) throws Exception {
         return;
     }
 
+    if (dp.orderCount >= dp.orders.length) {
+        System.out.print(ROSE + "Order storage is full. Cannot create retry order.\n" + RESET);
+        return;
+    }
+
     System.out.print(SOFTGRAY + "Enter Cancelled Order ID to retry: " + RESET);
     String cid = console.readLine();
     if (cid == null) cid = "";
@@ -1088,8 +1103,14 @@ private void handleReorder(BufferedReader console) throws Exception {
 
     Order original = findOrderById(cid);
 
-    if (original == null || !"CANCELLED".equalsIgnoreCase(original.status == null ? "" : original.status.trim())) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " not found in cancelled list.\n" + RESET);
+    if (original == null) {
+        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " not found.\n" + RESET);
+        return;
+    }
+
+    String originalStatus = (original.status == null) ? "" : original.status.trim();
+    if (!"CANCELLED".equalsIgnoreCase(originalStatus)) {
+        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " is not in cancelled list.\n" + RESET);
         return;
     }
 
@@ -1101,21 +1122,31 @@ private void handleReorder(BufferedReader console) throws Exception {
             ? "COD"
             : original.paymentMode.trim();
 
+    // preserve simulation metadata
+    retryOrder.isSimulationOrder = original.isSimulationOrder;
+    retryOrder.simulationItemName = original.simulationItemName;
+    retryOrder.simulationItemPrice = original.simulationItemPrice;
+
+    // copy items
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
         retryOrder.addItem(new Item(it.productId, it.quantity));
     }
 
-    // Keep retry order as PENDING
+    if (retryOrder.itemCount <= 0) {
+        System.out.print(ROSE + "Cancelled order has no valid items to retry.\n" + RESET);
+        return;
+    }
+
+    // keep retry order pending for later processing from status update
     retryOrder.status = "PENDING";
     retryOrder.cancelReason = "";
     retryOrder.trackingId = "";
 
-    // Optional: calculate total now without processing
-    retryOrder.totalAmount = safeOrderTotal(retryOrder);
+    // compute total now
+    retryOrder.totalAmount = computeOrderTotal(retryOrder);
 
-    // Save new pending retry order
     dp.orders[dp.orderCount++] = retryOrder;
     dp.saveOrders();
 
@@ -1123,8 +1154,11 @@ private void handleReorder(BufferedReader console) throws Exception {
 
     System.out.print(MINT + "Retry order created successfully! New Order ID: "
             + retryOrder.orderId + " (Status: PENDING).\n" + RESET);
-}
 
+    if (retryOrder.isSimulationOrder) {
+        System.out.print(ANSI_Yellow + "This is a simulation retry order. Simulation item name and fixed price were preserved.\n" + RESET);
+    }
+}
     /** Feature 12: Archive delivered orders older than N days (moves them to archive_orders.txt and removes from active list) */
     private void archiveDeliveredOrders(BufferedReader console) throws Exception {
         System.out.print(SOFTGRAY+"Archive delivered orders older than how many days? "+RESET);
@@ -1217,8 +1251,7 @@ private void handleReorder(BufferedReader console) throws Exception {
         System.out.print(MINT+"All logs cleared.\n"+RESET);
     }
 
-  /** Feature 16: Generate a receipt text file for a delivered order */
-private void generateReceipt(BufferedReader console) throws Exception {
+ private void generateReceipt(BufferedReader console) throws Exception {
     showOrdersPreview();
 
     System.out.print(SOFTGRAY + "Enter Order ID for receipt: " + RESET);
@@ -1261,27 +1294,42 @@ private void generateReceipt(BufferedReader console) throws Exception {
         fw.write("Tracking ID: (Not assigned)\n");
     }
 
+    if (order.isSimulationOrder) {
+        fw.write("Order Type: Simulation Order\n");
+    }
+
     fw.write("Items:\n");
     for (int j = 0; j < order.itemCount; j++) {
         Item it = order.items[j];
         if (it == null) continue;
 
-        Product p = dp.findProductById(it.productId);
-        String itemName = (p != null) ? p.name : it.productId;
-        int priceEach = (p != null) ? p.price : 0;
+        String itemName;
+        int priceEach;
+
+        if (order.isSimulationOrder) {
+            itemName = (order.simulationItemName == null || order.simulationItemName.trim().equals(""))
+                    ? "Simulation Item"
+                    : order.simulationItemName.trim();
+            priceEach = order.simulationItemPrice;
+        } else {
+            Product p = dp.findProductById(it.productId);
+            itemName = (p != null && p.name != null && !p.name.trim().equals(""))
+                    ? p.name.trim()
+                    : it.productId;
+            priceEach = (p != null) ? p.price : 0;
+        }
 
         fw.write("- " + itemName + " (x" + it.quantity + " @ BDT " + priceEach + " each)\n");
     }
 
     fw.write("--------------------------------------\n");
-    fw.write("Total Paid: BDT " + order.totalAmount + "\n");
+    fw.write("Total Paid: BDT " + computeOrderTotal(order) + "\n");
     fw.write("Thank you for your purchase!\n");
 
     fw.close();
 
     System.out.print(MINT + "Receipt generated: " + filename + "\n" + RESET);
 }
-
     /** Feature 14: Increase stock of an existing product (restock) */
     private void handleRestock(BufferedReader console) throws Exception {
         showRestockPreview();
@@ -1696,9 +1744,13 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
         System.out.print(LAVENDER + "Tracking ID: " + trackingId + "\n" + RESET);
     }
 
+    if (order.isSimulationOrder) {
+        System.out.print(ANSI_Yellow + "Order Type: Simulation Order\n" + RESET);
+    }
+
     System.out.print(LAVENDER + "Address: " + address + "\n" + RESET);
     System.out.print(LAVENDER + "Payment Mode: " + paymentMode + "\n" + RESET);
-    System.out.print(LAVENDER + "Total Amount: BDT " + order.totalAmount + "\n" + RESET);
+    System.out.print(LAVENDER + "Total Amount: BDT " + computeOrderTotal(order) + "\n" + RESET);
     System.out.print("Items:\n");
 
     boolean hasItems = false;
@@ -1707,12 +1759,24 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
         if (it == null) continue;
 
         hasItems = true;
-        Product p = dp.findProductById(it.productId);
-        String itemName = (p != null && p.name != null && !p.name.trim().equals(""))
-                ? p.name.trim()
-                : it.productId;
 
-        System.out.print(LAVENDER + "- " + itemName + " (x" + it.quantity + ")\n" + RESET);
+        String itemName;
+        int itemPrice;
+
+        if (order.isSimulationOrder) {
+            itemName = (order.simulationItemName == null || order.simulationItemName.trim().equals(""))
+                    ? "Simulation Item"
+                    : order.simulationItemName.trim();
+            itemPrice = order.simulationItemPrice;
+        } else {
+            Product p = dp.findProductById(it.productId);
+            itemName = (p != null && p.name != null && !p.name.trim().equals(""))
+                    ? p.name.trim()
+                    : it.productId;
+            itemPrice = (p != null) ? p.price : 0;
+        }
+
+        System.out.print(LAVENDER + "- " + itemName + " (x" + it.quantity + ", BDT " + itemPrice + " each)\n" + RESET);
     }
 
     if (!hasItems) {
@@ -2070,19 +2134,36 @@ private void showOrdersForStatusUpdate() {
 
     printLine();
 }
-private int computeOrderTotal(Order o) {
-    if (o == null) return 0;
+private int computeOrderTotal(Order order) {
+
+    if (order == null) return 0;
+
     int total = 0;
 
-    for (int i = 0; i < o.itemCount; i++) {
-        Item it = o.items[i];
+    for (int i = 0; i < order.itemCount; i++) {
+
+        Item it = order.items[i];
         if (it == null) continue;
 
-        Product p = dp.findProductById(it.productId);
-        if (p != null) {
-            total += p.price * it.quantity;
+        int price = 0;
+
+        // simulation order
+        if (order.isSimulationOrder) {
+
+            price = order.simulationItemPrice;
+
+        } else {
+
+            Product p = dp.findProductById(it.productId);
+
+            if (p != null) {
+                price = p.price;
+            }
         }
+
+        total += price * it.quantity;
     }
+
     return total;
 }
 
@@ -2199,20 +2280,6 @@ private void printProductSummary() {
     System.out.println(SOFTGRAY + "Out of Stock: " + RESET + ROSE + outOfStock + RESET);
     printLine();
 }
-private int safeOrderTotal(Order o) {
-    if (o == null) return 0;
-    if (o.totalAmount > 0) return o.totalAmount; // already correct
-
-    int total = 0;
-    for (int i = 0; i < o.itemCount; i++) {
-        Item it = o.items[i];
-        if (it == null) continue;
-        Product p = dp.findProductById(it.productId);
-        if (p != null) total += p.price * it.quantity;
-    }
-    return total; // computed even if stored total is 0
-}
-
 private void showRestockPreview() {
     System.out.println(PINK + BOLD + "\nProducts Needing Restock" + RESET);
     printLine();
@@ -2311,8 +2378,8 @@ private void showReorderPreview() {
     }
 
     printLine();
-}
-private String buildOrderItemsSummary(Order order) {
+}private String buildOrderItemsSummary(Order order) {
+
     if (order == null || order.itemCount == 0) {
         return "No items";
     }
@@ -2320,17 +2387,39 @@ private String buildOrderItemsSummary(Order order) {
     String summary = "";
 
     for (int i = 0; i < order.itemCount; i++) {
+
         Item it = order.items[i];
         if (it == null) continue;
 
-        String productName = it.productId; // fallback if product not found
+        String itemName;
 
-        // Find product name from product list
-        for (int j = 0; j < dp.productCount; j++) {
-            Product p = dp.products[j];
-            if (p != null && p.productId.equalsIgnoreCase(it.productId)) {
-                productName = p.name;
-                break;
+        // If simulation order, use simulation item name
+        if (order.isSimulationOrder) {
+
+            if (order.simulationItemName == null || order.simulationItemName.trim().equals("")) {
+                itemName = "Simulation Item";
+            } else {
+                itemName = order.simulationItemName.trim();
+            }
+
+        } else {
+
+            // fallback if product not found
+            itemName = it.productId;
+
+            // search product name
+            for (int j = 0; j < dp.productCount; j++) {
+
+                Product p = dp.products[j];
+
+                if (p != null && p.productId.equalsIgnoreCase(it.productId)) {
+
+                    if (p.name != null && !p.name.trim().equals("")) {
+                        itemName = p.name.trim();
+                    }
+
+                    break;
+                }
             }
         }
 
@@ -2338,7 +2427,7 @@ private String buildOrderItemsSummary(Order order) {
             summary += ", ";
         }
 
-        summary += productName + " x" + it.quantity;
+        summary += itemName + " x" + it.quantity;
     }
 
     return summary;
