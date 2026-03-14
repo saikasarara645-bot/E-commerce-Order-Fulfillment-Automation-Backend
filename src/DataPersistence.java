@@ -130,6 +130,13 @@ String[] parts = line.split("\\|");
 if (parts.length < 5) continue;
 Order o = new Order();
 
+// Basic fields
+o.orderId = normalizeOrderId(parts[0].trim());
+o.date = (parts.length > 1 ? parts[1].trim() : "");
+o.address = (parts.length > 2 ? parts[2].trim() : "");
+o.paymentMode = (parts.length > 3 ? parts[3].trim() : "");
+o.status = (parts.length > 4 ? parts[4].trim() : "PENDING");
+
 
 
 
