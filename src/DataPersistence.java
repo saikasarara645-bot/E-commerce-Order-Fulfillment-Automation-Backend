@@ -150,7 +150,8 @@ if (parts.length > 6) {
 itemsPart = parts[6].trim();
 parseItemsIntoOrder(o, itemsPart);
 }
-
+// Cancel reason (index 7)
+if (parts.length > 7) {
 
 
 
