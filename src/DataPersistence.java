@@ -137,6 +137,12 @@ o.address = (parts.length > 2 ? parts[2].trim() : "");
 o.paymentMode = (parts.length > 3 ? parts[3].trim() : "");
 o.status = (parts.length > 4 ? parts[4].trim() : "PENDING");
 
+// Total amount (index 5)
+if (parts.length > 5) {
+o.totalAmount = toInt(parts[5].trim());
+} else {
+o.totalAmount = 0;
+}
 
 
 
