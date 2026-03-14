@@ -182,6 +182,10 @@ o.simulationItemPrice = toInt(parts[11].trim());
 o.simulationItemPrice = 0;
 }
 
+// Recalculate total if missing/zero
+if (o.totalAmount <= 0 && o.itemCount > 0) {
+int total = 0;
+
 //.....................................
 
 private void loadAdmins() throws Exception {
