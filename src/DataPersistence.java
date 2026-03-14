@@ -175,7 +175,12 @@ o.simulationItemName = parts[10].trim();
 } else {
 o.simulationItemName = "";
 }
-
+// Simulation item price (index 11)
+if (parts.length > 11) {
+o.simulationItemPrice = toInt(parts[11].trim());
+} else {
+o.simulationItemPrice = 0;
+}
 
 //.....................................
 
