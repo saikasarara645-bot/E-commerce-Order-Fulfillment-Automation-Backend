@@ -192,7 +192,10 @@ Item it = o.items[i];
 if (it == null) continue;
 total += o.simulationItemPrice * it.quantity;
 }
-
+} else {
+for (int i = 0; i < o.itemCount; i++) {
+Item it = o.items[i];
+if (it == null) continue;
 
 
 
