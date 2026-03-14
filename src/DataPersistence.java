@@ -157,6 +157,12 @@ o.cancelReason = parts[7].trim();
 o.cancelReason = "";
 }
 
+// Tracking ID (index 8)
+if (parts.length > 8) {
+o.trackingId = parts[8].trim();
+} else {
+o.trackingId = "";
+}
 
 
 //.....................................
