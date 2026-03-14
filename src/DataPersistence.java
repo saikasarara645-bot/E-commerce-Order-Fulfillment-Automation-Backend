@@ -163,6 +163,12 @@ o.trackingId = parts[8].trim();
 } else {
 o.trackingId = "";
 }
+// Simulation flag (index 9)
+if (parts.length > 9) {
+o.isSimulationOrder = parts[9].trim().equalsIgnoreCase("true");
+} else {
+o.isSimulationOrder = false;
+}
 
 
 //.....................................
