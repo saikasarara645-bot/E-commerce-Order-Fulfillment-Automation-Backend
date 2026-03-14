@@ -152,6 +152,10 @@ parseItemsIntoOrder(o, itemsPart);
 }
 // Cancel reason (index 7)
 if (parts.length > 7) {
+o.cancelReason = parts[7].trim();
+} else {
+o.cancelReason = "";
+}
 
 
 
