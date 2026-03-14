@@ -124,6 +124,18 @@ while ((line = br.readLine()) != null) {
 line = line.trim();
 if (line.length() == 0) continue;
 
+// Format:
+//OrderID|Date|Address|PaymentMode|Status|Total|ItemList|CancelReason|TrackingId|IsSimulationOrder|SimulationItemName|SimulationItemPrice
+String[] parts = line.split("\\|");
+if (parts.length < 5) continue;
+Order o = new Order();
+
+
+
+
+
+
+//.....................................
 
 private void loadAdmins() throws Exception {
  adminCount = 0;
