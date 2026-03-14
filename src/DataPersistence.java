@@ -144,6 +144,12 @@ o.totalAmount = toInt(parts[5].trim());
 o.totalAmount = 0;
 }
 
+// Items list (index 6)
+String itemsPart = "";
+if (parts.length > 6) {
+itemsPart = parts[6].trim();
+parseItemsIntoOrder(o, itemsPart);
+}
 
 
 
