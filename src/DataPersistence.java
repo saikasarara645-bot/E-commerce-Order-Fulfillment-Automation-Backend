@@ -186,6 +186,16 @@ o.simulationItemPrice = 0;
 if (o.totalAmount <= 0 && o.itemCount > 0) {
 int total = 0;
 
+if (o.isSimulationOrder) {
+for (int i = 0; i < o.itemCount; i++) {
+Item it = o.items[i];
+if (it == null) continue;
+total += o.simulationItemPrice * it.quantity;
+}
+
+
+
+
 //.....................................
 
 private void loadAdmins() throws Exception {
