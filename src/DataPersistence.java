@@ -169,6 +169,12 @@ o.isSimulationOrder = parts[9].trim().equalsIgnoreCase("true");
 } else {
 o.isSimulationOrder = false;
 }
+// Simulation item name (index 10)
+if (parts.length > 10) {
+o.simulationItemName = parts[10].trim();
+} else {
+o.simulationItemName = "";
+}
 
 
 //.....................................
