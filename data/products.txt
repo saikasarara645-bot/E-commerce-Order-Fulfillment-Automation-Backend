@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 M101|Smartphone|Samsung|Galaxy A14 (4/64)|2500|7
 M102|Smartphone|Xiaomi|Redmi 12 (8/128)|18999|10
 M103|Smartphone|Realme|C55 (8/128)|19500|21
-=======
-M101|Smartphone|Samsung|Galaxy A14 (4/64)|2500|19
-M102|Smartphone|Xiaomi|Redmi 12 (8/128)|18999|19
-M103|Smartphone|Realme|C55 (8/128)|19500|11
->>>>>>> 77a640b1778dae35ee83d2294ee0f1ed9d743ed7
 M104|Smartphone|Nokia|G21 (6/128)|17500|60
 L201|Laptop|HP|Pavilion 15 (i5)|72000|6
 L202|Laptop|Dell|Inspiron 14 (i5)|75000|15
