@@ -312,6 +312,10 @@ if (item == null) continue;
 itemList.append(item.productId).append("x").append(item.quantity);
 
 
+if (j < o.itemCount - 1) {
+itemList.append(",");
+}
+}
 
 
 
