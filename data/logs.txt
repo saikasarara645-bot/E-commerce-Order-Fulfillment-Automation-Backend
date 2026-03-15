@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Order ADMIN - Password changed
 Order 02004 - Order created via admin interface (pending)
 Order 02004 - Inventory OK – stock reserved
@@ -23,3 +24,6 @@ Order 00001 - Inventory OK – stock reserved
 Order 00001 - PAYMENT OK (Cash on Delivery)
 Order 00001 - Status changed to PACKED
 Order 00003 - Simulation order with status: DELIVERED
+=======
+
+>>>>>>> 77a640b1778dae35ee83d2294ee0f1ed9d743ed7
