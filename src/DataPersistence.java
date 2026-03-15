@@ -322,7 +322,7 @@ String orderIdPart = (o.orderId == null) ? "" : o.orderId;
 String datePart = (o.date == null) ? "" : o.date;
 String addressPart = (o.address == null) ? "" : o.address;
 String paymentPart = (o.paymentMode == null) ? "" : o.paymentMode;
-
+String statusPart = (o.status == null) ? "" : o.status;
 //........................................
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
