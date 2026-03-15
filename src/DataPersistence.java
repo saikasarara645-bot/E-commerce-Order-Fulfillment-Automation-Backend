@@ -302,7 +302,8 @@ for (int i = 0; i < orderCount; i++) {
 Order o = orders[i];
 if (o == null) continue;
 
-
+// Build item list: ProductIDxQty,ProductIDxQty,...
+StringBuilder itemList = new StringBuilder();
 
 
 
