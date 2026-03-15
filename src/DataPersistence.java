@@ -216,9 +216,6 @@ if (br != null) br.close();
 }
 }
 
-public void saveOrders() throws Exception {
-// Overwrite orders.txt
-FileWriter fw = new FileWriter(path("orders.txt"), false);
 
 //.....................................
 
@@ -295,44 +292,13 @@ public void addAdmin(Admin newAdmin) {
  }
 }
 
+//------------------------
+
 public void saveOrders() throws Exception {
- // Open the file for writing (overwrite the file)
- FileWriter fw = new FileWriter(path("orders.txt"), false); 
- //'false' to overwrite
- // Iterate through all orders and write them to the file
- for (int i = 0; i < orderCount; i++) {
- Order o = orders[i];
- if (o == null) continue; // Skip null orders
- //format and write each order as:
-//OrderID|Date|Address|PaymentMode|Status|ItemList|TotalAmount|CancelReason
- fw.write(o.orderId + "|" + o.date + "|" + o.address + "|" +
-o.paymentMode + "|"
- + o.status + "|" + o.totalAmount); // Write order basic details
- // Prepare the item list in the format "ProductIDxQuantity,ProductIDxQuantity, ..."
- StringBuilder itemList = new StringBuilder();
- for (int j = 0; j < o.itemCount; j++) {
- Item item = o.items[j];
- if (item != null) {
+// Overwrite orders.txt
+FileWriter fw = new FileWriter(path("orders.txt"), false);
 
-itemList.append(item.productId).append("x").append(item.quantity);
- if (j < o.itemCount - 1) {
- itemList.append(","); // Add comma between items
- }
- }
- }
-
- // Write item list to the order record
- fw.write("|" + itemList.toString());
- // If the order was canceled, write the cancel reason
- if (o.cancelReason != null && !o.cancelReason.isEmpty()) {
- fw.write("|" + o.cancelReason); // Add cancellation reason if present
- }
- // End the order record with a new line
- fw.write("\n");
- }
- // Close the FileWriter after writing all orders
- fw.close();
-}
+//........................................
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
  for (int i = 0; i < adminCount; i++) {
