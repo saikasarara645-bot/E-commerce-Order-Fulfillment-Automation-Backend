@@ -331,7 +331,10 @@ String simNamePart = (o.simulationItemName == null) ? "" : o.simulationItemName;
 fw.write(
 orderIdPart + "|" +
 datePart + "|" +
-
+addressPart + "|" +
+paymentPart + "|" +
+statusPart + "|" +
+o.totalAmount + "|" +
 //........................................
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
