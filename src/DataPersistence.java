@@ -323,6 +323,11 @@ String datePart = (o.date == null) ? "" : o.date;
 String addressPart = (o.address == null) ? "" : o.address;
 String paymentPart = (o.paymentMode == null) ? "" : o.paymentMode;
 String statusPart = (o.status == null) ? "" : o.status;
+String cancelReasonPart = (o.cancelReason == null) ? "" : o.cancelReason;
+
+
+
+
 //........................................
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
