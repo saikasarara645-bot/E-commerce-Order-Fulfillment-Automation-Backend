@@ -1,1 +1,12 @@
 
+Order 00001 - Order created via admin interface (PENDING)
+Order 00002 - Simulation order created with status: DELIVERED
+Order 00003 - Reorder created from 00001 (Status: PENDING)
+Order 00001 - Inventory OK – stock reserved
+Order 00001 - PAYMENT OK (Cash on Delivery)
+Order 00001 - Status changed to PACKED
+Order 00001 - Order accepted and moved to PACKED
+Order 00003 - Inventory OK – stock reserved
+Order 00003 - PAYMENT OK (Cash on Delivery)
+Order 00003 - Status changed to PACKED
+Order 00003 - Order accepted and moved to PACKED

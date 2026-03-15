@@ -1,4 +1,4 @@
-M101|Smartphone|Samsung|Galaxy A14 (4/64)|2500|7
+M101|Smartphone|Samsung|Galaxy A14 (4/64)|2500|3
 M102|Smartphone|Xiaomi|Redmi 12 (8/128)|18999|10
 M103|Smartphone|Realme|C55 (8/128)|19500|21
 M104|Smartphone|Nokia|G21 (6/128)|17500|60
