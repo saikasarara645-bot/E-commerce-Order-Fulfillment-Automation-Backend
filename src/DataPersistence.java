@@ -211,7 +211,10 @@ orders[orderCount++] = o;
 } catch (Exception e) {
 // If orders.txt doesn't exist, it's fine
 
-
+} finally {
+if (br != null) br.close();
+}
+}
 
 //.....................................
 
