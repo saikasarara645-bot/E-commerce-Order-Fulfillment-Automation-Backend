@@ -319,6 +319,7 @@ itemList.append(",");
 // Safe values
 String orderIdPart = (o.orderId == null) ? "" : o.orderId;
 
+String datePart = (o.date == null) ? "" : o.date;
 
 
 
