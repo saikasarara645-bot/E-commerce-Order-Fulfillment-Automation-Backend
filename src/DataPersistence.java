@@ -298,6 +298,21 @@ public void saveOrders() throws Exception {
 // Overwrite orders.txt
 FileWriter fw = new FileWriter(path("orders.txt"), false);
 
+for (int i = 0; i < orderCount; i++) {
+Order o = orders[i];
+if (o == null) continue;
+
+
+
+
+
+
+
+
+
+
+
+
 //........................................
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
