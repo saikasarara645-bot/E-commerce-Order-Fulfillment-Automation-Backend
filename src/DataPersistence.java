@@ -344,7 +344,8 @@ o.simulationItemPrice
 );
 fw.write("\n");
 }
-
+fw.close();
+}
 
 //........................................
  private void saveAdmins() throws Exception {
