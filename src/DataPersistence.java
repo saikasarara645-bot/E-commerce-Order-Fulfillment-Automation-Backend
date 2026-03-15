@@ -217,7 +217,7 @@ if (br != null) br.close();
 }
 
 
-//.....................................
+
 
 private void loadAdmins() throws Exception {
  adminCount = 0;
@@ -292,7 +292,7 @@ public void addAdmin(Admin newAdmin) {
  }
 }
 
-//------------------------
+-
 
 public void saveOrders() throws Exception {
 // Overwrite orders.txt
@@ -347,7 +347,7 @@ fw.write("\n");
 fw.close();
 }
 
-//........................................
+
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
  for (int i = 0; i < adminCount; i++) {
