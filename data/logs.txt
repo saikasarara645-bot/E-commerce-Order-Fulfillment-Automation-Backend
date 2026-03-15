@@ -18,4 +18,8 @@ Order ADMIN - Restocked H301 (+20)
 Order ADMIN - Restocked A401 (+30)
 Order ADMIN - Restocked A404 (+20)
 Order ADMIN - Deleted ALL order history. Orders=28, Receipts=3, Backup=orders_archive.txt
-Order ADMIN - Password changed
+Order ADMIN - Password changedOrder 00001 - Order created via admin interface (pending)
+Order 00001 - Inventory OK – stock reserved
+Order 00001 - PAYMENT OK (Cash on Delivery)
+Order 00001 - Status changed to PACKED
+Order 00003 - Simulation order with status: DELIVERED
