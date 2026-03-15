@@ -327,6 +327,10 @@ String cancelReasonPart = (o.cancelReason == null) ? "" : o.cancelReason;
 String trackingPart = (o.trackingId == null) ? "" : o.trackingId;
 String simNamePart = (o.simulationItemName == null) ? "" : o.simulationItemName;
 
+// Format:OrderID|Date|Address|PaymentMode|Status|Total|ItemList|CancelReason|TrackingId|IsSimulationOrder|SimulationItemName|SimulationItemPrice
+fw.write(
+orderIdPart + "|" +
+datePart + "|" +
 
 //........................................
  private void saveAdmins() throws Exception {
