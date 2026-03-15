@@ -335,6 +335,10 @@ addressPart + "|" +
 paymentPart + "|" +
 statusPart + "|" +
 o.totalAmount + "|" +
+itemList.toString() + "|" +
+cancelReasonPart + "|" +
+
+
 //........................................
  private void saveAdmins() throws Exception {
  FileWriter fw = new FileWriter(path("admins.txt"), false);
