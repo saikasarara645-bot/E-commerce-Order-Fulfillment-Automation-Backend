@@ -216,6 +216,10 @@ if (br != null) br.close();
 }
 }
 
+public void saveOrders() throws Exception {
+// Overwrite orders.txt
+FileWriter fw = new FileWriter(path("orders.txt"), false);
+
 //.....................................
 
 private void loadAdmins() throws Exception {
