@@ -337,6 +337,11 @@ statusPart + "|" +
 o.totalAmount + "|" +
 itemList.toString() + "|" +
 cancelReasonPart + "|" +
+trackingPart + "|" +
+o.isSimulationOrder + "|" +
+simNamePart + "|" +
+o.simulationItemPrice
+);
 
 
 //........................................
