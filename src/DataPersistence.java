@@ -308,7 +308,8 @@ StringBuilder itemList = new StringBuilder();
 
 for (int j = 0; j < o.itemCount; j++) {
 Item item = o.items[j];
-
+if (item == null) continue;
+itemList.append(item.productId).append("x").append(item.quantity);
 
 
 
