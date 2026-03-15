@@ -316,7 +316,8 @@ if (j < o.itemCount - 1) {
 itemList.append(",");
 }
 }
-
+// Safe values
+String orderIdPart = (o.orderId == null) ? "" : o.orderId;
 
 
 
