@@ -203,6 +203,11 @@ total += p.price * it.quantity;
 }
 }
 }
+o.totalAmount = total;
+}
+orders[orderCount++] = o;
+}
+
 
 
 
