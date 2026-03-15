@@ -342,6 +342,8 @@ o.isSimulationOrder + "|" +
 simNamePart + "|" +
 o.simulationItemPrice
 );
+fw.write("\n");
+}
 
 
 //........................................
