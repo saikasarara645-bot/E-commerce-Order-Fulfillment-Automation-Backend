@@ -208,7 +208,8 @@ o.totalAmount = total;
 orders[orderCount++] = o;
 }
 
-
+} catch (Exception e) {
+// If orders.txt doesn't exist, it's fine
 
 
 
