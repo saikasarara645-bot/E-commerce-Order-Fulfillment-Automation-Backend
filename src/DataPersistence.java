@@ -320,7 +320,7 @@ itemList.append(",");
 String orderIdPart = (o.orderId == null) ? "" : o.orderId;
 
 String datePart = (o.date == null) ? "" : o.date;
-
+String addressPart = (o.address == null) ? "" : o.address;
 
 
 //........................................
