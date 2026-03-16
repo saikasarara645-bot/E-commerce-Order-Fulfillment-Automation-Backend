@@ -1423,13 +1423,13 @@ private String capitalizeWords(String text) {
 
     text = text.trim().toLowerCase();
 
-    String[] parts = text.split(" ");
+    String[] parts = text.split("\\s+");   // changed from " "
+
     StringBuilder result = new StringBuilder();
 
     for (int i = 0; i < parts.length; i++) {
-        if (parts[i].length() == 0) continue;
-
         String word = parts[i];
+
         String cap = word.substring(0,1).toUpperCase() + word.substring(1);
 
         if (result.length() > 0) result.append(" ");
@@ -1440,7 +1440,7 @@ private String capitalizeWords(String text) {
 }
   /** Feature 23: Manage products (Add, Edit, Delete products) */
 private void handleProductManagement(BufferedReader console) throws Exception {
-    System.out.print(SOFTGRAY+"Choose action - [A]dd, [E]dit, [D]elete: "+RESET);
+    System.out.print(SOFTGRAY + "Choose action - [A]dd, [E]dit, [D]elete: " + RESET);
     String action = console.readLine();
     if (action == null) action = "";
     action = action.trim().toUpperCase();
@@ -1448,134 +1448,165 @@ private void handleProductManagement(BufferedReader console) throws Exception {
     if (action.equals("A")) {
         // Add new product
         if (dp.productCount >= dp.products.length) {
-            System.out.print(ROSE+"Product list is full, cannot add more products.\n"+RESET);
+            System.out.print(ROSE + "Product list is full, cannot add more products.\n" + RESET);
             return;
         }
 
-        // ✅ Ask category FIRST (needed to generate ID)
-        System.out.print(SOFTGRAY+"Enter Category (Smartphone/Laptop/Home Appliance/Accessories/Power Bank): "+RESET);
+        // Ask category first
+        System.out.print(SOFTGRAY + "Enter Category (Smartphone/Laptop/Home Appliance/Accessories/Power Bank): " + RESET);
         String category = console.readLine();
+        category = capitalizeWords(category);
         if (category == null) category = "";
         category = category.trim();
+
         if (category.equals("")) {
-            System.out.print(ROSE+"Category cannot be empty.\n"+RESET);
+            System.out.print(ROSE + "Category cannot be empty.\n" + RESET);
             return;
         }
 
-        // ✅ Auto-generate Product ID based on category
+        // Auto-generate Product ID based on category
         String newId = dp.generateProductIdByCategory(category);
 
-        // ✅ Safety: if somehow exists, regenerate (rare case)
         while (dp.findProductById(newId) != null) {
             newId = dp.generateProductIdByCategory(category);
         }
 
-        System.out.print(MINT+"Auto Generated Product ID: "+ newId +"\n"+RESET);
+        System.out.print(MINT + "Auto Generated Product ID: " + newId + "\n" + RESET);
 
-        System.out.print(SOFTGRAY+"Enter Brand: "+RESET);
-       String brand = capitalizeWords(console.readLine());
+        System.out.print(SOFTGRAY + "Enter Brand: " + RESET);
+        String brand = console.readLine();
+        brand = capitalizeWords(brand);
         if (brand == null) brand = "";
         brand = brand.trim();
 
-        System.out.print(SOFTGRAY+"Enter Product Name: "+RESET);
-        String name = capitalizeWords(console.readLine());
+        System.out.print(SOFTGRAY + "Enter Product Name: " + RESET);
+        String name = console.readLine();
+        name = capitalizeWords(name);
         if (name == null) name = "";
         name = name.trim();
 
-        System.out.print(SOFTGRAY+"Enter Price: "+RESET);
+        System.out.print(SOFTGRAY + "Enter Price: " + RESET);
         String priceStr = console.readLine();
         if (priceStr == null) priceStr = "";
         priceStr = priceStr.trim();
 
-        System.out.print(SOFTGRAY+"Enter Initial Stock: "+RESET);
+        System.out.print(SOFTGRAY + "Enter Initial Stock: " + RESET);
         String stockStr = console.readLine();
         if (stockStr == null) stockStr = "";
         stockStr = stockStr.trim();
 
         if (category.equals("") || brand.equals("") || name.equals("")) {
-            System.out.print(ROSE+"Fields cannot be empty. Product not added.\n"+RESET);
+            System.out.print(ROSE + "Fields cannot be empty. Product not added.\n" + RESET);
             return;
         }
 
         int price = DataPersistence.toInt(priceStr);
         int stock = DataPersistence.toInt(stockStr);
 
+        if (price <= 0) {
+            System.out.print(ROSE + "Invalid price. Product not added.\n" + RESET);
+            return;
+        }
+
+        if (stock < 0) {
+            System.out.print(ROSE + "Invalid stock. Product not added.\n" + RESET);
+            return;
+        }
+
         dp.products[dp.productCount++] = new Product(newId, category, brand, name, price, stock);
         dp.sortProductsById();
-        dp.saveProducts(); // ✅ save immediately
-        System.out.print(MINT+"Product " + newId + " added successfully.\n"+RESET);
+        dp.saveProducts();
+
+        System.out.print(MINT + "Product " + newId + " added successfully.\n" + RESET);
         log.write("ADMIN", "Added product " + newId);
 
     } else if (action.equals("E")) {
         // Edit existing product
-         showProductsPreview2();
-        System.out.print(SOFTGRAY+"Enter Product ID to edit: "+RESET);
+        showProductsPreview2();
+
+        System.out.print(SOFTGRAY + "Enter Product ID to edit: " + RESET);
         String editId = console.readLine();
         if (editId == null) editId = "";
         editId = editId.trim();
+
         if (editId.equals("")) {
-            System.out.print(ROSE+"Product ID cannot be empty.\n"+RESET);
-            return;
-        }
-        Product product = dp.findProductById(editId);
-        if (product == null) {
-            System.out.print(ROSE+"Product " + editId + " not found.\n"+RESET);
+            System.out.print(ROSE + "Product ID cannot be empty.\n" + RESET);
             return;
         }
 
-        System.out.print(SOFTGRAY+"Edit field - [N]ame, [P]rice, [S]tock: "+RESET);
+        Product product = dp.findProductById(editId);
+        if (product == null) {
+            System.out.print(ROSE + "Product " + editId + " not found.\n" + RESET);
+            return;
+        }
+
+        System.out.print(SOFTGRAY + "Edit field - [N]ame, [P]rice, [S]tock: " + RESET);
         String field = console.readLine();
         if (field == null) field = "";
         field = field.trim().toUpperCase();
 
         if (field.equals("N")) {
-            System.out.print(SOFTGRAY+"Enter new Name: "+RESET);
+            System.out.print(SOFTGRAY + "Enter new Name: " + RESET);
             String newName = console.readLine();
+            newName = capitalizeWords(newName);
             if (newName == null) newName = "";
             newName = newName.trim();
+
             if (!newName.equals("")) {
                 product.name = newName;
                 dp.saveProducts();
-                System.out.print(MINT+"Product " + product.productId + " name updated.\n"+RESET);
+                System.out.print(MINT + "Product " + product.productId + " name updated.\n" + RESET);
                 log.write("ADMIN", "Edited product " + product.productId + " (Name changed)");
+            } else {
+                System.out.print(ROSE + "Name cannot be empty.\n" + RESET);
             }
+
         } else if (field.equals("P")) {
-            System.out.print(SOFTGRAY+"Enter new Price: "+RESET);
+            System.out.print(SOFTGRAY + "Enter new Price: " + RESET);
             String newPriceStr = console.readLine();
             if (newPriceStr == null) newPriceStr = "";
             newPriceStr = newPriceStr.trim();
+
             int newPrice = DataPersistence.toInt(newPriceStr);
             if (newPrice > 0) {
                 product.price = newPrice;
                 dp.saveProducts();
-                System.out.print(MINT+"Product " + product.productId + " price updated.\n"+RESET);
+                System.out.print(MINT + "Product " + product.productId + " price updated.\n" + RESET);
                 log.write("ADMIN", "Edited product " + product.productId + " (Price changed)");
+            } else {
+                System.out.print(ROSE + "Invalid price.\n" + RESET);
             }
+
         } else if (field.equals("S")) {
-            System.out.print(SOFTGRAY+"Enter new Stock value: "+RESET);
+            System.out.print(SOFTGRAY + "Enter new Stock value: " + RESET);
             String newStockStr = console.readLine();
             if (newStockStr == null) newStockStr = "";
             newStockStr = newStockStr.trim();
+
             int newStock = DataPersistence.toInt(newStockStr);
             if (newStock >= 0) {
                 product.stock = newStock;
                 dp.saveProducts();
-                System.out.print(MINT+"Product " + product.productId + " stock updated.\n"+RESET);
+                System.out.print(MINT + "Product " + product.productId + " stock updated.\n" + RESET);
                 log.write("ADMIN", "Edited product " + product.productId + " (Stock adjusted)");
+            } else {
+                System.out.print(ROSE + "Invalid stock value.\n" + RESET);
             }
+
         } else {
-            System.out.print(ROSE+"Invalid field selection.\n"+RESET);
+            System.out.print(ROSE + "Invalid field selection.\n" + RESET);
         }
 
     } else if (action.equals("D")) {
-         showProductsPreview2();
-        // Delete a product
-        System.out.print(SOFTGRAY+"Enter Product ID to delete: "+RESET);
+        showProductsPreview2();
+
+        System.out.print(SOFTGRAY + "Enter Product ID to delete: " + RESET);
         String delId = console.readLine();
         if (delId == null) delId = "";
         delId = delId.trim();
+
         if (delId.equals("")) {
-            System.out.print(ROSE+"Product ID cannot be empty.\n"+RESET);
+            System.out.print(ROSE + "Product ID cannot be empty.\n" + RESET);
             return;
         }
 
@@ -1586,32 +1617,35 @@ private void handleProductManagement(BufferedReader console) throws Exception {
                 break;
             }
         }
+
         if (idx == -1) {
-            System.out.print(ROSE+"Product " + delId + " not found.\n"+RESET);
+            System.out.print(ROSE + "Product " + delId + " not found.\n" + RESET);
             return;
         }
 
-        System.out.print(ANSI_Yellow+"Are you sure you want to delete " + delId + "? (Y/N): "+RESET);
+        System.out.print(ANSI_Yellow + "Are you sure you want to delete " + delId + "? (Y/N): " + RESET);
         String conf = console.readLine();
         if (conf == null) conf = "";
         conf = conf.trim().toUpperCase();
+
         if (!conf.equals("Y") && !conf.equals("YES")) {
-            System.out.print(ROSE+"Deletion cancelled.\n"+RESET);
+            System.out.print(ROSE + "Deletion cancelled.\n" + RESET);
             return;
         }
 
         for (int j = idx; j < dp.productCount - 1; j++) {
-            dp.products[j] = dp.products[j+1];
+            dp.products[j] = dp.products[j + 1];
         }
+
         dp.products[dp.productCount - 1] = null;
         dp.productCount--;
 
         dp.saveProducts();
-        System.out.print(MINT+"Product " + delId + " deleted.\n"+RESET);
+        System.out.print(MINT + "Product " + delId + " deleted.\n" + RESET);
         log.write("ADMIN", "Deleted product " + delId);
 
     } else {
-        System.out.print(ROSE+"Invalid action.\n"+RESET);
+        System.out.print(ROSE + "Invalid action.\n" + RESET);
     }
 }
 
