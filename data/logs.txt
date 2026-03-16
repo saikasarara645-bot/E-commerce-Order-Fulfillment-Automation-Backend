@@ -25,3 +25,12 @@ Order 00005 - Status changed to PACKED
 Order 00005 - Order accepted and moved to PACKED
 Order 00005 - Status changed to SHIPPED
 Order ADMIN - Deleted product m105
+Order ADMIN - Deleted product p505
+Order ADMIN - Added product M105
+Order ADMIN - Added product P505
+Order O0001 - Status changed to SHIPPED
+Order O0001 - Status changed to OUT_FOR_DELIVERY
+Order ADMIN - Restocked M101 (+12)
+Order 00006 - Reorder created from 00003 (Status: PENDING)
+Order ADMIN - Deleted ALL order history. Orders=6, Receipts=1, Backup=orders_archive.txt
+Order ADMIN - RESTORE from archive. Count=6
