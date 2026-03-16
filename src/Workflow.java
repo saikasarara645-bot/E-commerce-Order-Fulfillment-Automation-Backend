@@ -1333,9 +1333,7 @@ private void handleReorder(BufferedReader console) throws Exception {
     /** Feature 14: Increase stock of an existing product (restock) */
     private void handleRestock(BufferedReader console) throws Exception {
         showProductsPreview();
-        printLine();
         showRestockPreview();
-        printLine();
         System.out.print(SOFTGRAY+"Enter Product ID to restock: "+RESET);
         String pid = console.readLine();
         if (pid == null) pid = "";
