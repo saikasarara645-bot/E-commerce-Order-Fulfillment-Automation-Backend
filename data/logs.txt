@@ -12,3 +12,9 @@ Order 00003 - Status changed to PACKED
 Order 00003 - Order accepted and moved to PACKED
 Order 00004 - Order created via admin interface (PENDING)
 Order ADMIN - Added product P505
+Order ADMIN - Added product G1
+Order ADMIN - Edited product G1 (Name changed)
+Order ADMIN - Deleted product G1
+Order ADMIN - Added product M105
+Order ADMIN - Deleted product p505
+Order ADMIN - Added product P505
