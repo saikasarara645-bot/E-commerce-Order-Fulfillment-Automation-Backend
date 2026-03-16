@@ -40,3 +40,7 @@ Order 00007 - PAYMENT OK (Cash on Delivery)
 Order 00007 - Status changed to PACKED
 Order 00007 - Order accepted and moved to PACKED
 Order ADMIN - Edited product P505 (Price changed)
+Order ADMIN - Restocked L201 (+10)
+Order 00008 - Reorder created from 00004 (Status: PENDING)
+Order 00009 - Order created via admin interface (PENDING)
+Order 00009 - Order cancelled -Inventory Shortage: P505

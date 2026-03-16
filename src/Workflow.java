@@ -905,11 +905,11 @@ private void handleReorder(BufferedReader console) throws Exception {
     /** Feature 13: Display low stock items (stock < 5) highlighted in color */
     private void showLowStockAlerts() {
         boolean anyLow = false;
-        System.out.print(ANSI_Yellow+"Low Stock Items (stock < 5):\n"+RESET);
+        System.out.print(ANSI_Yellow+"Low Stock Items (stock <=5):\n"+RESET);
         for (int i = 0; i < dp.productCount; i++) {
             Product p = dp.products[i];
             if (p == null) continue;
-            if (p.stock < 5) {
+            if (p.stock <=5) {
                 anyLow = true;
                 // Highlight low stock product in yellow
                 System.out.print(ANSI_Yellow+ p.productId + " | " + p.name + " | Stock: " + p.stock + RESET + "\n");
@@ -1332,7 +1332,10 @@ private void handleReorder(BufferedReader console) throws Exception {
 }
     /** Feature 14: Increase stock of an existing product (restock) */
     private void handleRestock(BufferedReader console) throws Exception {
+        showProductsPreview();
+        printLine();
         showRestockPreview();
+        printLine();
         System.out.print(SOFTGRAY+"Enter Product ID to restock: "+RESET);
         String pid = console.readLine();
         if (pid == null) pid = "";
