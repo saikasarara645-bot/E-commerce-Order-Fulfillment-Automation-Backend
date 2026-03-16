@@ -18,3 +18,10 @@ Order ADMIN - Deleted product G1
 Order ADMIN - Added product M105
 Order ADMIN - Deleted product p505
 Order ADMIN - Added product P505
+Order 00005 - Order created via admin interface (PENDING)
+Order 00005 - Inventory OK – stock reserved
+Order 00005 - PAYMENT OK (Cash on Delivery)
+Order 00005 - Status changed to PACKED
+Order 00005 - Order accepted and moved to PACKED
+Order 00005 - Status changed to SHIPPED
+Order ADMIN - Deleted product m105
