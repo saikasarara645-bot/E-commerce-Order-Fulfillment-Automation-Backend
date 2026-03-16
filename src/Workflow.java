@@ -861,7 +861,7 @@ private void handleReorder(BufferedReader console) throws Exception {
 }
     /** Feature 6 (continued): View or filter products by brand or category */
     private void handleAdvancedFilter(BufferedReader console) throws Exception {
-        showProductsPreview2();
+        showProductsPreview();
         System.out.print(SOFTGRAY+"Filter by Brand or Category? (B/C): "+RESET);
         String choice = console.readLine();
         if (choice == null) choice = "";
@@ -1522,7 +1522,7 @@ private void handleProductManagement(BufferedReader console) throws Exception {
 
     } else if (action.equals("E")) {
         // Edit existing product
-        showProductsPreview2();
+        showProductsPreview();
 
         System.out.print(SOFTGRAY + "Enter Product ID to edit: " + RESET);
         String editId = console.readLine();
@@ -1598,7 +1598,7 @@ private void handleProductManagement(BufferedReader console) throws Exception {
         }
 
     } else if (action.equals("D")) {
-        showProductsPreview2();
+        showProductsPreview();
 
         System.out.print(SOFTGRAY + "Enter Product ID to delete: " + RESET);
         String delId = console.readLine();
@@ -2279,7 +2279,7 @@ private void showOrdersPreview() {
 
     printLine();
 }
-private void showProductsPreview2() {
+private void showProductsPreview() {
     System.out.println(PINK + BOLD + "\nProducts List (Preview)" + RESET);
     printLine();
 
@@ -2295,7 +2295,7 @@ private void showProductsPreview2() {
         "ProdID", "Category", "Brand", "Name", "Price", "Stock"
     );
     System.out.println(SOFTGRAY +
-        "--------------------------------------------------------------------------"
+        "------------------------------------------------------------------------------------------------------"
         + RESET
     );
 
