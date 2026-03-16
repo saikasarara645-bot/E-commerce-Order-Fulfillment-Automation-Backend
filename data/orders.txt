@@ -9,5 +9,5 @@ O0008|2026-03-16|Dhaka|COD|PENDING|13600|H302x2|||false||0
 O0009|2026-03-16|Tangail|COD|CANCELLED|6000|P505x6|Inventory Shortage: P505||false||0
 O2002|...|...||PENDING|0||||false||0
 O2003|...|...||PENDING|0||||false||0
-O2002|2026-03-11|Dhaka||PENDING|0||||false||0
-O2003|2026-02-14|Rajshahi||PENDING|0||||false||0
+O2002|2026-03-11|Dhaka||CANCELLED|0||||false||0
+O2003|2026-02-14|Rajshahi||CANCELLED|0||||false||0
