@@ -1,2 +1,5 @@
-{"orderId":"O2002","date":"...","address":"..."}
-{"orderId":"O2003","date":"...","address":"..."}
+{"orderId":"02002","date":"2026-03-16","address":"Dhaka","paymentMode":"COD","items":"M101x1,P501x2"}
+{"orderId":"02003","date":"2026-03-16","address":"Chattogram","paymentMode":"MockCard","items":"M102x1,A401x1"}
+{"orderId":"02004","date":"2026-03-15","address":"Khulna","paymentMode":"COD","items":"L201x1"}
+{"orderId":"02005","date":"2026-03-14","address":"Rajshahi","paymentMode":"MockCard","items":"H301x2,A402x1"}
+{"orderId":"02006","date":"2026-03-14","address":"Sylhet","paymentMode":"COD","items":"M103x1,P503x2"}

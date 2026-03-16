@@ -261,18 +261,18 @@ private void printAdminMenu(Admin currentAdmin) {
     printMenuOption(15,"System Health Check",true);
     printMenuOption(16,"Show Order Timeline",true);
     printMenuOption(17,"Auto Cancel Stale Orders",true);
-
+    printMenuOption(18,"Show Recently Auto-Cancelled Orders",true);
     // ADMIN ONLY
     printSection("SYSTEM (ADMIN ONLY)");
-    printMenuOption(18,"Bulk Import Orders",isAdmin);
-    printMenuOption(19,"Archive Delivered Orders",isAdmin);
-    printMenuOption(20,"Clear Logs",isAdmin);
-    printMenuOption(21,"Add New Admin",isAdmin);
-    printMenuOption(22,"Change Admin Password",isAdmin);
-    printMenuOption(23,"Generate Report",isAdmin);
-    printMenuOption(24,"Delete ALL Order History",isAdmin);
-    printMenuOption(25,"Restore Order History",isAdmin);
-    printMenuOption(26,"Undo Last Restore",isAdmin);
+    printMenuOption(19,"Bulk Import Orders",isAdmin);
+    printMenuOption(20,"Archive Delivered Orders",isAdmin);
+    printMenuOption(21,"Clear Logs",isAdmin);
+    printMenuOption(22,"Add New Admin",isAdmin);
+    printMenuOption(23,"Change Admin Password",isAdmin);
+    printMenuOption(24,"Generate Report",isAdmin);
+    printMenuOption(25,"Delete ALL Order History",isAdmin);
+    printMenuOption(26,"Restore Order History",isAdmin);
+    printMenuOption(27,"Undo Last Restore",isAdmin);
 
     System.out.println();
     System.out.println(LAVENDER + "[0] Exit" + RESET);
@@ -336,49 +336,68 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
                 break;
         case "15": systemHealthCheck(); break;
         case "16": showOrderTimeline(console); break;
-        case "17": autoCancelStaleOrders(2); break;
+        case "17":
+        System.out.print(SOFTGRAY + "Cancel orders pending for how many days?: " + RESET);
+        String daysStr = console.readLine();
+         if (daysStr == null) daysStr = "";
+        daysStr = daysStr.trim();
 
+        int days = DataPersistence.toInt(daysStr);
+        if (days <= 0) {
+        System.out.print(ROSE + "Invalid number of days.\n" + RESET);
+        break;
+    }
+
+    autoCancelStaleOrders(days);
+    break;
         case "18":
-            if(isAdmin) importOrdersFromFile(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
-            break;
+        showRecentlyAutoCancelledOrders();
+        break;
 
         case "19":
+        if (isAdmin) {
+          importOrdersFromFile(console);
+        } else {
+        System.out.println(ROSE + "Restricted: Admin only." + RESET);
+        }
+        break;
+
+        case "20":
             if(isAdmin) archiveDeliveredOrders(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "20":
+        case "21":
             if(isAdmin) clearLogs(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "21":
+        case "22":
             if(isAdmin) addNewAdmin(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "22":
+        case "23":
             if(isAdmin) changeAdminPassword(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "23":
+        case "24":
             if(isAdmin) generateReport();
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "24":
+        case "25":
             if(isAdmin) deleteAllOrderHistory(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "25":
+        case "26":
             if(isAdmin) restoreOrdersFromArchive(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
 
-        case "26":
+        case "27":
             if(isAdmin) undoLastRestore(console);
             else System.out.println(ROSE+"Restricted: Admin only."+RESET);
             break;
@@ -932,61 +951,187 @@ private void handleReorder(BufferedReader console) throws Exception {
         fw.close();
         System.out.print(MINT+"Stock report generated in stock_report.txt\n"+RESET);
     }
+private String extract(String src, String prefix, String endToken) {
 
+    if (src == null) return "";
+
+    int start = src.indexOf(prefix);
+
+    if (start == -1) return "";
+
+    start = start + prefix.length();
+
+    int end = src.indexOf(endToken, start);
+
+    if (end == -1) {
+        return src.substring(start);
+    }
+
+    return src.substring(start, end);
+}
     /** Feature 10: Bulk import orders from orders_import.txt */
-   private void importOrdersFromFile(BufferedReader console) throws Exception{
-        BufferedReader br = null;
-        int importedCount = 0;
-        try {
-       br = new BufferedReader(new FileReader(dp.path("orders_import.json")));
+   private void importOrdersFromFile(BufferedReader console) throws Exception {
+    printTitle("Bulk Import Orders");
+
+    System.out.print(SOFTGRAY + "Enter import filename (orders_import.json / orders_import.txt): " + RESET);
+    String fileName = console.readLine();
+    if (fileName == null) fileName = "";
+    fileName = fileName.trim();
+
+    if (fileName.equals("")) {
+        System.out.print(ROSE + "Filename cannot be empty.\n" + RESET);
+        return;
+    }
+
+    BufferedReader br = null;
+    int importedCount = 0;
+    int skippedCount = 0;
+    int invalidCount = 0;
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path(fileName)));
         String line;
+
         while ((line = br.readLine()) != null) {
             line = line.trim();
             if (line.length() == 0) continue;
 
-            // Extract fields manually
-            String orderId = extract(line, "\"orderId\":\"", "\"");
-            String date = extract(line, "\"date\":\"", "\"");
-            String address = extract(line, "\"address\":\"", "\"");
-            String paymentMode = extract(line, "\"paymentMode\":\"", "\"");
-            String itemList = extract(line, "\"items\":\"", "\"");
+            try {
+                Order o = null;
 
-            // Create Order object
-            Order o = new Order();
-            o.orderId = orderId;
-            o.date = date;
-            o.address = address;
-            o.paymentMode = paymentMode;
-            o.status = "PENDING";
-            dp.parseItemsIntoOrder(o, itemList);
+                // =========================
+                // JSON-like one-line format
+                // =========================
+                if (fileName.toLowerCase().endsWith(".json")) {
+                    String orderId = extract(line, "\"orderId\":\"", "\"");
+                    String date = extract(line, "\"date\":\"", "\"");
+                    String address = extract(line, "\"address\":\"", "\"");
+                    String paymentMode = extract(line, "\"paymentMode\":\"", "\"");
+                    String itemList = extract(line, "\"items\":\"", "\"");
 
-            // Calculate total
-            int total = 0;
-            for (int i = 0; i < o.itemCount; i++) {
-                Product p = dp.findProductById(o.items[i].productId);
-                if (p != null) {
-                    total += p.price * o.items[i].quantity;
+                    if (orderId.equals("") || itemList.equals("")) {
+                        invalidCount++;
+                        continue;
+                    }
+
+                    orderId = normalizeOrderId(orderId);
+
+                    if (findOrderById(orderId) != null) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (dp.orderCount >= dp.orders.length) {
+                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
+                        break;
+                    }
+
+                    o = new Order();
+                    o.orderId = orderId;
+                    o.date = date.equals("") ? currentDateString() : date;
+                    o.address = address;
+                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
+                    o.status = "PENDING";
+
+                    dp.parseItemsIntoOrder(o, itemList);
                 }
-            }
-            o.totalAmount = total;
 
-            dp.orders[dp.orderCount++] = o;
-            System.out.print(MINT+"Imported: " + o.orderId + "\n"+RESET);
+                // =========================
+                // TXT format
+                // Expected:
+                // OrderID|Date|Address|PaymentMode|ItemList
+                // =========================
+                else if (fileName.toLowerCase().endsWith(".txt")) {
+                    String[] parts = line.split("\\|");
+
+                    if (parts.length < 5) {
+                        invalidCount++;
+                        continue;
+                    }
+
+                    String orderId = normalizeOrderId(parts[0].trim());
+                    String date = parts[1].trim();
+                    String address = parts[2].trim();
+                    String paymentMode = parts[3].trim();
+                    String itemList = parts[4].trim();
+
+                    if (orderId.equals("") || itemList.equals("")) {
+                        invalidCount++;
+                        continue;
+                    }
+
+                    if (findOrderById(orderId) != null) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (dp.orderCount >= dp.orders.length) {
+                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
+                        break;
+                    }
+
+                    o = new Order();
+                    o.orderId = orderId;
+                    o.date = date.equals("") ? currentDateString() : date;
+                    o.address = address;
+                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
+                    o.status = "PENDING";
+
+                    dp.parseItemsIntoOrder(o, itemList);
+                }
+
+                else {
+                    System.out.print(ROSE + "Unsupported file type. Use .json or .txt\n" + RESET);
+                    return;
+                }
+
+                if (o == null || o.itemCount <= 0) {
+                    invalidCount++;
+                    continue;
+                }
+
+                // Calculate total
+                int total = 0;
+                for (int i = 0; i < o.itemCount; i++) {
+                    Item it = o.items[i];
+                    if (it == null) continue;
+
+                    Product p = dp.findProductById(it.productId);
+                    if (p != null) {
+                        total += p.price * it.quantity;
+                    }
+                }
+                o.totalAmount = total;
+
+                dp.orders[dp.orderCount++] = o;
+                importedCount++;
+
+                System.out.print(MINT + "Imported: " + o.orderId + "\n" + RESET);
+                log.write("SYSTEM", "Bulk imported order " + o.orderId);
+
+            } catch (Exception ex) {
+                invalidCount++;
             }
-        } catch (Exception e) {
-            System.out.print(ROSE+"Error reading orders_import.txt\n"+RESET);
-        } finally {
-            if (br != null) br.close();
         }
-        System.out.print(MINT+importedCount + " orders imported from orders_import.txt.\n"+RESET);
+
+        dp.saveOrders();
+
+    } catch (Exception e) {
+        System.out.print(ROSE + "Error reading file: " + fileName + "\n" + RESET);
+    } finally {
+        if (br != null) br.close();
     }
-    private String extract(String src, String prefix, String endToken) {
-    int start = src.indexOf(prefix);
-    if (start == -1) return "";
-    start += prefix.length();
-    int end = src.indexOf(endToken, start);
-    if (end == -1) return src.substring(start);
-    return src.substring(start, end);
+
+    printLine();
+    System.out.print(MINT + importedCount + " order(s) imported from " + fileName + ".\n" + RESET);
+
+    if (skippedCount > 0) {
+        System.out.print(ANSI_Yellow + skippedCount + " duplicate order(s) skipped.\n" + RESET);
+    }
+
+    if (invalidCount > 0) {
+        System.out.print(ROSE + invalidCount + " invalid record(s) skipped.\n" + RESET);
+    }
 }
 
     /** Feature 11: Simulation mode to generate and process orders in various scenarios */
@@ -2126,23 +2271,34 @@ private void systemHealthCheck() {
     printLine();
 }
 private void autoCancelStaleOrders(int days) throws Exception {
+
     java.time.LocalDate today = java.time.LocalDate.now();
     int cancelled = 0;
 
     for (int i = 0; i < dp.orderCount; i++) {
+
         Order o = dp.orders[i];
         if (o == null) continue;
         if (!"PENDING".equals(o.status)) continue;
 
         try {
-            java.time.LocalDate d = java.time.LocalDate.parse(o.date); // expects YYYY-MM-DD
+            java.time.LocalDate d = java.time.LocalDate.parse(o.date);
             long diff = java.time.temporal.ChronoUnit.DAYS.between(d, today);
+
             if (diff >= days) {
                 o.status = "CANCELLED";
+                o.cancelReason = "Auto-cancelled after " + diff + " day(s) in PENDING status";
                 cancelled++;
-                // if you have workflow log:
-                // log.write(o.orderId, "AUTO_CANCEL", "Order stale (" + diff + " days)");
+
+                System.out.print(
+                    ROSE + "Cancelled Order: " + o.orderId +
+                    " (Pending for " + diff + " days)\n" + RESET
+                );
+
+                log.write("SYSTEM", "Auto-cancelled order " + o.orderId +
+                        " after " + diff + " day(s) in PENDING status");
             }
+
         } catch (Exception ex) {
             // ignore bad date format
         }
@@ -2150,10 +2306,40 @@ private void autoCancelStaleOrders(int days) throws Exception {
 
     if (cancelled > 0) {
         dp.saveAll();
-        System.out.print(MINT + "Auto-cancelled " + cancelled + " stale PENDING orders.\n" + RESET);
+        System.out.print(MINT + "Auto-cancelled " + cancelled +
+                " stale PENDING orders.\n" + RESET);
     } else {
         System.out.print(ROSE + "No stale PENDING orders found.\n" + RESET);
     }
+}
+private void showRecentlyAutoCancelledOrders() throws Exception {
+    printTitle("Recently Auto-Cancelled Orders");
+
+    BufferedReader br = null;
+    boolean found = false;
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path("logs.txt")));
+        String line;
+
+        while ((line = br.readLine()) != null) {
+            if (line.contains("Auto-cancelled order")) {
+                System.out.print(ROSE + line + "\n" + RESET);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            System.out.print(ROSE + "No auto-cancelled orders found in logs.\n" + RESET);
+        }
+
+    } catch (Exception e) {
+        System.out.print(ROSE + "logs.txt not found.\n" + RESET);
+    } finally {
+        if (br != null) br.close();
+    }
+
+    printLine();
 }
 private void showOrdersForStatusUpdate() {
     System.out.println(PINK + BOLD + "\nOrders List (Choose an Order ID)" + RESET);
