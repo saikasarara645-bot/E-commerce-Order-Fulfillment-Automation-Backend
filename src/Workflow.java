@@ -813,7 +813,7 @@ private void handleReorder(BufferedReader console) throws Exception {
     System.out.print(SOFTGRAY + "Enter Order ID to reorder: " + RESET);
     String oldId = console.readLine();
     if (oldId == null) oldId = "";
-    oldId = oldId.trim();
+    oldId = normalizeOrderId(oldId);
 
     if (oldId.equals("")) {
         System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
@@ -828,12 +828,12 @@ private void handleReorder(BufferedReader console) throws Exception {
     Order original = findOrderById(oldId);
 
     if (original == null) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(oldId) + " not found.\n" + RESET);
+        System.out.print(ROSE + "Order " + oldId + " not found.\n" + RESET);
         return;
     }
 
+    // Create order object first, but DO NOT generate ID yet
     Order newOrder = new Order();
-    newOrder.orderId = dp.generateOrderId();
     newOrder.date = currentDateString();
     newOrder.address = original.address;
     newOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
@@ -845,11 +845,15 @@ private void handleReorder(BufferedReader console) throws Exception {
     newOrder.simulationItemName = original.simulationItemName;
     newOrder.simulationItemPrice = original.simulationItemPrice;
 
-    // copy items
+    // copy items first; if anything fails, no order ID is lost
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
-        newOrder.addItem(new Item(it.productId, it.quantity));
+
+        if (!newOrder.addItem(new Item(it.productId, it.quantity))) {
+            System.out.print(ROSE + "Failed to copy item " + it.productId + " for reorder.\n" + RESET);
+            return;
+        }
     }
 
     if (newOrder.itemCount <= 0) {
@@ -865,11 +869,14 @@ private void handleReorder(BufferedReader console) throws Exception {
     // calculate total now
     newOrder.totalAmount = computeOrderTotal(newOrder);
 
+    // NOW generate ID only after everything is valid and ready
+    newOrder.orderId = dp.generateOrderId();
+
     // save new pending order
     dp.orders[dp.orderCount++] = newOrder;
     dp.saveOrders();
 
-    log.write(newOrder.orderId, "Reorder created from " + normalizeOrderId(oldId) + " (Status: PENDING)");
+    log.write(newOrder.orderId, "Reorder created from " + oldId + " (Status: PENDING)");
 
     System.out.print(MINT + "Reorder created successfully! New Order ID: "
             + newOrder.orderId + " (Status: PENDING).\n" + RESET);
@@ -970,7 +977,7 @@ private String extract(String src, String prefix, String endToken) {
     return src.substring(start, end);
 }
     /** Feature 10: Bulk import orders from orders_import.txt */
-   private void importOrdersFromFile(BufferedReader console) throws Exception {
+  private void importOrdersFromFile(BufferedReader console) throws Exception {
     printTitle("Bulk Import Orders");
 
     System.out.print(SOFTGRAY + "Enter import filename (orders_import.json / orders_import.txt): " + RESET);
@@ -980,6 +987,15 @@ private String extract(String src, String prefix, String endToken) {
 
     if (fileName.equals("")) {
         System.out.print(ROSE + "Filename cannot be empty.\n" + RESET);
+        return;
+    }
+
+    String lowerName = fileName.toLowerCase();
+    boolean isJson = lowerName.endsWith(".json");
+    boolean isTxt = lowerName.endsWith(".txt");
+
+    if (!isJson && !isTxt) {
+        System.out.print(ROSE + "Unsupported file type. Use .json or .txt\n" + RESET);
         return;
     }
 
@@ -994,103 +1010,79 @@ private String extract(String src, String prefix, String endToken) {
 
         while ((line = br.readLine()) != null) {
             line = line.trim();
+
             if (line.length() == 0) continue;
 
             try {
-                Order o = null;
+                if (dp.orderCount >= dp.orders.length) {
+                    System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
+                    break;
+                }
+
+                String rawOrderId = "";
+                String date = "";
+                String address = "";
+                String paymentMode = "";
+                String itemList = "";
 
                 // =========================
                 // JSON-like one-line format
                 // =========================
-                if (fileName.toLowerCase().endsWith(".json")) {
-                    String orderId = extract(line, "\"orderId\":\"", "\"");
-                    String date = extract(line, "\"date\":\"", "\"");
-                    String address = extract(line, "\"address\":\"", "\"");
-                    String paymentMode = extract(line, "\"paymentMode\":\"", "\"");
-                    String itemList = extract(line, "\"items\":\"", "\"");
-
-                    if (orderId.equals("") || itemList.equals("")) {
-                        invalidCount++;
-                        continue;
-                    }
-
-                    orderId = normalizeOrderId(orderId);
-
-                    if (findOrderById(orderId) != null) {
-                        skippedCount++;
-                        continue;
-                    }
-
-                    if (dp.orderCount >= dp.orders.length) {
-                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
-                        break;
-                    }
-
-                    o = new Order();
-                    o.orderId = orderId;
-                    o.date = date.equals("") ? currentDateString() : date;
-                    o.address = address;
-                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
-                    o.status = "PENDING";
-
-                    dp.parseItemsIntoOrder(o, itemList);
+                if (isJson) {
+                    rawOrderId = extract(line, "\"orderId\":\"", "\"");
+                    date = extract(line, "\"date\":\"", "\"");
+                    address = extract(line, "\"address\":\"", "\"");
+                    paymentMode = extract(line, "\"paymentMode\":\"", "\"");
+                    itemList = extract(line, "\"items\":\"", "\"");
                 }
 
                 // =========================
                 // TXT format
                 // Expected:
                 // OrderID|Date|Address|PaymentMode|ItemList
+                // OrderID may be blank -> auto-generate after validation
                 // =========================
-                else if (fileName.toLowerCase().endsWith(".txt")) {
-                    String[] parts = line.split("\\|");
+                else if (isTxt) {
+                    String[] parts = line.split("\\|", -1);
 
                     if (parts.length < 5) {
                         invalidCount++;
                         continue;
                     }
 
-                    String orderId = normalizeOrderId(parts[0].trim());
-                    String date = parts[1].trim();
-                    String address = parts[2].trim();
-                    String paymentMode = parts[3].trim();
-                    String itemList = parts[4].trim();
-
-                    if (orderId.equals("") || itemList.equals("")) {
-                        invalidCount++;
-                        continue;
-                    }
-
-                    if (findOrderById(orderId) != null) {
-                        skippedCount++;
-                        continue;
-                    }
-
-                    if (dp.orderCount >= dp.orders.length) {
-                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
-                        break;
-                    }
-
-                    o = new Order();
-                    o.orderId = orderId;
-                    o.date = date.equals("") ? currentDateString() : date;
-                    o.address = address;
-                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
-                    o.status = "PENDING";
-
-                    dp.parseItemsIntoOrder(o, itemList);
+                    rawOrderId = parts[0].trim();
+                    date = parts[1].trim();
+                    address = parts[2].trim();
+                    paymentMode = parts[3].trim();
+                    itemList = parts[4].trim();
                 }
 
-                else {
-                    System.out.print(ROSE + "Unsupported file type. Use .json or .txt\n" + RESET);
-                    return;
-                }
-
-                if (o == null || o.itemCount <= 0) {
+                // Item list is mandatory
+                if (itemList.equals("")) {
                     invalidCount++;
                     continue;
                 }
 
-                // Calculate total
+                // Build order first WITHOUT assigning ID yet
+                Order o = new Order();
+                o.date = date.equals("") ? currentDateString() : date;
+                o.address = capitalizeWords(address == null ? "" : address.trim());
+
+                paymentMode = normalizePaymentMode(paymentMode);
+                o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
+
+                o.status = "PENDING";
+                o.cancelReason = "";
+                o.trackingId = "";
+
+                dp.parseItemsIntoOrder(o, itemList);
+
+                if (o.itemCount <= 0) {
+                    invalidCount++;
+                    continue;
+                }
+
+                // Calculate total before assigning ID
                 int total = 0;
                 for (int i = 0; i < o.itemCount; i++) {
                     Item it = o.items[i];
@@ -1102,6 +1094,20 @@ private String extract(String src, String prefix, String endToken) {
                     }
                 }
                 o.totalAmount = total;
+
+                // Finalize order ID ONLY after row is valid
+                String finalOrderId = normalizeOrderId(rawOrderId);
+
+                if (finalOrderId.equals("")) {
+                    finalOrderId = dp.generateOrderId();
+                } else {
+                    if (findOrderById(finalOrderId) != null) {
+                        skippedCount++;
+                        continue;
+                    }
+                }
+
+                o.orderId = finalOrderId;
 
                 dp.orders[dp.orderCount++] = o;
                 importedCount++;
@@ -1115,6 +1121,7 @@ private String extract(String src, String prefix, String endToken) {
         }
 
         dp.saveOrders();
+        dp.refreshNextOrderNumber();
 
     } catch (Exception e) {
         System.out.print(ROSE + "Error reading file: " + fileName + "\n" + RESET);
@@ -1239,7 +1246,7 @@ private String extract(String src, String prefix, String endToken) {
     System.out.print(SOFTGRAY + "Enter Cancelled Order ID to retry: " + RESET);
     String cid = console.readLine();
     if (cid == null) cid = "";
-    cid = cid.trim();
+    cid = normalizeOrderId(cid);
 
     if (cid.equals("")) {
         System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
@@ -1249,18 +1256,18 @@ private String extract(String src, String prefix, String endToken) {
     Order original = findOrderById(cid);
 
     if (original == null) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " not found.\n" + RESET);
+        System.out.print(ROSE + "Order " + cid + " not found.\n" + RESET);
         return;
     }
 
     String originalStatus = (original.status == null) ? "" : original.status.trim();
     if (!"CANCELLED".equalsIgnoreCase(originalStatus)) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " is not in cancelled list.\n" + RESET);
+        System.out.print(ROSE + "Order " + cid + " is not in cancelled list.\n" + RESET);
         return;
     }
 
+    // Create retry order first, but DO NOT generate ID yet
     Order retryOrder = new Order();
-    retryOrder.orderId = dp.generateOrderId();
     retryOrder.date = currentDateString();
     retryOrder.address = original.address;
     retryOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
@@ -1272,11 +1279,15 @@ private String extract(String src, String prefix, String endToken) {
     retryOrder.simulationItemName = original.simulationItemName;
     retryOrder.simulationItemPrice = original.simulationItemPrice;
 
-    // copy items
+    // copy items first; if copying fails, no order ID is lost
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
-        retryOrder.addItem(new Item(it.productId, it.quantity));
+
+        if (!retryOrder.addItem(new Item(it.productId, it.quantity))) {
+            System.out.print(ROSE + "Failed to copy item " + it.productId + " for retry order.\n" + RESET);
+            return;
+        }
     }
 
     if (retryOrder.itemCount <= 0) {
@@ -1284,7 +1295,7 @@ private String extract(String src, String prefix, String endToken) {
         return;
     }
 
-    // keep retry order pending for later processing from status update
+    // keep retry order pending for later processing
     retryOrder.status = "PENDING";
     retryOrder.cancelReason = "";
     retryOrder.trackingId = "";
@@ -1292,10 +1303,14 @@ private String extract(String src, String prefix, String endToken) {
     // compute total now
     retryOrder.totalAmount = computeOrderTotal(retryOrder);
 
+    // NOW generate ID only after everything is valid
+    retryOrder.orderId = dp.generateOrderId();
+
+    // save retry order
     dp.orders[dp.orderCount++] = retryOrder;
     dp.saveOrders();
 
-    log.write(retryOrder.orderId, "Retry order created from " + normalizeOrderId(cid) + " (Status: PENDING)");
+    log.write(retryOrder.orderId, "Retry order created from " + cid + " (Status: PENDING)");
 
     System.out.print(MINT + "Retry order created successfully! New Order ID: "
             + retryOrder.orderId + " (Status: PENDING).\n" + RESET);
@@ -2040,21 +2055,22 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
     /** Helper: normalize input to full Order ID format (e.g., add 'O' prefix if missing) */
 private String normalizeOrderId(String input) {
     if (input == null) return "";
+
     String s = input.trim();
 
-    // Remove optional 'O' prefix if user types it
-    if (s.length() > 0 && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
+    // Remove optional O prefix if user types it
+    if (!s.equals("") && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
         s = s.substring(1).trim();
     }
 
     // If numeric, pad to 5 digits (01001 style)
     if (isNumeric(s)) {
-        while (s.length() < 5) s = "0" + s;
-        return s;
+        while (s.length() < 5) {
+            s = "0" + s;
+        }
     }
 
-    // Otherwise return as-is (maybe they typed status)
-    return input.trim();
+    return s;
 }
 
     /** Helper: check if a string is numeric */
@@ -2101,130 +2117,177 @@ private String normalizePaymentMode(String input) {
     return "";
 }
 private void acceptNewOrder(BufferedReader console) throws Exception {
-    // 1. Auto-generate Order ID and initialize a new Order
-    String newId = dp.generateOrderId();
+    // 1. Display product catalog first
+    printTitle("Product Catalog");
+
+    System.out.printf(
+        LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
+        "ProdID", "Category", "Brand", "Name", "Price", "Stock"
+    );
+
+    System.out.println(
+        SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
+    );
+
+    for (int i = 0; i < dp.productCount; i++) {
+        Product prod = dp.products[i];
+        if (prod == null) continue;
+
+        String category = (prod.category == null) ? "" : prod.category;
+        String brand = (prod.brand == null) ? "" : prod.brand;
+        String name = (prod.name == null) ? "" : prod.name;
+
+        String stockColor;
+        if (prod.stock <= 0) {
+            stockColor = ROSE;
+        } else if (prod.stock <= 5) {
+            stockColor = ANSI_Yellow;
+        } else {
+            stockColor = MINT;
+        }
+
+        System.out.printf(
+            "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
+            prod.productId,
+            trimTo(category, 18),
+            trimTo(brand, 15),
+            trimTo(name, 28),
+            prod.price,
+            stockColor, prod.stock, RESET
+        );
+    }
+
+    printLine();
+
+    // 2. Ask number of products until valid
+    int itemCount;
+    while (true) {
+        System.out.print(SOFTGRAY + "How many different products in this order? (1-10): " + RESET);
+        String countStr = console.readLine();
+        if (countStr == null) countStr = "";
+        countStr = countStr.trim();
+
+        itemCount = DataPersistence.toInt(countStr);
+
+        if (itemCount >= 1 && itemCount <= 10) {
+            break;
+        }
+
+        System.out.print(ROSE + "Invalid number. Please enter a value from 1 to 10.\n" + RESET);
+    }
+
+    // 3. Temporarily store items first
+    Item[] tempItems = new Item[10];
+
+    for (int i = 1; i <= itemCount; i++) {
+        Product product;
+
+        // Re-ask Product ID until valid
+        while (true) {
+            System.out.print(SOFTGRAY + "Enter Product ID for item " + i + ": " + RESET);
+            String pid = console.readLine();
+            if (pid == null) pid = "";
+            pid = pid.trim();
+
+            if (pid.equals("")) {
+                System.out.print(ROSE + "Product ID cannot be empty. Try again.\n" + RESET);
+                continue;
+            }
+
+            product = dp.findProductById(pid);
+            if (product == null) {
+                System.out.print(ROSE + "Product " + pid + " not found. Try again.\n" + RESET);
+                continue;
+            }
+
+            // Optional: prevent duplicate product in same order
+            boolean duplicate = false;
+            for (int j = 0; j < i - 1; j++) {
+                if (tempItems[j] != null &&
+                    tempItems[j].productId.equalsIgnoreCase(product.productId)) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (duplicate) {
+                System.out.print(ROSE + "This product is already added in the order. Choose a different product.\n" + RESET);
+                continue;
+            }
+
+            break;
+        }
+
+        int qty;
+
+        // Re-ask quantity until valid
+        while (true) {
+            System.out.print(SOFTGRAY + "Enter quantity for " + product.name + ": " + RESET);
+            String qtyStr = console.readLine();
+            if (qtyStr == null) qtyStr = "";
+            qtyStr = qtyStr.trim();
+
+            qty = DataPersistence.toInt(qtyStr);
+
+            if (qty > 0) {
+                break;
+            }
+
+            System.out.print(ROSE + "Invalid quantity. Please enter a positive number.\n" + RESET);
+        }
+
+        tempItems[i - 1] = new Item(product.productId, qty);
+    }
+
+    // 4. Re-ask shipping address until valid
+    String address;
+    while (true) {
+        System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
+        address = console.readLine();
+        if (address == null) address = "";
+        address = capitalizeWords(address.trim());
+
+        if (!address.equals("")) {
+            break;
+        }
+
+        System.out.print(ROSE + "Address cannot be empty. Try again.\n" + RESET);
+    }
+
+    // 5. Re-ask payment mode until valid
+    String paymentMode;
+    while (true) {
+        System.out.print(SOFTGRAY + "Enter payment mode (COD or MockCard): " + RESET);
+        paymentMode = console.readLine();
+        paymentMode = normalizePaymentMode(paymentMode);
+
+        if (!paymentMode.equals("")) {
+            break;
+        }
+
+        System.out.print(ROSE + "Invalid payment mode. Use COD or MockCard only.\n" + RESET);
+    }
+
+    // 6. NOW create order and generate ID only after all inputs are valid
     Order newOrder = new Order();
-    newOrder.orderId = newId;
-    newOrder.date = currentDateString();   // set current date (YYYY-MM-DD)
-    newOrder.status = "PENDING";           // keep order pending until admin processes it later
+    newOrder.orderId = dp.generateOrderId();
+    newOrder.date = currentDateString();
+    newOrder.status = "PENDING";
+    newOrder.address = address;
+    newOrder.paymentMode = paymentMode;
+
+    for (int i = 0; i < itemCount; i++) {
+        if (tempItems[i] != null) {
+            if (!newOrder.addItem(tempItems[i])) {
+                System.out.print(ROSE + "Failed to add item " + tempItems[i].productId + ". Order cancelled.\n" + RESET);
+                return;
+            }
+        }
+    }
 
     System.out.print(LAVENDER + "New Order ID: " + newOrder.orderId + "\n" + RESET);
 
-    // 2. Display product catalog
-   printTitle("Product Catalog");
-
-System.out.printf(
-    LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
-    "ProdID", "Category", "Brand", "Name", "Price", "Stock"
-);
-
-System.out.println(
-    SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
-);
-
-for (int i = 0; i < dp.productCount; i++) {
-    Product prod = dp.products[i];
-    if (prod == null) continue;
-
-    String category = (prod.category == null) ? "" : prod.category;
-    String brand = (prod.brand == null) ? "" : prod.brand;
-    String name = (prod.name == null) ? "" : prod.name;
-
-    String stockColor;
-    if (prod.stock <= 0) {
-        stockColor = ROSE;
-    } else if (prod.stock <= 5) {
-        stockColor = ANSI_Yellow;
-    } else {
-        stockColor = MINT;
-    }
-
-    System.out.printf(
-        "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
-        prod.productId,
-        trimTo(category, 18),
-        trimTo(brand, 15),
-        trimTo(name, 28),
-        prod.price,
-        stockColor, prod.stock, RESET
-    );
-}
-
-printLine();
-
-    // 3. Allow admin to select products and specify quantities
-    System.out.print(SOFTGRAY + "How many different products in this order? (1-10): " + RESET);
-    String countStr = console.readLine();
-    if (countStr == null) countStr = "";
-    countStr = countStr.trim();
-
-    int itemCount = DataPersistence.toInt(countStr);
-    if (itemCount < 1 || itemCount > 10) {
-        System.out.print(ROSE + "Invalid number of products. Order cancelled.\n" + RESET);
-        return;
-    }
-
-    for (int i = 1; i <= itemCount; i++) {
-        System.out.print(SOFTGRAY + "Enter Product ID for item " + i + ": " + RESET);
-        String pid = console.readLine();
-        if (pid == null) pid = "";
-        pid = pid.trim();
-
-        if (pid.equals("")) {
-            System.out.print(ROSE + "Product ID cannot be empty. Order cancelled.\n" + RESET);
-            return;
-        }
-
-        Product product = dp.findProductById(pid);
-        if (product == null) {
-            System.out.print(ROSE + "Product " + pid + " not found. Order cancelled.\n" + RESET);
-            return;
-        }
-
-        System.out.print(SOFTGRAY + "Enter quantity for " + product.name + ": " + RESET);
-        String qtyStr = console.readLine();
-        if (qtyStr == null) qtyStr = "";
-        qtyStr = qtyStr.trim();
-
-        int qty = DataPersistence.toInt(qtyStr);
-        if (qty <= 0) {
-            System.out.print(ROSE + "Invalid quantity. Order cancelled.\n" + RESET);
-            return;
-        }
-
-        // Add item to order
-        if (!newOrder.addItem(new Item(product.productId, qty))) {
-            System.out.print(ROSE + "Failed to add item " + product.productId + ". Order cancelled.\n" + RESET);
-            return;
-        }
-    }
-
-    // 4. Ask for shipping address
-   System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
-   String address = console.readLine();
-
-   if (address == null) address = "";
-   address = capitalizeWords(address);   // <-- automatic capitalization
-
-   if (address.equals("")) {
-    System.out.print(ROSE + "Address cannot be empty.\n" + RESET);
-    return;
-}
-
-newOrder.address = address;
-
-    // 5. Ask for payment mode
-    System.out.print(SOFTGRAY + "Enter payment mode (COD or MockCard): " + RESET);
-    String paymentMode = console.readLine();
-    paymentMode = normalizePaymentMode(paymentMode);
-
-    if (paymentMode.equals("")) {
-    System.out.print(ROSE + "Invalid payment mode. Use COD or MockCard only.\n" + RESET);
-    return;
-}
-  newOrder.paymentMode = paymentMode;
-
-    // 6. Show order summary before saving
+    // 7. Show order summary before saving
     printTitle("Order Summary");
     for (int i = 0; i < newOrder.itemCount; i++) {
         Item it = newOrder.items[i];
@@ -2235,19 +2298,20 @@ newOrder.address = address;
 
         System.out.print(LAVENDER + "- " + RESET + itemName + " x" + it.quantity + "\n");
     }
+
     System.out.print(SOFTGRAY + "Address: " + RESET + newOrder.address + "\n");
     System.out.print(SOFTGRAY + "Payment: " + RESET + newOrder.paymentMode + "\n");
     System.out.print(SOFTGRAY + "Initial Status: " + RESET + ANSI_Yellow + newOrder.status + RESET + "\n");
     printLine();
 
-    // 7. Save the order only as PENDING
+    // 8. Save as PENDING
     dp.orders[dp.orderCount++] = newOrder;
     dp.saveOrders();
 
-    // 8. Log creation only (do NOT process now)
+    // 9. Log creation
     log.write(newOrder.orderId, "Order created via admin interface (PENDING)");
 
-    // 9. Final message
+    // 10. Final message
     System.out.print(MINT + "New order created successfully.\n" + RESET);
     System.out.print(SOFTGRAY + "Order ID: " + RESET + newOrder.orderId + "\n");
     System.out.print(SOFTGRAY + "Status: " + RESET + ANSI_Yellow + newOrder.status + RESET + "\n");

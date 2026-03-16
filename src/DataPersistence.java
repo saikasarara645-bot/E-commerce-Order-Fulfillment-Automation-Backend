@@ -36,24 +36,7 @@ this.baseDir = (baseDir == null ? "" : baseDir);
  }
  return baseDir + "/" + filename; // e.g. "data/admins.txt"
 }
-private String normalizeOrderIdForUI(String id) {
- if (id == null) return "";
- id = id.trim();
- if (id.length() == 0) return "";
- // If starts with O -> remove it
- if (id.startsWith("O") || id.startsWith("o")) id = id.substring(1);
 
- // Keep only digits
- String num = "";
- for (int i = 0; i < id.length(); i++) {
- char c = id.charAt(i);
- if (c >= '0' && c <= '9') num += c;
- }
- if (num.length() == 0) return "";
- // Pad to 5 digits
- while (num.length() < 5) num = "0" + num;
- return num;
-}
 
 /** Load all data from files: products, orders, admins */
  public void loadAll() throws Exception {
@@ -411,35 +394,77 @@ public int computeOrderTotal(Order o) {
  return total;
 }
  /** Determine nextOrderNumber by finding the max numeric part of loaded order IDs */
- private void computeNextOrderNumber() {
- int maxNum = 0;
- for (int i = 0; i < orderCount; i++) {
- Order o = orders[i];
- if (o == null || o.orderId == null) continue;
- String id = o.orderId;
- // extract numeric part from ID (works for O1019, 01019, 1019)
- String numPart = "";
- for (int k = 0; k < id.length(); k++) {
- char ch = id.charAt(k);
- if (ch >= '0' && ch <= '9') {
- numPart += ch;
- }
- }
- int num = toInt(numPart);
- if (num > maxNum) {
- maxNum = num;
- }
- }
- // set next order number after loop
- nextOrderNumber = maxNum + 1;
+private int computeNextOrderNumber() {
+    int max = 1000;   // so next becomes 01001
+
+    for (int i = 0; i < orderCount; i++) {
+        Order o = orders[i];
+        if (o == null || o.orderId == null) continue;
+
+        String s = o.orderId.trim();
+
+        if (s.equals("")) continue;
+
+        // remove optional O prefix
+        if (s.length() > 0 && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
+            s = s.substring(1).trim();
+        }
+
+        if (isNumeric(s)) {
+            int n = toInt(s);
+            if (n > max) max = n;
+        }
+    }
+
+    return max + 1;
 }
+
+public void refreshNextOrderNumber() {
+    nextOrderNumber = computeNextOrderNumber();
+}
+private boolean isNumeric(String s) {
+    if (s == null) return false;
+
+    s = s.trim();
+    if (s.equals("")) return false;
+
+    for (int i = 0; i < s.length(); i++) {
+        if (!Character.isDigit(s.charAt(i))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
  // Generate a new unique Order ID (e.g., "O1001", "O1002", ...) 
  public String generateOrderId() {
- int n = nextOrderNumber;
- nextOrderNumber++;
- String s = "" + n;
- while (s.length() < 5) s = "0" + s; // 1001 -> 01001
- return s;
+    int maxId = 0;
+
+    for (int i = 0; i < orderCount; i++) {
+        Order o = orders[i];
+        if (o == null || o.orderId == null) continue;
+
+        String id = o.orderId.trim();
+
+        try {
+            int num = Integer.parseInt(id);
+            if (num > maxId) {
+                maxId = num;
+            }
+        } catch (Exception e) {
+            // ignore invalid order ids
+        }
+    }
+
+    int nextId = maxId + 1;
+
+    String s = String.valueOf(nextId);
+    while (s.length() < 5) {
+        s = "0" + s;
+    }
+
+    return s;
 }
 /** Parse an "ItemList" string into Item objects added to Order
 * Supported formats:
