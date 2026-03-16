@@ -1501,6 +1501,7 @@ private void handleProductManagement(BufferedReader console) throws Exception {
         int stock = DataPersistence.toInt(stockStr);
 
         dp.products[dp.productCount++] = new Product(newId, category, brand, name, price, stock);
+        dp.sortProductsById();
         dp.saveProducts(); // ✅ save immediately
         System.out.print(MINT+"Product " + newId + " added successfully.\n"+RESET);
         log.write("ADMIN", "Added product " + newId);

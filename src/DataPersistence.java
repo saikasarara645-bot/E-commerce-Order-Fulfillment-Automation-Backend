@@ -380,6 +380,23 @@ fw.close();
  }
  return neg ? -value : value;
  }
+ public void sortProductsById() {
+    for (int i = 0; i < productCount - 1; i++) {
+        for (int j = i + 1; j < productCount; j++) {
+
+            Product a = products[i];
+            Product b = products[j];
+
+            if (a == null || b == null) continue;
+
+            if (a.productId.compareToIgnoreCase(b.productId) > 0) {
+                Product temp = products[i];
+                products[i] = products[j];
+                products[j] = temp;
+            }
+        }
+    }
+}
 public int computeOrderTotal(Order o) {
  if (o == null) return 0;
  int total = 0;
