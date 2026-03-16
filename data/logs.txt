@@ -1,1 +1,1 @@
-
+Order 00001 - Order created via admin interface (PENDING)
