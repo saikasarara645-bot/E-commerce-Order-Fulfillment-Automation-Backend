@@ -1965,18 +1965,46 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
     System.out.print(LAVENDER + "New Order ID: " + newOrder.orderId + "\n" + RESET);
 
     // 2. Display product catalog
-    printTitle("Product Catalog");
-    for (int i = 0; i < dp.productCount; i++) {
-        Product prod = dp.products[i];
-        if (prod == null) continue;
+   printTitle("Product Catalog");
 
-        System.out.print(
-            LAVENDER + prod.productId + RESET +
-            " - " + MINT + prod.name + RESET +
-            SOFTGRAY + " (Stock: " + prod.stock + ")" + RESET + "\n"
-        );
+System.out.printf(
+    LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
+    "ProdID", "Category", "Brand", "Name", "Price", "Stock"
+);
+
+System.out.println(
+    SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
+);
+
+for (int i = 0; i < dp.productCount; i++) {
+    Product prod = dp.products[i];
+    if (prod == null) continue;
+
+    String category = (prod.category == null) ? "" : prod.category;
+    String brand = (prod.brand == null) ? "" : prod.brand;
+    String name = (prod.name == null) ? "" : prod.name;
+
+    String stockColor;
+    if (prod.stock <= 0) {
+        stockColor = ROSE;
+    } else if (prod.stock <= 5) {
+        stockColor = ANSI_Yellow;
+    } else {
+        stockColor = MINT;
     }
-    printLine();
+
+    System.out.printf(
+        "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
+        prod.productId,
+        trimTo(category, 18),
+        trimTo(brand, 15),
+        trimTo(name, 28),
+        prod.price,
+        stockColor, prod.stock, RESET
+    );
+}
+
+printLine();
 
     // 3. Allow admin to select products and specify quantities
     System.out.print(SOFTGRAY + "How many different products in this order? (1-10): " + RESET);
