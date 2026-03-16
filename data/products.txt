@@ -18,3 +18,4 @@ P501|Power Bank|Xiaomi|Mi Power Bank 3|2399|30
 P502|Power Bank|Anker|PowerCore 20K|4999|12
 P503|Power Bank|Baseus|Bipow 20W|3499|18
 P504|Power Bank|Remax|RPP-20|2999|10
+P505|power bank|Tecno|C45|3000|12

@@ -10,3 +10,5 @@ Order 00003 - Inventory OK – stock reserved
 Order 00003 - PAYMENT OK (Cash on Delivery)
 Order 00003 - Status changed to PACKED
 Order 00003 - Order accepted and moved to PACKED
+Order 00004 - Order created via admin interface (PENDING)
+Order ADMIN - Added product P505
