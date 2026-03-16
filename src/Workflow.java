@@ -355,9 +355,12 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
         break;
 
         case "19":
-            if(isAdmin) importOrdersFromFile(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
-            break;
+        if (isAdmin) {
+          importOrdersFromFile(console);
+        } else {
+        System.out.println(ROSE + "Restricted: Admin only." + RESET);
+        }
+        break;
 
         case "20":
             if(isAdmin) archiveDeliveredOrders(console);
@@ -948,61 +951,187 @@ private void handleReorder(BufferedReader console) throws Exception {
         fw.close();
         System.out.print(MINT+"Stock report generated in stock_report.txt\n"+RESET);
     }
+private String extract(String src, String prefix, String endToken) {
 
+    if (src == null) return "";
+
+    int start = src.indexOf(prefix);
+
+    if (start == -1) return "";
+
+    start = start + prefix.length();
+
+    int end = src.indexOf(endToken, start);
+
+    if (end == -1) {
+        return src.substring(start);
+    }
+
+    return src.substring(start, end);
+}
     /** Feature 10: Bulk import orders from orders_import.txt */
-   private void importOrdersFromFile(BufferedReader console) throws Exception{
-        BufferedReader br = null;
-        int importedCount = 0;
-        try {
-       br = new BufferedReader(new FileReader(dp.path("orders_import.json")));
+   private void importOrdersFromFile(BufferedReader console) throws Exception {
+    printTitle("Bulk Import Orders");
+
+    System.out.print(SOFTGRAY + "Enter import filename (orders_import.json / orders_import.txt): " + RESET);
+    String fileName = console.readLine();
+    if (fileName == null) fileName = "";
+    fileName = fileName.trim();
+
+    if (fileName.equals("")) {
+        System.out.print(ROSE + "Filename cannot be empty.\n" + RESET);
+        return;
+    }
+
+    BufferedReader br = null;
+    int importedCount = 0;
+    int skippedCount = 0;
+    int invalidCount = 0;
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path(fileName)));
         String line;
+
         while ((line = br.readLine()) != null) {
             line = line.trim();
             if (line.length() == 0) continue;
 
-            // Extract fields manually
-            String orderId = extract(line, "\"orderId\":\"", "\"");
-            String date = extract(line, "\"date\":\"", "\"");
-            String address = extract(line, "\"address\":\"", "\"");
-            String paymentMode = extract(line, "\"paymentMode\":\"", "\"");
-            String itemList = extract(line, "\"items\":\"", "\"");
+            try {
+                Order o = null;
 
-            // Create Order object
-            Order o = new Order();
-            o.orderId = orderId;
-            o.date = date;
-            o.address = address;
-            o.paymentMode = paymentMode;
-            o.status = "PENDING";
-            dp.parseItemsIntoOrder(o, itemList);
+                // =========================
+                // JSON-like one-line format
+                // =========================
+                if (fileName.toLowerCase().endsWith(".json")) {
+                    String orderId = extract(line, "\"orderId\":\"", "\"");
+                    String date = extract(line, "\"date\":\"", "\"");
+                    String address = extract(line, "\"address\":\"", "\"");
+                    String paymentMode = extract(line, "\"paymentMode\":\"", "\"");
+                    String itemList = extract(line, "\"items\":\"", "\"");
 
-            // Calculate total
-            int total = 0;
-            for (int i = 0; i < o.itemCount; i++) {
-                Product p = dp.findProductById(o.items[i].productId);
-                if (p != null) {
-                    total += p.price * o.items[i].quantity;
+                    if (orderId.equals("") || itemList.equals("")) {
+                        invalidCount++;
+                        continue;
+                    }
+
+                    orderId = normalizeOrderId(orderId);
+
+                    if (findOrderById(orderId) != null) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (dp.orderCount >= dp.orders.length) {
+                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
+                        break;
+                    }
+
+                    o = new Order();
+                    o.orderId = orderId;
+                    o.date = date.equals("") ? currentDateString() : date;
+                    o.address = address;
+                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
+                    o.status = "PENDING";
+
+                    dp.parseItemsIntoOrder(o, itemList);
                 }
-            }
-            o.totalAmount = total;
 
-            dp.orders[dp.orderCount++] = o;
-            System.out.print(MINT+"Imported: " + o.orderId + "\n"+RESET);
+                // =========================
+                // TXT format
+                // Expected:
+                // OrderID|Date|Address|PaymentMode|ItemList
+                // =========================
+                else if (fileName.toLowerCase().endsWith(".txt")) {
+                    String[] parts = line.split("\\|");
+
+                    if (parts.length < 5) {
+                        invalidCount++;
+                        continue;
+                    }
+
+                    String orderId = normalizeOrderId(parts[0].trim());
+                    String date = parts[1].trim();
+                    String address = parts[2].trim();
+                    String paymentMode = parts[3].trim();
+                    String itemList = parts[4].trim();
+
+                    if (orderId.equals("") || itemList.equals("")) {
+                        invalidCount++;
+                        continue;
+                    }
+
+                    if (findOrderById(orderId) != null) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    if (dp.orderCount >= dp.orders.length) {
+                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
+                        break;
+                    }
+
+                    o = new Order();
+                    o.orderId = orderId;
+                    o.date = date.equals("") ? currentDateString() : date;
+                    o.address = address;
+                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
+                    o.status = "PENDING";
+
+                    dp.parseItemsIntoOrder(o, itemList);
+                }
+
+                else {
+                    System.out.print(ROSE + "Unsupported file type. Use .json or .txt\n" + RESET);
+                    return;
+                }
+
+                if (o == null || o.itemCount <= 0) {
+                    invalidCount++;
+                    continue;
+                }
+
+                // Calculate total
+                int total = 0;
+                for (int i = 0; i < o.itemCount; i++) {
+                    Item it = o.items[i];
+                    if (it == null) continue;
+
+                    Product p = dp.findProductById(it.productId);
+                    if (p != null) {
+                        total += p.price * it.quantity;
+                    }
+                }
+                o.totalAmount = total;
+
+                dp.orders[dp.orderCount++] = o;
+                importedCount++;
+
+                System.out.print(MINT + "Imported: " + o.orderId + "\n" + RESET);
+                log.write("SYSTEM", "Bulk imported order " + o.orderId);
+
+            } catch (Exception ex) {
+                invalidCount++;
             }
-        } catch (Exception e) {
-            System.out.print(ROSE+"Error reading orders_import.txt\n"+RESET);
-        } finally {
-            if (br != null) br.close();
         }
-        System.out.print(MINT+importedCount + " orders imported from orders_import.txt.\n"+RESET);
+
+        dp.saveOrders();
+
+    } catch (Exception e) {
+        System.out.print(ROSE + "Error reading file: " + fileName + "\n" + RESET);
+    } finally {
+        if (br != null) br.close();
     }
-    private String extract(String src, String prefix, String endToken) {
-    int start = src.indexOf(prefix);
-    if (start == -1) return "";
-    start += prefix.length();
-    int end = src.indexOf(endToken, start);
-    if (end == -1) return src.substring(start);
-    return src.substring(start, end);
+
+    printLine();
+    System.out.print(MINT + importedCount + " order(s) imported from " + fileName + ".\n" + RESET);
+
+    if (skippedCount > 0) {
+        System.out.print(ANSI_Yellow + skippedCount + " duplicate order(s) skipped.\n" + RESET);
+    }
+
+    if (invalidCount > 0) {
+        System.out.print(ROSE + invalidCount + " invalid record(s) skipped.\n" + RESET);
+    }
 }
 
     /** Feature 11: Simulation mode to generate and process orders in various scenarios */
