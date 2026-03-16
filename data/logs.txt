@@ -34,3 +34,9 @@ Order ADMIN - Restocked M101 (+12)
 Order 00006 - Reorder created from 00003 (Status: PENDING)
 Order ADMIN - Deleted ALL order history. Orders=6, Receipts=1, Backup=orders_archive.txt
 Order ADMIN - RESTORE from archive. Count=6
+Order 00007 - Order created via admin interface (PENDING)
+Order 00007 - Inventory OK – stock reserved
+Order 00007 - PAYMENT OK (Cash on Delivery)
+Order 00007 - Status changed to PACKED
+Order 00007 - Order accepted and moved to PACKED
+Order ADMIN - Edited product P505 (Price changed)
