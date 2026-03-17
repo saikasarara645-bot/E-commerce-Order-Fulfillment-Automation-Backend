@@ -1,0 +1,38 @@
+[
+  {
+    "productId": "P501",
+    "name": "Mi Power Bank 3",
+    "price": 2399,
+    "stock": 30
+  },
+  {
+    "productId": "P502",
+    "name": "PowerCore 20K",
+    "price": 4999,
+    "stock": 12
+  },
+  {
+    "productId": "P503",
+    "name": "Bipow 20W",
+    "price": 3499,
+    "stock": 18
+  },
+  {
+    "productId": "P504",
+    "name": "RPP-20",
+    "price": 2999,
+    "stock": 15
+  },
+  {
+    "productId": "P106",
+    "name": "P2",
+    "price": 300000000,
+    "stock": 90
+  },
+  {
+    "productId": "M105",
+    "name": "Camon 30",
+    "price": 25000,
+    "stock": 10
+  }
+]
