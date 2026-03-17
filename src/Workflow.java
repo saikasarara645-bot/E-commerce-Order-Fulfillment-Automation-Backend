@@ -318,16 +318,12 @@ private String ordersToJson(Order[] list, int count, String indent) {
     return json.toString();
 }
 
-private String ordersToJson(Order[] list, int count) {
-    return ordersToJson(list, count, "");
-}
-
 private Order buildOrderFromJson(String obj) {
     if (obj == null || obj.trim().equals("")) return null;
 
     Order o = new Order();
 
-    o.orderId = extractJsonString(obj, "orderId");
+    o.orderId = normalizeOrderId(extractJsonString(obj, "orderId"));
     o.date = extractJsonString(obj, "date");
     o.address = extractJsonString(obj, "address");
     o.paymentMode = extractJsonString(obj, "paymentMode");
@@ -369,7 +365,10 @@ private int appendOrdersFromJsonArray(String ordersJson) {
 
         Order o = buildOrderFromJson(orderObjects[i]);
         if (o == null) continue;
-        if (o.orderId == null || o.orderId.trim().equals("")) continue;
+
+        o.orderId = normalizeOrderId(o.orderId);
+
+        if (o.orderId.equals("")) continue;
 
         if (findOrderById(o.orderId) != null) {
             continue; // skip duplicates
@@ -379,6 +378,7 @@ private int appendOrdersFromJsonArray(String ordersJson) {
         restored++;
     }
 
+    dp.refreshNextOrderNumber();
     return restored;
 }
 
@@ -1326,24 +1326,6 @@ private void handleReorder(BufferedReader console) throws Exception {
 
     writeWholeFile("stock_report.json", json.toString());
     System.out.print(MINT + "Stock report generated in stock_report.json\n" + RESET);
-}
-private String extract(String src, String prefix, String endToken) {
-
-    if (src == null) return "";
-
-    int start = src.indexOf(prefix);
-
-    if (start == -1) return "";
-
-    start = start + prefix.length();
-
-    int end = src.indexOf(endToken, start);
-
-    if (end == -1) {
-        return src.substring(start);
-    }
-
-    return src.substring(start, end);
 }
      
 private void importOrdersFromFile(BufferedReader console) throws Exception {
@@ -2527,9 +2509,9 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
     printTitle("Product Catalog");
 
     System.out.printf(
-        LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
-        "ProdID", "Category", "Brand", "Name", "Price", "Stock"
-    );
+    LAVENDER + "%-8s %-18s %-15s %-28s %-14s %-10s%n" + RESET,
+    "ProdID", "Category", "Brand", "Name", "Price", "Stock"
+);
 
     System.out.println(
         SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
@@ -2552,15 +2534,17 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
             stockColor = MINT;
         }
 
-        System.out.printf(
-            "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
-            prod.productId,
-            trimTo(category, 18),
-            trimTo(brand, 15),
-            trimTo(name, 28),
-            prod.price,
-            stockColor, prod.stock, RESET
-        );
+      System.out.printf(
+    "%-8s %-18s %-15s %-28s %-14s %s%-10d%s%n",
+    prod.productId,
+    trimTo(category, 18),
+    trimTo(brand, 15),
+    trimTo(name, 28),
+    formatMoney(prod.price),
+    stockColor,
+    prod.stock,
+    RESET
+);
     }
 
     printLine();
@@ -2947,11 +2931,11 @@ private void showProductsPreview() {
 
     // Header
     System.out.printf(
-        LAVENDER + "%-8s %-16s %-14s %-30s %-10s %-8s" + RESET + "%n",
+        LAVENDER + "%-8s %-16s %-14s %-30s %-14s %-8s" + RESET + "%n",
         "ProdID", "Category", "Brand", "Name", "Price", "Stock"
     );
     System.out.println(SOFTGRAY +
-        "------------------------------------------------------------------------------------------------------"
+        "------------------------------------------------------------------------------------------------------------"
         + RESET
     );
 
@@ -2963,12 +2947,12 @@ private void showProductsPreview() {
         String stockColor = p.stock <= 5 ? ROSE : MINT;
 
         System.out.printf(
-            "%-8s %-16s %-14s %-30s %-10d %s%-8d%s%n",
+            "%-8s %-16s %-14s %-30s %-14d %s%-8d%s%n",
             p.productId,
             p.category,
             p.brand,
             p.name,
-            p.price,
+            formatMoney(p.price),
             stockColor,
             p.stock,
             RESET
@@ -3291,23 +3275,6 @@ private void deleteAllOrderHistory(BufferedReader console) throws Exception {
     }
 }
 
-private String readLastLine(String filePath) {
-    BufferedReader br = null;
-    try {
-        br = new BufferedReader(new FileReader(filePath));
-        String line;
-        String last = "";
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (!line.equals("")) last = line;
-        }
-        return last;
-    } catch (Exception e) {
-        return "";
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-    }
-}
 private int[] deleteAllReceiptFiles() {
     int deleted = 0;
     int failed = 0;

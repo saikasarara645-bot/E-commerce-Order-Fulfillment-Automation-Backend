@@ -1,8 +1,14 @@
 [
+{
+    "invoiceId": "INV-202603-01002",
+    "orderId": "O01002",
+    "totalAmount": 2000,
+    "generatedAt": "2026-03-17T11:44:40.033870"
+  },
   {
-    "invoiceId": "INV-202603-00001",
-    "orderId": "O00001",
-    "totalAmount": 96000,
-    "generatedAt": "2026-03-17T01:44:02.203864100"
+    "invoiceId": "INV-202603-01003",
+    "orderId": "O01003",
+    "totalAmount": 12400,
+    "generatedAt": "2026-03-17T11:48:34.908449"
   }
 ]
