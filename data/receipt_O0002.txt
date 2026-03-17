@@ -1,9 +1,0 @@
-Receipt for Order O0002
-Address: Simulation Address
-Status: DELIVERED
-Tracking ID: (Not assigned)
-Items:
-- SIM-ITEM-1 (x1 @ BDT 0 each)
---------------------------------------
-Total Paid: BDT 0
-Thank you for your purchase!

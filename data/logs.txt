@@ -1,3 +1,0 @@
-Order O2002 - Inventory OK – stock reserved
-Order O2002 - PAYMENT FAIL (Unknown payment mode: )
-Order O2002 - Order cancelled - Payment Declined

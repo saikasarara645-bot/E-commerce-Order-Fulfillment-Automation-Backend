@@ -35,6 +35,382 @@ public class Workflow {
         this.log = log;
         this.paymentService = new PaymentService(log);
     }
+    private String readWholeFile(String filename) {
+    BufferedReader br = null;
+    StringBuilder sb = new StringBuilder();
+
+    try {
+        br = new BufferedReader(new FileReader(dp.path(filename)));
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+    } catch (Exception e) {
+        return "";
+    } finally {
+        try { if (br != null) br.close(); } catch (Exception ex) {}
+    }
+
+    return sb.toString().trim();
+}
+
+private void writeWholeFile(String filename, String content) throws Exception {
+    FileWriter fw = new FileWriter(dp.path(filename), false);
+    fw.write(content);
+    fw.close();
+}
+
+private String jsonEscape(String s) {
+    if (s == null) return "";
+
+    StringBuilder out = new StringBuilder();
+    for (int i = 0; i < s.length(); i++) {
+        char c = s.charAt(i);
+
+        if (c == '\\') out.append("\\\\");
+        else if (c == '"') out.append("\\\"");
+        else if (c == '\n') out.append("\\n");
+        else if (c == '\r') out.append("\\r");
+        else if (c == '\t') out.append("\\t");
+        else out.append(c);
+    }
+
+    return out.toString();
+}
+
+private String q(String s) {
+    return "\"" + jsonEscape(s) + "\"";
+}
+
+private int skipSpaces(String s, int i) {
+    while (i < s.length()) {
+        char c = s.charAt(i);
+        if (c == ' ' || c == '\n' || c == '\r' || c == '\t') i++;
+        else break;
+    }
+    return i;
+}
+
+private int findValueStart(String obj, String key) {
+    String token = "\"" + key + "\"";
+    int k = obj.indexOf(token);
+    if (k < 0) return -1;
+
+    int colon = obj.indexOf(":", k + token.length());
+    if (colon < 0) return -1;
+
+    return skipSpaces(obj, colon + 1);
+}
+
+private String extractJsonString(String obj, String key) {
+    int i = findValueStart(obj, key);
+    if (i < 0 || i >= obj.length()) return "";
+    if (obj.charAt(i) != '"') return "";
+
+    i++;
+    StringBuilder sb = new StringBuilder();
+    boolean escape = false;
+
+    while (i < obj.length()) {
+        char c = obj.charAt(i);
+
+        if (escape) {
+            if (c == 'n') sb.append('\n');
+            else if (c == 'r') sb.append('\r');
+            else if (c == 't') sb.append('\t');
+            else sb.append(c);
+            escape = false;
+        } else {
+            if (c == '\\') {
+                escape = true;
+            } else if (c == '"') {
+                break;
+            } else {
+                sb.append(c);
+            }
+        }
+        i++;
+    }
+
+    return sb.toString();
+}
+
+private int extractJsonInt(String obj, String key) {
+    int i = findValueStart(obj, key);
+    if (i < 0 || i >= obj.length()) return 0;
+
+    String num = "";
+    if (obj.charAt(i) == '-') {
+        num += "-";
+        i++;
+    }
+
+    while (i < obj.length()) {
+        char c = obj.charAt(i);
+        if (c >= '0' && c <= '9') {
+            num += c;
+            i++;
+        } else {
+            break;
+        }
+    }
+
+    return DataPersistence.toInt(num);
+}
+
+private boolean extractJsonBoolean(String obj, String key) {
+    int i = findValueStart(obj, key);
+    if (i < 0 || i >= obj.length()) return false;
+
+    return obj.startsWith("true", i);
+}
+
+private String extractJsonArray(String obj, String key) {
+    int i = findValueStart(obj, key);
+    if (i < 0 || i >= obj.length()) return "[]";
+    if (obj.charAt(i) != '[') return "[]";
+
+    int start = i;
+    int depth = 0;
+    boolean inString = false;
+    boolean escape = false;
+
+    while (i < obj.length()) {
+        char c = obj.charAt(i);
+
+        if (inString) {
+            if (escape) {
+                escape = false;
+            } else if (c == '\\') {
+                escape = true;
+            } else if (c == '"') {
+                inString = false;
+            }
+        } else {
+            if (c == '"') {
+                inString = true;
+            } else if (c == '[') {
+                depth++;
+            } else if (c == ']') {
+                depth--;
+                if (depth == 0) {
+                    return obj.substring(start, i + 1);
+                }
+            }
+        }
+
+        i++;
+    }
+
+    return "[]";
+}
+
+private String[] splitTopLevelObjects(String jsonArrayText) {
+    String text = (jsonArrayText == null ? "" : jsonArrayText.trim());
+
+    if (text.startsWith("[")) text = text.substring(1);
+    if (text.endsWith("]")) text = text.substring(0, text.length() - 1);
+
+    String[] temp = new String[1000];
+    int count = 0;
+
+    int start = -1;
+    int depth = 0;
+    boolean inString = false;
+    boolean escape = false;
+
+    for (int i = 0; i < text.length(); i++) {
+        char c = text.charAt(i);
+
+        if (inString) {
+            if (escape) {
+                escape = false;
+            } else if (c == '\\') {
+                escape = true;
+            } else if (c == '"') {
+                inString = false;
+            }
+        } else {
+            if (c == '"') {
+                inString = true;
+            } else if (c == '{') {
+                if (depth == 0) start = i;
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0 && start != -1) {
+                    temp[count++] = text.substring(start, i + 1);
+                    start = -1;
+                }
+            }
+        }
+    }
+
+    String[] result = new String[count];
+    for (int i = 0; i < count; i++) {
+        result[i] = temp[i];
+    }
+
+    return result;
+}
+
+private String orderToJson(Order o, String indent) {
+    if (indent == null) indent = "";
+
+    String in1 = indent + "  ";
+    String in2 = indent + "    ";
+    String in3 = indent + "      ";
+
+    StringBuilder json = new StringBuilder();
+
+    json.append(indent).append("{\n");
+    json.append(in1).append("\"orderId\": ").append(q(o.orderId == null ? "" : o.orderId)).append(",\n");
+    json.append(in1).append("\"date\": ").append(q(o.date == null ? "" : o.date)).append(",\n");
+    json.append(in1).append("\"address\": ").append(q(o.address == null ? "" : o.address)).append(",\n");
+    json.append(in1).append("\"paymentMode\": ").append(q(o.paymentMode == null ? "" : o.paymentMode)).append(",\n");
+    json.append(in1).append("\"status\": ").append(q(o.status == null ? "" : o.status)).append(",\n");
+    json.append(in1).append("\"totalAmount\": ").append(o.totalAmount).append(",\n");
+    json.append(in1).append("\"cancelReason\": ").append(q(o.cancelReason == null ? "" : o.cancelReason)).append(",\n");
+    json.append(in1).append("\"trackingId\": ").append(q(o.trackingId == null ? "" : o.trackingId)).append(",\n");
+    json.append(in1).append("\"isSimulationOrder\": ").append(o.isSimulationOrder).append(",\n");
+    json.append(in1).append("\"simulationItemName\": ").append(q(o.simulationItemName == null ? "" : o.simulationItemName)).append(",\n");
+    json.append(in1).append("\"simulationItemPrice\": ").append(o.simulationItemPrice).append(",\n");
+    json.append(in1).append("\"items\": [\n");
+
+    int writtenItems = 0;
+    for (int i = 0; i < o.itemCount; i++) {
+        Item it = o.items[i];
+        if (it == null) continue;
+
+        if (writtenItems > 0) json.append(",\n");
+
+        json.append(in2).append("{\n");
+        json.append(in3).append("\"productId\": ").append(q(it.productId == null ? "" : it.productId)).append(",\n");
+        json.append(in3).append("\"quantity\": ").append(it.quantity).append("\n");
+        json.append(in2).append("}");
+
+        writtenItems++;
+    }
+
+    json.append("\n").append(in1).append("]\n");
+    json.append(indent).append("}");
+
+    return json.toString();
+}
+
+private String ordersToJson(Order[] list, int count, String indent) {
+    if (indent == null) indent = "";
+
+    StringBuilder json = new StringBuilder();
+    json.append("[\n");
+
+    int written = 0;
+    for (int i = 0; i < count; i++) {
+        Order o = list[i];
+        if (o == null) continue;
+
+        if (written > 0) json.append(",\n");
+        json.append(orderToJson(o, indent + "  "));
+        written++;
+    }
+
+    json.append("\n").append(indent).append("]");
+    return json.toString();
+}
+
+private String ordersToJson(Order[] list, int count) {
+    return ordersToJson(list, count, "");
+}
+
+private Order buildOrderFromJson(String obj) {
+    if (obj == null || obj.trim().equals("")) return null;
+
+    Order o = new Order();
+
+    o.orderId = extractJsonString(obj, "orderId");
+    o.date = extractJsonString(obj, "date");
+    o.address = extractJsonString(obj, "address");
+    o.paymentMode = extractJsonString(obj, "paymentMode");
+    o.status = extractJsonString(obj, "status");
+    o.totalAmount = extractJsonInt(obj, "totalAmount");
+    o.cancelReason = extractJsonString(obj, "cancelReason");
+    o.trackingId = extractJsonString(obj, "trackingId");
+    o.isSimulationOrder = extractJsonBoolean(obj, "isSimulationOrder");
+    o.simulationItemName = extractJsonString(obj, "simulationItemName");
+    o.simulationItemPrice = extractJsonInt(obj, "simulationItemPrice");
+
+    String itemsJson = extractJsonArray(obj, "items");
+    String[] itemObjects = splitTopLevelObjects(itemsJson);
+
+    for (int i = 0; i < itemObjects.length; i++) {
+        String itemObj = itemObjects[i];
+        String pid = extractJsonString(itemObj, "productId");
+        int qty = extractJsonInt(itemObj, "quantity");
+
+        if (!pid.equals("") && qty > 0) {
+            o.addItem(new Item(pid, qty));
+        }
+    }
+
+    if (o.totalAmount <= 0 && o.itemCount > 0) {
+        o.totalAmount = computeOrderTotal(o);
+    }
+
+    return o;
+}
+
+private int appendOrdersFromJsonArray(String ordersJson) {
+    int restored = 0;
+
+    String[] orderObjects = splitTopLevelObjects(ordersJson);
+
+    for (int i = 0; i < orderObjects.length; i++) {
+        if (dp.orderCount >= dp.orders.length) break;
+
+        Order o = buildOrderFromJson(orderObjects[i]);
+        if (o == null) continue;
+        if (o.orderId == null || o.orderId.trim().equals("")) continue;
+
+        if (findOrderById(o.orderId) != null) {
+            continue; // skip duplicates
+        }
+
+        dp.orders[dp.orderCount++] = o;
+        restored++;
+    }
+
+    return restored;
+}
+
+private void replaceOrdersFromJsonArray(String ordersJson) {
+    for (int i = 0; i < dp.orders.length; i++) {
+        dp.orders[i] = null;
+    }
+    dp.orderCount = 0;
+
+    appendOrdersFromJsonArray(ordersJson);
+}
+
+private String readLastAuditSummary() {
+    String json = readWholeFile("login_audit.json");
+    if (json.equals("")) return "";
+
+    String[] objects = splitTopLevelObjects(json);
+    if (objects.length == 0) return "";
+
+    String last = objects[objects.length - 1];
+
+    String action = extractJsonString(last, "action");
+    String username = extractJsonString(last, "username");
+    String timestamp = extractJsonString(last, "timestamp");
+
+    String out = "";
+    if (!action.equals("")) out += action;
+    if (!username.equals("")) out += (out.equals("") ? "" : " | ") + username;
+    if (!timestamp.equals("")) out += (out.equals("") ? "" : " | ") + timestamp;
+
+    return out;
+}
 
     /** Wrapper for Admin authentication */
     public boolean adminLogin(BufferedReader console) throws Exception {
@@ -319,7 +695,7 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
         case "12": retryCancelledOrder(console); break;
         case "13": runSimulation(console); break;
         case "14":
-            System.out.print(LAVENDER + "Enter test data filename (e.g. testdata.txt): " + RESET);
+           System.out.print(LAVENDER + "Enter JSON filename (e.g. orders_import.json): " + RESET);
                 String file = console.readLine();
                 if (file == null) file = "";
                 file = file.trim();
@@ -451,7 +827,6 @@ private void showOrderTimeline(BufferedReader console) throws Exception {
         return;
     }
 
-    // Find the real order first
     Order order = findOrderById(id);
 
     if (order == null) {
@@ -464,28 +839,7 @@ private void showOrderTimeline(BufferedReader console) throws Exception {
     System.out.print(PINK + BOLD + "Timeline for " + realOrderId + "\n" + RESET);
     printLine();
 
-    BufferedReader br = null;
-    boolean found = false;
-
-    try {
-        br = new BufferedReader(new FileReader(dp.path("logs.txt")));
-        String line;
-
-        while ((line = br.readLine()) != null) {
-            if (line != null && line.contains(realOrderId)) {
-                found = true;
-                System.out.print(SOFTGRAY + "- " + RESET + line + "\n");
-            }
-        }
-    } catch (Exception e) {
-        System.out.print(ROSE + "logs.txt not found.\n" + RESET);
-    } finally {
-        if (br != null) br.close();
-    }
-
-    if (!found) {
-        System.out.print(ROSE + "No timeline entries found for " + realOrderId + ".\n" + RESET);
-    }
+    log.viewLogsByOrder(realOrderId);
 
     printLine();
 }
@@ -813,7 +1167,7 @@ private void handleReorder(BufferedReader console) throws Exception {
     System.out.print(SOFTGRAY + "Enter Order ID to reorder: " + RESET);
     String oldId = console.readLine();
     if (oldId == null) oldId = "";
-    oldId = oldId.trim();
+    oldId = normalizeOrderId(oldId);
 
     if (oldId.equals("")) {
         System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
@@ -828,12 +1182,12 @@ private void handleReorder(BufferedReader console) throws Exception {
     Order original = findOrderById(oldId);
 
     if (original == null) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(oldId) + " not found.\n" + RESET);
+        System.out.print(ROSE + "Order " + oldId + " not found.\n" + RESET);
         return;
     }
 
+    // Create order object first, but DO NOT generate ID yet
     Order newOrder = new Order();
-    newOrder.orderId = dp.generateOrderId();
     newOrder.date = currentDateString();
     newOrder.address = original.address;
     newOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
@@ -845,11 +1199,15 @@ private void handleReorder(BufferedReader console) throws Exception {
     newOrder.simulationItemName = original.simulationItemName;
     newOrder.simulationItemPrice = original.simulationItemPrice;
 
-    // copy items
+    // copy items first; if anything fails, no order ID is lost
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
-        newOrder.addItem(new Item(it.productId, it.quantity));
+
+        if (!newOrder.addItem(new Item(it.productId, it.quantity))) {
+            System.out.print(ROSE + "Failed to copy item " + it.productId + " for reorder.\n" + RESET);
+            return;
+        }
     }
 
     if (newOrder.itemCount <= 0) {
@@ -865,11 +1223,14 @@ private void handleReorder(BufferedReader console) throws Exception {
     // calculate total now
     newOrder.totalAmount = computeOrderTotal(newOrder);
 
+    // NOW generate ID only after everything is valid and ready
+    newOrder.orderId = dp.generateOrderId();
+
     // save new pending order
     dp.orders[dp.orderCount++] = newOrder;
     dp.saveOrders();
 
-    log.write(newOrder.orderId, "Reorder created from " + normalizeOrderId(oldId) + " (Status: PENDING)");
+    log.write(newOrder.orderId, "Reorder created from " + oldId + " (Status: PENDING)");
 
     System.out.print(MINT + "Reorder created successfully! New Order ID: "
             + newOrder.orderId + " (Status: PENDING).\n" + RESET);
@@ -939,18 +1300,33 @@ private void handleReorder(BufferedReader console) throws Exception {
         }
     }
 
-    /** Feature 18: Export current stock levels of all products to stock_report.txt */
-    private void exportStockReport() throws Exception {
-        FileWriter fw = new FileWriter(dp.path("stock_report.txt"), false);
-        fw.write("ProductID | Name | Price | Stock\n");
-        for (int i = 0; i < dp.productCount; i++) {
-            Product p = dp.products[i];
-            if (p == null) continue;
-            fw.write(p.productId + " | " + p.name + " | " + p.price + " | " + p.stock + "\n");
-        }
-        fw.close();
-        System.out.print(MINT+"Stock report generated in stock_report.txt\n"+RESET);
+   
+   private void exportStockReport() throws Exception {
+    StringBuilder json = new StringBuilder();
+    json.append("[\n");
+
+    int written = 0;
+    for (int i = 0; i < dp.productCount; i++) {
+        Product p = dp.products[i];
+        if (p == null) continue;
+
+        if (written > 0) json.append(",\n");
+
+        json.append("  {\n");
+        json.append("    \"productId\": ").append(q(p.productId)).append(",\n");
+        json.append("    \"name\": ").append(q(p.name)).append(",\n");
+        json.append("    \"price\": ").append(p.price).append(",\n");
+        json.append("    \"stock\": ").append(p.stock).append("\n");
+        json.append("  }");
+
+        written++;
     }
+
+    json.append("\n]");
+
+    writeWholeFile("stock_report.json", json.toString());
+    System.out.print(MINT + "Stock report generated in stock_report.json\n" + RESET);
+}
 private String extract(String src, String prefix, String endToken) {
 
     if (src == null) return "";
@@ -969,11 +1345,11 @@ private String extract(String src, String prefix, String endToken) {
 
     return src.substring(start, end);
 }
-    /** Feature 10: Bulk import orders from orders_import.txt */
-   private void importOrdersFromFile(BufferedReader console) throws Exception {
+     
+private void importOrdersFromFile(BufferedReader console) throws Exception {
     printTitle("Bulk Import Orders");
 
-    System.out.print(SOFTGRAY + "Enter import filename (orders_import.json / orders_import.txt): " + RESET);
+    System.out.print(SOFTGRAY + "Enter import filename (orders_import.json): " + RESET);
     String fileName = console.readLine();
     if (fileName == null) fileName = "";
     fileName = fileName.trim();
@@ -983,125 +1359,82 @@ private String extract(String src, String prefix, String endToken) {
         return;
     }
 
-    BufferedReader br = null;
+    if (!fileName.toLowerCase().endsWith(".json")) {
+        System.out.print(ROSE + "Unsupported file type. Use .json only.\n" + RESET);
+        return;
+    }
+
     int importedCount = 0;
     int skippedCount = 0;
     int invalidCount = 0;
 
     try {
-        br = new BufferedReader(new FileReader(dp.path(fileName)));
-        String line;
+        String json = readWholeFile(fileName);
 
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.length() == 0) continue;
+        if (json.equals("")) {
+            System.out.print(ROSE + "File is empty or not found: " + fileName + "\n" + RESET);
+            return;
+        }
 
+        String[] objects = splitTopLevelObjects(json);
+
+        for (int x = 0; x < objects.length; x++) {
             try {
-                Order o = null;
-
-                // =========================
-                // JSON-like one-line format
-                // =========================
-                if (fileName.toLowerCase().endsWith(".json")) {
-                    String orderId = extract(line, "\"orderId\":\"", "\"");
-                    String date = extract(line, "\"date\":\"", "\"");
-                    String address = extract(line, "\"address\":\"", "\"");
-                    String paymentMode = extract(line, "\"paymentMode\":\"", "\"");
-                    String itemList = extract(line, "\"items\":\"", "\"");
-
-                    if (orderId.equals("") || itemList.equals("")) {
-                        invalidCount++;
-                        continue;
-                    }
-
-                    orderId = normalizeOrderId(orderId);
-
-                    if (findOrderById(orderId) != null) {
-                        skippedCount++;
-                        continue;
-                    }
-
-                    if (dp.orderCount >= dp.orders.length) {
-                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
-                        break;
-                    }
-
-                    o = new Order();
-                    o.orderId = orderId;
-                    o.date = date.equals("") ? currentDateString() : date;
-                    o.address = address;
-                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
-                    o.status = "PENDING";
-
-                    dp.parseItemsIntoOrder(o, itemList);
+                if (dp.orderCount >= dp.orders.length) {
+                    System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
+                    break;
                 }
 
-                // =========================
-                // TXT format
-                // Expected:
-                // OrderID|Date|Address|PaymentMode|ItemList
-                // =========================
-                else if (fileName.toLowerCase().endsWith(".txt")) {
-                    String[] parts = line.split("\\|");
+                String obj = objects[x];
 
-                    if (parts.length < 5) {
-                        invalidCount++;
-                        continue;
-                    }
+                Order o = buildOrderFromJson(obj);
 
-                    String orderId = normalizeOrderId(parts[0].trim());
-                    String date = parts[1].trim();
-                    String address = parts[2].trim();
-                    String paymentMode = parts[3].trim();
-                    String itemList = parts[4].trim();
-
-                    if (orderId.equals("") || itemList.equals("")) {
-                        invalidCount++;
-                        continue;
-                    }
-
-                    if (findOrderById(orderId) != null) {
-                        skippedCount++;
-                        continue;
-                    }
-
-                    if (dp.orderCount >= dp.orders.length) {
-                        System.out.print(ROSE + "Order storage is full. Import stopped.\n" + RESET);
-                        break;
-                    }
-
-                    o = new Order();
-                    o.orderId = orderId;
-                    o.date = date.equals("") ? currentDateString() : date;
-                    o.address = address;
-                    o.paymentMode = paymentMode.equals("") ? "COD" : paymentMode;
-                    o.status = "PENDING";
-
-                    dp.parseItemsIntoOrder(o, itemList);
-                }
-
-                else {
-                    System.out.print(ROSE + "Unsupported file type. Use .json or .txt\n" + RESET);
-                    return;
-                }
-
-                if (o == null || o.itemCount <= 0) {
+                if (o == null) {
                     invalidCount++;
                     continue;
                 }
 
-                // Calculate total
-                int total = 0;
-                for (int i = 0; i < o.itemCount; i++) {
-                    Item it = o.items[i];
-                    if (it == null) continue;
+                // defaults if missing
+                if (o.date == null || o.date.trim().equals("")) {
+                    o.date = currentDateString();
+                }
 
-                    Product p = dp.findProductById(it.productId);
-                    if (p != null) {
-                        total += p.price * it.quantity;
+                if (o.address == null) o.address = "";
+                o.address = capitalizeWords(o.address.trim());
+
+                String pm = normalizePaymentMode(o.paymentMode);
+                o.paymentMode = pm.equals("") ? "COD" : pm;
+
+                if (o.status == null || o.status.trim().equals("")) {
+                    o.status = "PENDING";
+                }
+
+                if (o.cancelReason == null) o.cancelReason = "";
+                if (o.trackingId == null) o.trackingId = "";
+
+                if (o.itemCount <= 0) {
+                    invalidCount++;
+                    continue;
+                }
+
+                // recalculate total if needed
+                if (o.totalAmount <= 0) {
+                    o.totalAmount = computeOrderTotal(o);
+                }
+
+                // finalize / validate order id
+                String finalOrderId = normalizeOrderId(o.orderId);
+
+                if (finalOrderId.equals("")) {
+                    finalOrderId = dp.generateOrderId();
+                } else {
+                    if (findOrderById(finalOrderId) != null) {
+                        skippedCount++;
+                        continue;
                     }
                 }
-                o.totalAmount = total;
+
+                o.orderId = finalOrderId;
 
                 dp.orders[dp.orderCount++] = o;
                 importedCount++;
@@ -1115,11 +1448,10 @@ private String extract(String src, String prefix, String endToken) {
         }
 
         dp.saveOrders();
+        dp.refreshNextOrderNumber();
 
     } catch (Exception e) {
         System.out.print(ROSE + "Error reading file: " + fileName + "\n" + RESET);
-    } finally {
-        if (br != null) br.close();
     }
 
     printLine();
@@ -1239,7 +1571,7 @@ private String extract(String src, String prefix, String endToken) {
     System.out.print(SOFTGRAY + "Enter Cancelled Order ID to retry: " + RESET);
     String cid = console.readLine();
     if (cid == null) cid = "";
-    cid = cid.trim();
+    cid = normalizeOrderId(cid);
 
     if (cid.equals("")) {
         System.out.print(ROSE + "Order ID cannot be empty.\n" + RESET);
@@ -1249,18 +1581,18 @@ private String extract(String src, String prefix, String endToken) {
     Order original = findOrderById(cid);
 
     if (original == null) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " not found.\n" + RESET);
+        System.out.print(ROSE + "Order " + cid + " not found.\n" + RESET);
         return;
     }
 
     String originalStatus = (original.status == null) ? "" : original.status.trim();
     if (!"CANCELLED".equalsIgnoreCase(originalStatus)) {
-        System.out.print(ROSE + "Order " + normalizeOrderId(cid) + " is not in cancelled list.\n" + RESET);
+        System.out.print(ROSE + "Order " + cid + " is not in cancelled list.\n" + RESET);
         return;
     }
 
+    // Create retry order first, but DO NOT generate ID yet
     Order retryOrder = new Order();
-    retryOrder.orderId = dp.generateOrderId();
     retryOrder.date = currentDateString();
     retryOrder.address = original.address;
     retryOrder.paymentMode = (original.paymentMode == null || original.paymentMode.trim().equals(""))
@@ -1272,11 +1604,15 @@ private String extract(String src, String prefix, String endToken) {
     retryOrder.simulationItemName = original.simulationItemName;
     retryOrder.simulationItemPrice = original.simulationItemPrice;
 
-    // copy items
+    // copy items first; if copying fails, no order ID is lost
     for (int j = 0; j < original.itemCount; j++) {
         Item it = original.items[j];
         if (it == null) continue;
-        retryOrder.addItem(new Item(it.productId, it.quantity));
+
+        if (!retryOrder.addItem(new Item(it.productId, it.quantity))) {
+            System.out.print(ROSE + "Failed to copy item " + it.productId + " for retry order.\n" + RESET);
+            return;
+        }
     }
 
     if (retryOrder.itemCount <= 0) {
@@ -1284,7 +1620,7 @@ private String extract(String src, String prefix, String endToken) {
         return;
     }
 
-    // keep retry order pending for later processing from status update
+    // keep retry order pending for later processing
     retryOrder.status = "PENDING";
     retryOrder.cancelReason = "";
     retryOrder.trackingId = "";
@@ -1292,10 +1628,14 @@ private String extract(String src, String prefix, String endToken) {
     // compute total now
     retryOrder.totalAmount = computeOrderTotal(retryOrder);
 
+    // NOW generate ID only after everything is valid
+    retryOrder.orderId = dp.generateOrderId();
+
+    // save retry order
     dp.orders[dp.orderCount++] = retryOrder;
     dp.saveOrders();
 
-    log.write(retryOrder.orderId, "Retry order created from " + normalizeOrderId(cid) + " (Status: PENDING)");
+    log.write(retryOrder.orderId, "Retry order created from " + cid + " (Status: PENDING)");
 
     System.out.print(MINT + "Retry order created successfully! New Order ID: "
             + retryOrder.orderId + " (Status: PENDING).\n" + RESET);
@@ -1304,51 +1644,75 @@ private String extract(String src, String prefix, String endToken) {
         System.out.print(ANSI_Yellow + "This is a simulation retry order. Simulation item name and fixed price were preserved.\n" + RESET);
     }
 }
-    /** Feature 12: Archive delivered orders older than N days (moves them to archive_orders.txt and removes from active list) */
-    private void archiveDeliveredOrders(BufferedReader console) throws Exception {
-        System.out.print(SOFTGRAY+"Archive delivered orders older than how many days? "+RESET);
-        String daysStr = console.readLine();
-        if (daysStr == null) daysStr = "";
-        daysStr = daysStr.trim();
-        int N = DataPersistence.toInt(daysStr);
-        if (N <= 0) {
-            System.out.print(ROSE+"Invalid number of days.\n"+RESET);
-            return;
-        }
-        String todayStr = currentDateString();
-        // Convert date to a simple numeric day count (approximate)
-        int todayCount = dateToDayCount(todayStr);
-        FileWriter fw = new FileWriter(dp.path("archive_orders.txt"), true);
-        int archivedCount = 0;
-        // Use a new array to store remaining orders after archiving
-        Order[] remaining = new Order[dp.orders.length];
-        int remCount = 0;
-        for (int i = 0; i < dp.orderCount; i++) {
-            Order o = dp.orders[i];
-            if (o == null) continue;
-            if (o.status.equals("DELIVERED")) {
-                // Calculate age in days
-                int orderDayCount = dateToDayCount(o.date);
-                int age = todayCount - orderDayCount;
-                if (age > N) {
-                    // Write order record to archive file
-                    fw.write(o.toRecord() + "\n");
-                    archivedCount++;
-                    // Skip adding it to remaining active orders (effectively removing it)
-                    log.write(o.orderId, "Archived after delivery (age " + age + " days)");
-                    continue;
-                }
-            }
-            // Keep order in the remaining list if not archived
-            remaining[remCount++] = o;
-        }
-        fw.close();
-        // Replace the active orders list with the remaining orders
-        dp.orders = remaining;
-        dp.orderCount = remCount;
-        System.out.print(MINT+"Archived " + archivedCount + " delivered orders (older than " + N + " days).\n"+RESET);
+    
+   private void archiveDeliveredOrders(BufferedReader console) throws Exception {
+    System.out.print(SOFTGRAY + "Archive delivered orders older than how many days? " + RESET);
+    String daysStr = console.readLine();
+    if (daysStr == null) daysStr = "";
+    daysStr = daysStr.trim();
+
+    int N = DataPersistence.toInt(daysStr);
+    if (N <= 0) {
+        System.out.print(ROSE + "Invalid number of days.\n" + RESET);
+        return;
     }
 
+    String todayStr = currentDateString();
+    int todayCount = dateToDayCount(todayStr);
+
+    String existing = readWholeFile("archive_orders.json");
+    if (existing.equals("")) existing = "[]";
+    String[] oldArchived = splitTopLevelObjects(existing);
+
+    StringBuilder archive = new StringBuilder();
+    archive.append("[\n");
+
+    int written = 0;
+    for (int i = 0; i < oldArchived.length; i++) {
+        if (oldArchived[i] == null || oldArchived[i].trim().equals("")) continue;
+
+        if (written > 0) archive.append(",\n");
+        archive.append(oldArchived[i]);
+        written++;
+    }
+
+    int archivedCount = 0;
+    Order[] remaining = new Order[dp.orders.length];
+    int remCount = 0;
+
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null) continue;
+
+        String status = (o.status == null) ? "" : o.status.trim();
+
+        if ("DELIVERED".equalsIgnoreCase(status)) {
+            int orderDayCount = dateToDayCount(o.date);
+            int age = todayCount - orderDayCount;
+
+            if (age > N) {
+                if (written > 0) archive.append(",\n");
+                archive.append(orderToJson(o, "  "));
+                written++;
+
+                archivedCount++;
+                log.write(o.orderId, "Archived after delivery (age " + age + " days)");
+                continue;
+            }
+        }
+
+        remaining[remCount++] = o;
+    }
+
+    archive.append("\n]");
+    writeWholeFile("archive_orders.json", archive.toString());
+
+    dp.orders = remaining;
+    dp.orderCount = remCount;
+    dp.saveOrders();
+
+    System.out.print(MINT + "Archived " + archivedCount + " delivered orders (older than " + N + " days).\n" + RESET);
+}
     /** Feature 20: Change password for the currently logged-in admin account */
     private void changeAdminPassword(BufferedReader console) throws Exception {
         System.out.print(SOFTGRAY+"Enter current password: "+RESET);
@@ -1379,22 +1743,21 @@ private String extract(String src, String prefix, String endToken) {
         System.out.print(MINT+"Admin password changed successfully.\n"+RESET);
     }
 
-    /** Feature 14: Clear all logs (logs.txt) after confirmation */
-    private void clearLogs(BufferedReader console) throws Exception {
-        System.out.print(ANSI_Yellow+"Are you sure you want to clear all logs? (Y/N): "+RESET);
-        String confirm = console.readLine();
-        if (confirm == null) confirm = "";
-        confirm = confirm.trim();
-        if (!confirm.equalsIgnoreCase("Y") && !confirm.equalsIgnoreCase("YES")) {
-            System.out.print(ROSE+"Log clearance cancelled.\n"+RESET);
-            return;
-        }
-        // Overwrite logs.txt with nothing
-        FileWriter fw = new FileWriter(dp.path("logs.txt"), false);
-        fw.write("");
-        fw.close();
-        System.out.print(MINT+"All logs cleared.\n"+RESET);
+    
+   private void clearLogs(BufferedReader console) throws Exception {
+    System.out.print(ANSI_Yellow + "Are you sure you want to clear all logs? (Y/N): " + RESET);
+    String confirm = console.readLine();
+    if (confirm == null) confirm = "";
+    confirm = confirm.trim();
+
+    if (!confirm.equalsIgnoreCase("Y") && !confirm.equalsIgnoreCase("YES")) {
+        System.out.print(ROSE + "Log clearance cancelled.\n" + RESET);
+        return;
     }
+
+    writeWholeFile("logs.json", "[]");
+    System.out.print(MINT + "All logs cleared.\n" + RESET);
+}
 
  private void generateReceipt(BufferedReader console) throws Exception {
     showOrdersPreview();
@@ -1421,29 +1784,27 @@ private String extract(String src, String prefix, String endToken) {
         return;
     }
 
-    String filename = "receipt_" + order.orderId + ".txt";
-    FileWriter fw = new FileWriter(dp.path(filename), false);
-
-    fw.write("Receipt for Order " + order.orderId + "\n");
+    String filename = "receipt_" + order.orderId + ".json";
+    StringBuilder json = new StringBuilder();
 
     String addr = (order.address == null || order.address.trim().equals(""))
             ? "(Not Provided)"
             : order.address.trim();
-    fw.write("Address: " + addr + "\n");
 
-    fw.write("Status: " + order.status + "\n");
+    String tracking = (order.trackingId == null || order.trackingId.trim().equals(""))
+            ? "(Not assigned)"
+            : order.trackingId.trim();
 
-    if (order.trackingId != null && !order.trackingId.trim().equals("")) {
-        fw.write("Tracking ID: " + order.trackingId.trim() + "\n");
-    } else {
-        fw.write("Tracking ID: (Not assigned)\n");
-    }
+    json.append("{\n");
+    json.append("  \"orderId\": ").append(q(order.orderId)).append(",\n");
+    json.append("  \"address\": ").append(q(addr)).append(",\n");
+    json.append("  \"status\": ").append(q(order.status)).append(",\n");
+    json.append("  \"trackingId\": ").append(q(tracking)).append(",\n");
+    json.append("  \"paymentMode\": ").append(q(order.paymentMode == null ? "" : order.paymentMode)).append(",\n");
+    json.append("  \"isSimulationOrder\": ").append(order.isSimulationOrder).append(",\n");
+    json.append("  \"items\": [\n");
 
-    if (order.isSimulationOrder) {
-        fw.write("Order Type: Simulation Order\n");
-    }
-
-    fw.write("Items:\n");
+    int writtenItems = 0;
     for (int j = 0; j < order.itemCount; j++) {
         Item it = order.items[j];
         if (it == null) continue;
@@ -1464,14 +1825,23 @@ private String extract(String src, String prefix, String endToken) {
             priceEach = (p != null) ? p.price : 0;
         }
 
-        fw.write("- " + itemName + " (x" + it.quantity + " @ BDT " + priceEach + " each)\n");
+        if (writtenItems > 0) json.append(",\n");
+
+        json.append("    {\n");
+        json.append("      \"itemName\": ").append(q(itemName)).append(",\n");
+        json.append("      \"quantity\": ").append(it.quantity).append(",\n");
+        json.append("      \"priceEach\": ").append(priceEach).append("\n");
+        json.append("    }");
+
+        writtenItems++;
     }
 
-    fw.write("--------------------------------------\n");
-    fw.write("Total Paid: BDT " + computeOrderTotal(order) + "\n");
-    fw.write("Thank you for your purchase!\n");
+    json.append("\n  ],\n");
+    json.append("  \"totalPaid\": ").append(computeOrderTotal(order)).append(",\n");
+    json.append("  \"message\": ").append(q("Thank you for your purchase!")).append("\n");
+    json.append("}");
 
-    fw.close();
+    writeWholeFile(filename, json.toString());
 
     System.out.print(MINT + "Receipt generated: " + filename + "\n" + RESET);
 }
@@ -1879,17 +2249,45 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
     order.status = "PACKED";
     log.write(order.orderId, "Status changed to PACKED");
 
-    try {
-        // ✅ Format: INV-YYYYMM-####
-        String ym = order.date.substring(0, 7).replace("-", ""); // "202602"
-        String orderNum = order.orderId.substring(1); // drop 'O' → "1005"
+       try {
+        String ym = order.date.substring(0, 7).replace("-", "");
+        String orderNum = order.orderId;
+        if (orderNum != null && orderNum.startsWith("O")) {
+            orderNum = orderNum.substring(1);
+        }
+
         String invoiceId = "INV-" + ym + "-" + orderNum;
 
-        FileWriter fw = new FileWriter(dp.path("invoices.txt"), true);
-        fw.write(invoiceId + "|BDT " + order.totalAmount + "\n");
-        fw.close();
+        String existing = readWholeFile("invoices.json");
+        if (existing.equals("")) existing = "[]";
 
-        // (Optional) Show invoice ID to admin
+        String[] oldObjects = splitTopLevelObjects(existing);
+
+        StringBuilder json = new StringBuilder();
+        json.append("[\n");
+
+        int written = 0;
+        for (int i = 0; i < oldObjects.length; i++) {
+            if (oldObjects[i] == null || oldObjects[i].trim().equals("")) continue;
+
+            if (written > 0) json.append(",\n");
+            json.append(oldObjects[i]);
+            written++;
+        }
+
+        if (written > 0) json.append(",\n");
+
+        json.append("  {\n");
+        json.append("    \"invoiceId\": ").append(q(invoiceId)).append(",\n");
+        json.append("    \"orderId\": ").append(q(order.orderId)).append(",\n");
+        json.append("    \"totalAmount\": ").append(order.totalAmount).append(",\n");
+        json.append("    \"generatedAt\": ").append(q(dp.currentDateTimeString())).append("\n");
+        json.append("  }\n");
+
+        json.append("]");
+
+        writeWholeFile("invoices.json", json.toString());
+
         System.out.print("Invoice generated: " + invoiceId + "\n");
     } catch (Exception e) {
         // Ignore invoice errors silently
@@ -1965,96 +2363,120 @@ private boolean processPendingOrder(Order order, BufferedReader console) throws 
     }
 }
 
-    /** Feature 17: Generate a report of revenue and cancellations, write to report.txt */
+  
     private void generateReport() throws Exception {
-        int totalOrders = dp.orderCount;
-        int completedCount = 0;
-        int cancelledCount = 0;
-        int revenueSum = 0;
-        // Count cancellation reasons
-        String[] reasons = new String[totalOrders];
-        int[] reasonCounts = new int[totalOrders];
-        int reasonTypes = 0;
-        for (int i = 0; i < dp.orderCount; i++) {
-            Order o = dp.orders[i];
-            if (o == null) continue;
-            if (o.status.equalsIgnoreCase("DELIVERED")) {
-                completedCount++;
-                revenueSum += o.totalAmount;
-            }
-            if (o.status.equalsIgnoreCase("CANCELLED")) {
-                cancelledCount++;
-                String reason = (o.cancelReason == null || o.cancelReason.equals("") ? "Unknown" : o.cancelReason);
-                // Increment count for this reason
-                boolean found = false;
-                for (int r = 0; r < reasonTypes; r++) {
-                    if (reasons[r].equalsIgnoreCase(reason)) {
-                        reasonCounts[r]++;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    reasons[reasonTypes] = reason;
-                    reasonCounts[reasonTypes] = 1;
-                    reasonTypes++;
+    int totalOrders = dp.orderCount;
+    int completedCount = 0;
+    int cancelledCount = 0;
+    int revenueSum = 0;
+
+    String[] reasons = new String[totalOrders];
+    int[] reasonCounts = new int[totalOrders];
+    int reasonTypes = 0;
+
+    for (int i = 0; i < dp.orderCount; i++) {
+        Order o = dp.orders[i];
+        if (o == null) continue;
+
+        if (o.status.equalsIgnoreCase("DELIVERED")) {
+            completedCount++;
+            revenueSum += o.totalAmount;
+        }
+
+        if (o.status.equalsIgnoreCase("CANCELLED")) {
+            cancelledCount++;
+            String reason = (o.cancelReason == null || o.cancelReason.equals("") ? "Unknown" : o.cancelReason);
+
+            boolean found = false;
+            for (int r = 0; r < reasonTypes; r++) {
+                if (reasons[r].equalsIgnoreCase(reason)) {
+                    reasonCounts[r]++;
+                    found = true;
+                    break;
                 }
             }
-        }
-        // Sort cancellation reasons by frequency (descending)
-        for (int i = 0; i < reasonTypes - 1; i++) {
-            int maxIndex = i;
-            for (int j = i + 1; j < reasonTypes; j++) {
-                if (reasonCounts[j] > reasonCounts[maxIndex]) {
-                    maxIndex = j;
-                }
+
+            if (!found) {
+                reasons[reasonTypes] = reason;
+                reasonCounts[reasonTypes] = 1;
+                reasonTypes++;
             }
-            // swap
-            String tempReason = reasons[i];
-            reasons[i] = reasons[maxIndex];
-            reasons[maxIndex] = tempReason;
-            int tempCount = reasonCounts[i];
-            reasonCounts[i] = reasonCounts[maxIndex];
-            reasonCounts[maxIndex] = tempCount;
         }
-        // Build report content
-        StringBuilder report = new StringBuilder();
-        report.append("Total Orders: ").append(totalOrders).append("\n");
-        report.append("Completed Orders: ").append(completedCount).append("\n");
-        report.append("Cancelled Orders: ").append(cancelledCount).append("\n");
-        report.append("Total Revenue: BDT ").append(revenueSum).append("\n");
-        report.append("Top 3 Cancellation Reasons:\n");
-        for (int k = 0; k < reasonTypes && k < 3; k++) {
-            report.append((k + 1) + ". " + reasons[k] + " – " + reasonCounts[k] + "\n");
-        }
-        // Write report to file and display summary in console
-        FileWriter fw = new FileWriter(dp.path("report.txt"), false);
-        fw.write(report.toString());
-        fw.close();
-        printTitle("Report Summary");
-        System.out.print(report.toString());
-        System.out.print(MINT+"(Full report saved to report.txt)\n"+RESET);
     }
 
+    for (int i = 0; i < reasonTypes - 1; i++) {
+        int maxIndex = i;
+        for (int j = i + 1; j < reasonTypes; j++) {
+            if (reasonCounts[j] > reasonCounts[maxIndex]) {
+                maxIndex = j;
+            }
+        }
+
+        String tempReason = reasons[i];
+        reasons[i] = reasons[maxIndex];
+        reasons[maxIndex] = tempReason;
+
+        int tempCount = reasonCounts[i];
+        reasonCounts[i] = reasonCounts[maxIndex];
+        reasonCounts[maxIndex] = tempCount;
+    }
+
+    StringBuilder json = new StringBuilder();
+    json.append("{\n");
+    json.append("  \"totalOrders\": ").append(totalOrders).append(",\n");
+    json.append("  \"completedOrders\": ").append(completedCount).append(",\n");
+    json.append("  \"cancelledOrders\": ").append(cancelledCount).append(",\n");
+    json.append("  \"totalRevenue\": ").append(revenueSum).append(",\n");
+    json.append("  \"topCancellationReasons\": [\n");
+
+    int top = (reasonTypes < 3) ? reasonTypes : 3;
+    for (int k = 0; k < top; k++) {
+        if (k > 0) json.append(",\n");
+
+        json.append("    {\n");
+        json.append("      \"reason\": ").append(q(reasons[k])).append(",\n");
+        json.append("      \"count\": ").append(reasonCounts[k]).append("\n");
+        json.append("    }");
+    }
+
+    json.append("\n  ]\n");
+    json.append("}");
+
+    writeWholeFile("report.json", json.toString());
+
+    printTitle("Report Summary");
+    System.out.print("Total Orders: " + totalOrders + "\n");
+    System.out.print("Completed Orders: " + completedCount + "\n");
+    System.out.print("Cancelled Orders: " + cancelledCount + "\n");
+    System.out.print("Total Revenue: BDT " + revenueSum + "\n");
+    System.out.print("Top 3 Cancellation Reasons:\n");
+
+    for (int k = 0; k < top; k++) {
+        System.out.print((k + 1) + ". " + reasons[k] + " – " + reasonCounts[k] + "\n");
+    }
+
+    System.out.print(MINT + "(Full report saved to report.json)\n" + RESET);
+}
 
     /** Helper: normalize input to full Order ID format (e.g., add 'O' prefix if missing) */
 private String normalizeOrderId(String input) {
     if (input == null) return "";
+
     String s = input.trim();
 
-    // Remove optional 'O' prefix if user types it
-    if (s.length() > 0 && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
+    // Remove optional O prefix if user types it
+    if (!s.equals("") && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
         s = s.substring(1).trim();
     }
 
     // If numeric, pad to 5 digits (01001 style)
     if (isNumeric(s)) {
-        while (s.length() < 5) s = "0" + s;
-        return s;
+        while (s.length() < 5) {
+            s = "0" + s;
+        }
     }
 
-    // Otherwise return as-is (maybe they typed status)
-    return input.trim();
+    return s;
 }
 
     /** Helper: check if a string is numeric */
@@ -2101,130 +2523,177 @@ private String normalizePaymentMode(String input) {
     return "";
 }
 private void acceptNewOrder(BufferedReader console) throws Exception {
-    // 1. Auto-generate Order ID and initialize a new Order
-    String newId = dp.generateOrderId();
+    // 1. Display product catalog first
+    printTitle("Product Catalog");
+
+    System.out.printf(
+        LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
+        "ProdID", "Category", "Brand", "Name", "Price", "Stock"
+    );
+
+    System.out.println(
+        SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
+    );
+
+    for (int i = 0; i < dp.productCount; i++) {
+        Product prod = dp.products[i];
+        if (prod == null) continue;
+
+        String category = (prod.category == null) ? "" : prod.category;
+        String brand = (prod.brand == null) ? "" : prod.brand;
+        String name = (prod.name == null) ? "" : prod.name;
+
+        String stockColor;
+        if (prod.stock <= 0) {
+            stockColor = ROSE;
+        } else if (prod.stock <= 5) {
+            stockColor = ANSI_Yellow;
+        } else {
+            stockColor = MINT;
+        }
+
+        System.out.printf(
+            "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
+            prod.productId,
+            trimTo(category, 18),
+            trimTo(brand, 15),
+            trimTo(name, 28),
+            prod.price,
+            stockColor, prod.stock, RESET
+        );
+    }
+
+    printLine();
+
+    // 2. Ask number of products until valid
+    int itemCount;
+    while (true) {
+        System.out.print(SOFTGRAY + "How many different products in this order? (1-10): " + RESET);
+        String countStr = console.readLine();
+        if (countStr == null) countStr = "";
+        countStr = countStr.trim();
+
+        itemCount = DataPersistence.toInt(countStr);
+
+        if (itemCount >= 1 && itemCount <= 10) {
+            break;
+        }
+
+        System.out.print(ROSE + "Invalid number. Please enter a value from 1 to 10.\n" + RESET);
+    }
+
+    // 3. Temporarily store items first
+    Item[] tempItems = new Item[10];
+
+    for (int i = 1; i <= itemCount; i++) {
+        Product product;
+
+        // Re-ask Product ID until valid
+        while (true) {
+            System.out.print(SOFTGRAY + "Enter Product ID for item " + i + ": " + RESET);
+            String pid = console.readLine();
+            if (pid == null) pid = "";
+            pid = pid.trim();
+
+            if (pid.equals("")) {
+                System.out.print(ROSE + "Product ID cannot be empty. Try again.\n" + RESET);
+                continue;
+            }
+
+            product = dp.findProductById(pid);
+            if (product == null) {
+                System.out.print(ROSE + "Product " + pid + " not found. Try again.\n" + RESET);
+                continue;
+            }
+
+            // Optional: prevent duplicate product in same order
+            boolean duplicate = false;
+            for (int j = 0; j < i - 1; j++) {
+                if (tempItems[j] != null &&
+                    tempItems[j].productId.equalsIgnoreCase(product.productId)) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (duplicate) {
+                System.out.print(ROSE + "This product is already added in the order. Choose a different product.\n" + RESET);
+                continue;
+            }
+
+            break;
+        }
+
+        int qty;
+
+        // Re-ask quantity until valid
+        while (true) {
+            System.out.print(SOFTGRAY + "Enter quantity for " + product.name + ": " + RESET);
+            String qtyStr = console.readLine();
+            if (qtyStr == null) qtyStr = "";
+            qtyStr = qtyStr.trim();
+
+            qty = DataPersistence.toInt(qtyStr);
+
+            if (qty > 0) {
+                break;
+            }
+
+            System.out.print(ROSE + "Invalid quantity. Please enter a positive number.\n" + RESET);
+        }
+
+        tempItems[i - 1] = new Item(product.productId, qty);
+    }
+
+    // 4. Re-ask shipping address until valid
+    String address;
+    while (true) {
+        System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
+        address = console.readLine();
+        if (address == null) address = "";
+        address = capitalizeWords(address.trim());
+
+        if (!address.equals("")) {
+            break;
+        }
+
+        System.out.print(ROSE + "Address cannot be empty. Try again.\n" + RESET);
+    }
+
+    // 5. Re-ask payment mode until valid
+    String paymentMode;
+    while (true) {
+        System.out.print(SOFTGRAY + "Enter payment mode (COD or MockCard): " + RESET);
+        paymentMode = console.readLine();
+        paymentMode = normalizePaymentMode(paymentMode);
+
+        if (!paymentMode.equals("")) {
+            break;
+        }
+
+        System.out.print(ROSE + "Invalid payment mode. Use COD or MockCard only.\n" + RESET);
+    }
+
+    // 6. NOW create order and generate ID only after all inputs are valid
     Order newOrder = new Order();
-    newOrder.orderId = newId;
-    newOrder.date = currentDateString();   // set current date (YYYY-MM-DD)
-    newOrder.status = "PENDING";           // keep order pending until admin processes it later
+    newOrder.orderId = dp.generateOrderId();
+    newOrder.date = currentDateString();
+    newOrder.status = "PENDING";
+    newOrder.address = address;
+    newOrder.paymentMode = paymentMode;
+
+    for (int i = 0; i < itemCount; i++) {
+        if (tempItems[i] != null) {
+            if (!newOrder.addItem(tempItems[i])) {
+                System.out.print(ROSE + "Failed to add item " + tempItems[i].productId + ". Order cancelled.\n" + RESET);
+                return;
+            }
+        }
+    }
 
     System.out.print(LAVENDER + "New Order ID: " + newOrder.orderId + "\n" + RESET);
 
-    // 2. Display product catalog
-   printTitle("Product Catalog");
-
-System.out.printf(
-    LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
-    "ProdID", "Category", "Brand", "Name", "Price", "Stock"
-);
-
-System.out.println(
-    SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
-);
-
-for (int i = 0; i < dp.productCount; i++) {
-    Product prod = dp.products[i];
-    if (prod == null) continue;
-
-    String category = (prod.category == null) ? "" : prod.category;
-    String brand = (prod.brand == null) ? "" : prod.brand;
-    String name = (prod.name == null) ? "" : prod.name;
-
-    String stockColor;
-    if (prod.stock <= 0) {
-        stockColor = ROSE;
-    } else if (prod.stock <= 5) {
-        stockColor = ANSI_Yellow;
-    } else {
-        stockColor = MINT;
-    }
-
-    System.out.printf(
-        "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
-        prod.productId,
-        trimTo(category, 18),
-        trimTo(brand, 15),
-        trimTo(name, 28),
-        prod.price,
-        stockColor, prod.stock, RESET
-    );
-}
-
-printLine();
-
-    // 3. Allow admin to select products and specify quantities
-    System.out.print(SOFTGRAY + "How many different products in this order? (1-10): " + RESET);
-    String countStr = console.readLine();
-    if (countStr == null) countStr = "";
-    countStr = countStr.trim();
-
-    int itemCount = DataPersistence.toInt(countStr);
-    if (itemCount < 1 || itemCount > 10) {
-        System.out.print(ROSE + "Invalid number of products. Order cancelled.\n" + RESET);
-        return;
-    }
-
-    for (int i = 1; i <= itemCount; i++) {
-        System.out.print(SOFTGRAY + "Enter Product ID for item " + i + ": " + RESET);
-        String pid = console.readLine();
-        if (pid == null) pid = "";
-        pid = pid.trim();
-
-        if (pid.equals("")) {
-            System.out.print(ROSE + "Product ID cannot be empty. Order cancelled.\n" + RESET);
-            return;
-        }
-
-        Product product = dp.findProductById(pid);
-        if (product == null) {
-            System.out.print(ROSE + "Product " + pid + " not found. Order cancelled.\n" + RESET);
-            return;
-        }
-
-        System.out.print(SOFTGRAY + "Enter quantity for " + product.name + ": " + RESET);
-        String qtyStr = console.readLine();
-        if (qtyStr == null) qtyStr = "";
-        qtyStr = qtyStr.trim();
-
-        int qty = DataPersistence.toInt(qtyStr);
-        if (qty <= 0) {
-            System.out.print(ROSE + "Invalid quantity. Order cancelled.\n" + RESET);
-            return;
-        }
-
-        // Add item to order
-        if (!newOrder.addItem(new Item(product.productId, qty))) {
-            System.out.print(ROSE + "Failed to add item " + product.productId + ". Order cancelled.\n" + RESET);
-            return;
-        }
-    }
-
-    // 4. Ask for shipping address
-   System.out.print(SOFTGRAY + "Enter shipping address: " + RESET);
-   String address = console.readLine();
-
-   if (address == null) address = "";
-   address = capitalizeWords(address);   // <-- automatic capitalization
-
-   if (address.equals("")) {
-    System.out.print(ROSE + "Address cannot be empty.\n" + RESET);
-    return;
-}
-
-newOrder.address = address;
-
-    // 5. Ask for payment mode
-    System.out.print(SOFTGRAY + "Enter payment mode (COD or MockCard): " + RESET);
-    String paymentMode = console.readLine();
-    paymentMode = normalizePaymentMode(paymentMode);
-
-    if (paymentMode.equals("")) {
-    System.out.print(ROSE + "Invalid payment mode. Use COD or MockCard only.\n" + RESET);
-    return;
-}
-  newOrder.paymentMode = paymentMode;
-
-    // 6. Show order summary before saving
+    // 7. Show order summary before saving
     printTitle("Order Summary");
     for (int i = 0; i < newOrder.itemCount; i++) {
         Item it = newOrder.items[i];
@@ -2235,19 +2704,20 @@ newOrder.address = address;
 
         System.out.print(LAVENDER + "- " + RESET + itemName + " x" + it.quantity + "\n");
     }
+
     System.out.print(SOFTGRAY + "Address: " + RESET + newOrder.address + "\n");
     System.out.print(SOFTGRAY + "Payment: " + RESET + newOrder.paymentMode + "\n");
     System.out.print(SOFTGRAY + "Initial Status: " + RESET + ANSI_Yellow + newOrder.status + RESET + "\n");
     printLine();
 
-    // 7. Save the order only as PENDING
+    // 8. Save as PENDING
     dp.orders[dp.orderCount++] = newOrder;
     dp.saveOrders();
 
-    // 8. Log creation only (do NOT process now)
+    // 9. Log creation
     log.write(newOrder.orderId, "Order created via admin interface (PENDING)");
 
-    // 9. Final message
+    // 10. Final message
     System.out.print(MINT + "New order created successfully.\n" + RESET);
     System.out.print(SOFTGRAY + "Order ID: " + RESET + newOrder.orderId + "\n");
     System.out.print(SOFTGRAY + "Status: " + RESET + ANSI_Yellow + newOrder.status + RESET + "\n");
@@ -2315,28 +2785,27 @@ private void autoCancelStaleOrders(int days) throws Exception {
 private void showRecentlyAutoCancelledOrders() throws Exception {
     printTitle("Recently Auto-Cancelled Orders");
 
-    BufferedReader br = null;
+    String json = readWholeFile("logs.json");
+    if (json.equals("")) {
+        System.out.print(ROSE + "No auto-cancelled orders found in logs.\n" + RESET);
+        printLine();
+        return;
+    }
+
+    String[] objects = splitTopLevelObjects(json);
     boolean found = false;
 
-    try {
-        br = new BufferedReader(new FileReader(dp.path("logs.txt")));
-        String line;
+    for (int i = 0; i < objects.length; i++) {
+        String message = extractJsonString(objects[i], "message");
 
-        while ((line = br.readLine()) != null) {
-            if (line.contains("Auto-cancelled order")) {
-                System.out.print(ROSE + line + "\n" + RESET);
-                found = true;
-            }
+        if (message.contains("Auto-cancelled order")) {
+            System.out.print(ROSE + message + "\n" + RESET);
+            found = true;
         }
+    }
 
-        if (!found) {
-            System.out.print(ROSE + "No auto-cancelled orders found in logs.\n" + RESET);
-        }
-
-    } catch (Exception e) {
-        System.out.print(ROSE + "logs.txt not found.\n" + RESET);
-    } finally {
-        if (br != null) br.close();
+    if (!found) {
+        System.out.print(ROSE + "No auto-cancelled orders found in logs.\n" + RESET);
     }
 
     printLine();
@@ -2712,7 +3181,6 @@ private void showTimelinePreview() {
 private void deleteAllOrderHistory(BufferedReader console) throws Exception {
     Admin currentAdmin = dp.admins[dp.currentAdminIndex];
 
-    // ✅ Admin-only protection
     if (currentAdmin == null || currentAdmin.role != Role.ADMIN) {
         System.out.print(ROSE + "Access denied. Admin only.\n" + RESET);
         return;
@@ -2744,74 +3212,51 @@ private void deleteAllOrderHistory(BufferedReader console) throws Exception {
         return;
     }
 
-    // ✅ Count before delete
     int deletedCount = dp.orderCount;
 
-    String archiveFileName = "orders_archive.txt";
+    String archiveFileName = "orders_archive.json";
     String archivePath = dp.path(archiveFileName);
 
-    // ===============================
-    // ✅ BACKUP ORDERS (SOFT DELETE)
-    // ===============================
-    FileWriter backup = null;
-    try {
-        backup = new FileWriter(archivePath, true);
-        backup.write("\n=== ARCHIVE DELETE by " + currentAdmin.username + " ===\n");
-        backup.write("Deleted at: " + dp.currentDateTimeString() + "\n");
+    String existingSessions = readWholeFile(archiveFileName);
+    if (existingSessions.equals("")) existingSessions = "[]";
+    String[] oldSessions = splitTopLevelObjects(existingSessions);
 
-        for (int i = 0; i < dp.orderCount; i++) {
-            Order o = dp.orders[i];
-            if (o == null) continue;
+    String deletedAt = dp.currentDateTimeString();
 
-            StringBuilder itemList = new StringBuilder();
-            for (int j = 0; j < o.itemCount; j++) {
-                Item it = o.items[j];
-                if (it == null) continue;
-                itemList.append(it.productId).append("x").append(it.quantity);
-                if (j < o.itemCount - 1) itemList.append(",");
-            }
+    StringBuilder archive = new StringBuilder();
+    archive.append("[\n");
 
-            backup.write(
-                o.orderId + "|" + o.date + "|" + o.address + "|" +
-                o.paymentMode + "|" + o.status + "|" +
-                o.totalAmount + "|" + itemList.toString()
-            );
+    int written = 0;
+    for (int i = 0; i < oldSessions.length; i++) {
+        if (oldSessions[i] == null || oldSessions[i].trim().equals("")) continue;
 
-            if (o.cancelReason != null && !o.cancelReason.equals("")) {
-                backup.write("|" + o.cancelReason);
-            }
-
-            if (o.trackingId != null && !o.trackingId.equals("")) {
-                backup.write("|" + o.trackingId);
-            }
-
-            backup.write("\n");
-        }
-    } finally {
-        if (backup != null) backup.close();
+        if (written > 0) archive.append(",\n");
+        archive.append(oldSessions[i]);
+        written++;
     }
 
-    // ===============================
-    // ✅ CLEAR ORDERS FROM MEMORY
-    // ===============================
+    if (written > 0) archive.append(",\n");
+
+    archive.append("  {\n");
+    archive.append("    \"deletedBy\": ").append(q(currentAdmin.username)).append(",\n");
+    archive.append("    \"deletedAt\": ").append(q(deletedAt)).append(",\n");
+    archive.append("    \"orders\": ").append(ordersToJson(dp.orders, dp.orderCount, "    ")).append("\n");
+    archive.append("  }\n");
+    archive.append("]");
+
+    writeWholeFile(archiveFileName, archive.toString());
+
     for (int i = 0; i < dp.orderCount; i++) {
         dp.orders[i] = null;
     }
     dp.orderCount = 0;
 
-    // ✅ Clear orders.txt
     dp.saveOrders();
 
-    // ===============================
-    // ✅ DELETE RECEIPT FILES
-    // ===============================
     int[] receiptResult = deleteAllReceiptFiles();
     int receiptDeleted = receiptResult[0];
     int receiptFailed = receiptResult[1];
 
-    // ===============================
-    // ✅ ARCHIVE SIZE
-    // ===============================
     long sizeBytes = 0;
     try {
         java.io.File f = new java.io.File(archivePath);
@@ -2820,9 +3265,6 @@ private void deleteAllOrderHistory(BufferedReader console) throws Exception {
 
     long sizeKB = (sizeBytes + 1023) / 1024;
 
-    // ===============================
-    // ✅ LOGGING & AUDIT
-    // ===============================
     log.write(
         "ADMIN",
         "Deleted ALL order history. Orders=" + deletedCount +
@@ -2831,11 +3273,8 @@ private void deleteAllOrderHistory(BufferedReader console) throws Exception {
     );
     dp.appendLoginAudit("DELETE_ORDERS", currentAdmin.username);
 
-    String lastAuditLine = readLastLine(dp.path("login_audit.txt"));
+    String lastAuditLine = readLastAuditSummary();
 
-    // ===============================
-    // ✅ FINAL OUTPUT
-    // ===============================
     System.out.print(MINT + "All order history deleted successfully.\n" + RESET);
     System.out.print(SOFTGRAY + "Deleted Orders: " + RESET + MINT + deletedCount + RESET + "\n");
     System.out.print(SOFTGRAY + "Receipts Deleted: " + RESET + LAVENDER + receiptDeleted + RESET + "\n");
@@ -2874,11 +3313,9 @@ private int[] deleteAllReceiptFiles() {
     int failed = 0;
 
     try {
-        // Find the folder where orders.txt exists (same folder will contain receipts usually)
-        java.io.File ordersFile = new java.io.File(dp.path("orders.txt"));
+        java.io.File ordersFile = new java.io.File(dp.path("orders.json"));
         java.io.File dir = ordersFile.getParentFile();
 
-        // If no parent folder, use current directory
         if (dir == null) dir = new java.io.File(".");
 
         java.io.File[] files = dir.listFiles();
@@ -2891,20 +3328,20 @@ private int[] deleteAllReceiptFiles() {
             String name = f.getName();
             if (name == null) continue;
 
-            // receipts like: receipt_O1016.txt or receipt_01016.txt
-            if (name.startsWith("receipt_") && name.endsWith(".txt")) {
+            if (name.startsWith("receipt_") && name.endsWith(".json")) {
                 boolean ok = false;
                 try {
                     ok = f.delete();
                 } catch (Exception ex) {
                     ok = false;
                 }
+
                 if (ok) deleted++;
                 else failed++;
             }
         }
     } catch (Exception e) {
-        // ignore (no crash)
+        // ignore
     }
 
     return new int[]{deleted, failed};
@@ -2916,15 +3353,12 @@ private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
         return;
     }
 
-    String archivePath = dp.path("orders_archive.txt");
-    java.io.File archiveFile = new java.io.File(archivePath);
-
+    java.io.File archiveFile = new java.io.File(dp.path("orders_archive.json"));
     if (!archiveFile.exists()) {
-        System.out.print(ROSE + "Archive file not found: orders_archive.txt\n" + RESET);
+        System.out.print(ROSE + "Archive file not found: orders_archive.json\n" + RESET);
         return;
     }
 
-    // ✅ Preview first
     previewArchiveSessions();
 
     System.out.print(SOFTGRAY +
@@ -2934,6 +3368,7 @@ private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
         "3) Restore ALL archive orders\n" +
         "Choose (1-3): "
     );
+
     String opt = console.readLine();
     if (opt == null) opt = "";
     opt = opt.trim();
@@ -2956,18 +3391,17 @@ private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
         }
     }
 
-    // ✅ Confirm restore
-    System.out.print(ROSE + "This will modify orders.txt.\n" + RESET);
+    System.out.print(ROSE + "This will modify orders.json.\n" + RESET);
     System.out.print(SOFTGRAY + "Type RESTORE to confirm: " + RESET);
     String conf = console.readLine();
     if (conf == null) conf = "";
     conf = conf.trim();
+
     if (!conf.equalsIgnoreCase("RESTORE")) {
         System.out.print(ROSE + "Restore cancelled.\n" + RESET);
         return;
     }
 
-    // ✅ Backup orders.txt so we can UNDO
     backupOrdersBeforeRestore();
 
     int restoredCount = 0;
@@ -2975,7 +3409,7 @@ private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
     else if (opt.equals("2")) restoredCount = restoreByDate(dateFilter);
     else restoredCount = restoreAllArchiveOrders();
 
-    // Reload into memory
+    dp.saveOrders();
     dp.loadAll();
 
     log.write("ADMIN", "RESTORE from archive. Count=" + restoredCount);
@@ -2983,226 +3417,108 @@ private void restoreOrdersFromArchive(BufferedReader console) throws Exception {
 
     System.out.print(MINT + "Restore complete.\n" + RESET);
     System.out.print(SOFTGRAY + "Orders Restored: " + RESET + MINT + restoredCount + RESET + "\n");
-    System.out.print(SOFTGRAY + "You can undo using option 26.\n" + RESET);
+    System.out.print(SOFTGRAY + "You can undo using option 27.\n" + RESET);
 }
 private void previewArchiveSessions() {
     System.out.println(PINK + BOLD + "\nArchive Preview (Delete Sessions)" + RESET);
     printLine();
 
-    BufferedReader br = null;
-    try {
-        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
-        String line;
+    String json = readWholeFile("orders_archive.json");
+    if (json.equals("")) {
+        System.out.println(ROSE + "No archive sessions found." + RESET);
+        printLine();
+        return;
+    }
 
-        String currentUser = "";
-        String currentDateTime = "";
-        int currentCount = 0;
+    String[] sessions = splitTopLevelObjects(json);
 
-        int sessionNo = 0;
+    if (sessions.length == 0) {
+        System.out.println(ROSE + "No archive sessions found." + RESET);
+        printLine();
+        return;
+    }
 
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.equals("")) continue;
+    for (int i = 0; i < sessions.length; i++) {
+        String session = sessions[i];
 
-            // session header
-            if (line.startsWith("=== ARCHIVE DELETE by")) {
-                // print previous session
-                if (sessionNo > 0) {
-                    System.out.println(LAVENDER + "Session " + sessionNo + RESET +
-                            SOFTGRAY + " | By: " + RESET + currentUser +
-                            SOFTGRAY + " | At: " + RESET + currentDateTime +
-                            SOFTGRAY + " | Orders: " + RESET + currentCount);
-                    currentCount = 0;
-                }
-                sessionNo++;
-                currentUser = line.replace("=== ARCHIVE DELETE by", "").replace("===", "").trim();
-                currentDateTime = "";
-                continue;
-            }
+        String deletedBy = extractJsonString(session, "deletedBy");
+        String deletedAt = extractJsonString(session, "deletedAt");
+        String ordersJson = extractJsonArray(session, "orders");
+        int count = splitTopLevelObjects(ordersJson).length;
 
-            if (line.startsWith("Deleted at:")) {
-                currentDateTime = line.replace("Deleted at:", "").trim();
-                continue;
-            }
-
-            // order lines
-            if (line.contains("|")) {
-                currentCount++;
-            }
-        }
-
-        // last session
-        if (sessionNo > 0) {
-            System.out.println(LAVENDER + "Session " + sessionNo + RESET +
-                    SOFTGRAY + " | By: " + RESET + currentUser +
-                    SOFTGRAY + " | At: " + RESET + currentDateTime +
-                    SOFTGRAY + " | Orders: " + RESET + currentCount);
-        } else {
-            System.out.println(ROSE + "No archive sessions found." + RESET);
-        }
-
-    } catch (Exception e) {
-        System.out.println(ROSE + "Failed to preview archive." + RESET);
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
+        System.out.println(
+            LAVENDER + "Session " + (i + 1) + RESET +
+            SOFTGRAY + " | By: " + RESET + deletedBy +
+            SOFTGRAY + " | At: " + RESET + deletedAt +
+            SOFTGRAY + " | Orders: " + RESET + count
+        );
     }
 
     printLine();
 }
 private void backupOrdersBeforeRestore() {
-    BufferedReader br = null;
-    FileWriter fw = null;
-
     try {
-        br = new BufferedReader(new FileReader(dp.path("orders.txt")));
-        fw = new FileWriter(dp.path("orders_restore_backup.txt"), false);
-
-        String line;
-        while ((line = br.readLine()) != null) {
-            fw.write(line + "\n");
-        }
+        String currentOrders = readWholeFile("orders.json");
+        if (currentOrders.equals("")) currentOrders = "[]";
+        writeWholeFile("orders_restore_backup.json", currentOrders);
     } catch (Exception e) {
-        // if orders.txt doesn't exist yet, still create empty backup
-        try {
-            fw = new FileWriter(dp.path("orders_restore_backup.txt"), false);
-        } catch (Exception ex) {}
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-        try { if (fw != null) fw.close(); } catch (Exception ex) {}
+        // ignore
     }
 }
 private int restoreLatestSessionOnly() {
-    BufferedReader br = null;
-    FileWriter fw = null;
-
-    int restored = 0;
-
     try {
-        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
+        String json = readWholeFile("orders_archive.json");
+        if (json.equals("")) return 0;
 
-        // First pass: find the last session start
-        String line;
-        int lastSessionLine = -1;
-        int lineNo = 0;
+        String[] sessions = splitTopLevelObjects(json);
+        if (sessions.length == 0) return 0;
 
-        while ((line = br.readLine()) != null) {
-            lineNo++;
-            if (line.trim().startsWith("=== ARCHIVE DELETE by")) {
-                lastSessionLine = lineNo;
-            }
-        }
-        br.close();
+        String latestSession = sessions[sessions.length - 1];
+        String ordersJson = extractJsonArray(latestSession, "orders");
 
-        if (lastSessionLine == -1) return 0;
-
-        // Second pass: read from last session and write only order lines
-        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
-        fw = new FileWriter(dp.path("orders.txt"), true); // append
-
-        lineNo = 0;
-        boolean inLatest = false;
-
-        while ((line = br.readLine()) != null) {
-            lineNo++;
-            String t = line.trim();
-
-            if (lineNo == lastSessionLine) inLatest = true;
-
-            if (!inLatest) continue;
-
-            if (t.equals("") || t.startsWith("===") || t.startsWith("Deleted at:")) continue;
-
-            if (t.contains("|")) {
-                fw.write(t + "\n");
-                restored++;
-            }
-        }
-
+        return appendOrdersFromJsonArray(ordersJson);
     } catch (Exception e) {
-        return restored;
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-        try { if (fw != null) fw.close(); } catch (Exception ex) {}
+        return 0;
     }
-
-    return restored;
 }
 private int restoreByDate(String dateFilter) {
-    BufferedReader br = null;
-    FileWriter fw = null;
-
     int restored = 0;
 
     try {
-        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
-        fw = new FileWriter(dp.path("orders.txt"), true);
+        String json = readWholeFile("orders_archive.json");
+        if (json.equals("")) return 0;
 
-        String line;
-        boolean sessionMatch = false;
+        String[] sessions = splitTopLevelObjects(json);
 
-        while ((line = br.readLine()) != null) {
-            String t = line.trim();
-            if (t.equals("")) continue;
+        for (int i = 0; i < sessions.length; i++) {
+            String deletedAt = extractJsonString(sessions[i], "deletedAt");
 
-            if (t.startsWith("=== ARCHIVE DELETE by")) {
-                sessionMatch = false; // reset for new session
-                continue;
-            }
-
-            if (t.startsWith("Deleted at:")) {
-                String dt = t.replace("Deleted at:", "").trim();
-                // match only date part
-                if (dt.startsWith(dateFilter)) sessionMatch = true;
-                continue;
-            }
-
-            if (!sessionMatch) continue;
-
-            if (t.startsWith("===") || t.startsWith("Deleted at:")) continue;
-
-            if (t.contains("|")) {
-                fw.write(t + "\n");
-                restored++;
+            if (deletedAt.startsWith(dateFilter)) {
+                String ordersJson = extractJsonArray(sessions[i], "orders");
+                restored += appendOrdersFromJsonArray(ordersJson);
             }
         }
-
     } catch (Exception e) {
         return restored;
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-        try { if (fw != null) fw.close(); } catch (Exception ex) {}
     }
 
     return restored;
 }
 private int restoreAllArchiveOrders() {
-    BufferedReader br = null;
-    FileWriter fw = null;
-
     int restored = 0;
 
     try {
-        br = new BufferedReader(new FileReader(dp.path("orders_archive.txt")));
-        fw = new FileWriter(dp.path("orders.txt"), true);
+        String json = readWholeFile("orders_archive.json");
+        if (json.equals("")) return 0;
 
-        String line;
-        while ((line = br.readLine()) != null) {
-            String t = line.trim();
-            if (t.equals("")) continue;
+        String[] sessions = splitTopLevelObjects(json);
 
-            if (t.startsWith("===") || t.startsWith("Deleted at:")) continue;
-
-            if (t.contains("|")) {
-                fw.write(t + "\n");
-                restored++;
-            }
+        for (int i = 0; i < sessions.length; i++) {
+            String ordersJson = extractJsonArray(sessions[i], "orders");
+            restored += appendOrdersFromJsonArray(ordersJson);
         }
-
     } catch (Exception e) {
         return restored;
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-        try { if (fw != null) fw.close(); } catch (Exception ex) {}
     }
 
     return restored;
@@ -3214,13 +3530,13 @@ private void undoLastRestore(BufferedReader console) throws Exception {
         return;
     }
 
-    java.io.File backupFile = new java.io.File(dp.path("orders_restore_backup.txt"));
+    java.io.File backupFile = new java.io.File(dp.path("orders_restore_backup.json"));
     if (!backupFile.exists()) {
         System.out.print(ROSE + "No restore backup found. Cannot undo.\n" + RESET);
         return;
     }
 
-    System.out.print(ROSE + "Undo will revert orders.txt to previous state.\n" + RESET);
+    System.out.print(ROSE + "Undo will revert orders.json to previous state.\n" + RESET);
     System.out.print(SOFTGRAY + "Type UNDO to confirm: " + RESET);
     String conf = console.readLine();
     if (conf == null) conf = "";
@@ -3231,28 +3547,17 @@ private void undoLastRestore(BufferedReader console) throws Exception {
         return;
     }
 
-    BufferedReader br = null;
-    FileWriter fw = null;
+    String backupJson = readWholeFile("orders_restore_backup.json");
+    if (backupJson.equals("")) backupJson = "[]";
 
-    try {
-        br = new BufferedReader(new FileReader(dp.path("orders_restore_backup.txt")));
-        fw = new FileWriter(dp.path("orders.txt"), false); // overwrite
-
-        String line;
-        while ((line = br.readLine()) != null) {
-            fw.write(line + "\n");
-        }
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-        try { if (fw != null) fw.close(); } catch (Exception ex) {}
-    }
-
+    replaceOrdersFromJsonArray(backupJson);
+    dp.saveOrders();
     dp.loadAll();
 
-    log.write("ADMIN", "UNDO restore (orders.txt reverted).");
+    log.write("ADMIN", "UNDO restore (orders.json reverted).");
     dp.appendLoginAudit("UNDO_RESTORE", currentAdmin.username);
 
-    System.out.print(MINT + "Undo successful. orders.txt restored to previous state.\n" + RESET);
+    System.out.print(MINT + "Undo successful. orders.json restored to previous state.\n" + RESET);
 }
    }
 
