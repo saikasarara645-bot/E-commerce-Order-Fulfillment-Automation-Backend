@@ -318,10 +318,6 @@ private String ordersToJson(Order[] list, int count, String indent) {
     return json.toString();
 }
 
-private String ordersToJson(Order[] list, int count) {
-    return ordersToJson(list, count, "");
-}
-
 private Order buildOrderFromJson(String obj) {
     if (obj == null || obj.trim().equals("")) return null;
 
@@ -1330,24 +1326,6 @@ private void handleReorder(BufferedReader console) throws Exception {
 
     writeWholeFile("stock_report.json", json.toString());
     System.out.print(MINT + "Stock report generated in stock_report.json\n" + RESET);
-}
-private String extract(String src, String prefix, String endToken) {
-
-    if (src == null) return "";
-
-    int start = src.indexOf(prefix);
-
-    if (start == -1) return "";
-
-    start = start + prefix.length();
-
-    int end = src.indexOf(endToken, start);
-
-    if (end == -1) {
-        return src.substring(start);
-    }
-
-    return src.substring(start, end);
 }
      
 private void importOrdersFromFile(BufferedReader console) throws Exception {
@@ -3297,23 +3275,6 @@ private void deleteAllOrderHistory(BufferedReader console) throws Exception {
     }
 }
 
-private String readLastLine(String filePath) {
-    BufferedReader br = null;
-    try {
-        br = new BufferedReader(new FileReader(filePath));
-        String line;
-        String last = "";
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (!line.equals("")) last = line;
-        }
-        return last;
-    } catch (Exception e) {
-        return "";
-    } finally {
-        try { if (br != null) br.close(); } catch (Exception ex) {}
-    }
-}
 private int[] deleteAllReceiptFiles() {
     int deleted = 0;
     int failed = 0;

@@ -613,20 +613,6 @@ private int computeNextOrderNumber() {
 public void refreshNextOrderNumber() {
     nextOrderNumber = computeNextOrderNumber();
 }
-private boolean isNumeric(String s) {
-    if (s == null) return false;
-
-    s = s.trim();
-    if (s.equals("")) return false;
-
-    for (int i = 0; i < s.length(); i++) {
-        if (!Character.isDigit(s.charAt(i))) {
-            return false;
-        }
-    }
-
-    return true;
-}
 
  // Generate a new unique Order ID (e.g., "O1001", "O1002", ...) 
 public String generateOrderId() {
