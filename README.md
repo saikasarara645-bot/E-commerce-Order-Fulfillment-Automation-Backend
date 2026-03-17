@@ -123,24 +123,25 @@ The backend system is designed to be used by admins who can perform various task
 
 ---
 
-##How to Run the Project
-
-**Clone the repository**:
-
+How to Run the Project
+--------------------------------------
+Clone the repository:
+---------------------
 git clone <repository-url>
 cd E-commerce-Order-Fulfillment-Automation-Backend
 
-**Compile the Java files**:
-
+Compile the Java files:
+-----------------------
 javac -d out src\*.java
 
-**Run the Main class**:
-
+Run the Main class:
+--------------------
  java -cp out Main
 
 ---
 
-##Login:
+Login:
+---------------------------------------
 
 After running the application, log in using the admin credentials. The default credentials (if no admin is loaded) are:
 
@@ -150,7 +151,8 @@ Password: admin123
 
 ---
 
-##Running Simulation Scenarios
+Running Simulation Scenarios
+---------------------------------------
 
 The system includes simulation modes to test different scenarios, including:
 
@@ -166,7 +168,8 @@ To run a simulation, choose the Simulation Mode option from the Admin Dashboard 
 
 ---
 
-##Future Improvements
+Future Improvements
+--------------------------------------
 
 Reporting: Implement more detailed reporting on orders, sales, and revenue.
 
