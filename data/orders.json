@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "orderId": "O01001",
+    "date": "2026-03-17",
+    "address": "Dhaka",
+    "paymentMode": "COD",
+    "status": "PACKED",
+    "totalAmount": 96000,
+    "cancelReason": "",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "A401",
+        "quantity": 3
+      }
+    ]
+  }
+]

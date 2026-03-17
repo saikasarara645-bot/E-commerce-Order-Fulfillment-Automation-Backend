@@ -1,1 +1,22 @@
-[]
+[
+{
+    "orderId": "O01001",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01001",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01001",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01001",
+    "message": "Status changed to PACKED"
+  },
+  {
+    "orderId": "O01001",
+    "message": "Order accepted and moved to PACKED"
+  }
+]

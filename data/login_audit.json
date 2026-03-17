@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T12:21:12.377795500"
+  }
+]

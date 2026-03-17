@@ -2934,9 +2934,11 @@ private void showProductsPreview() {
         LAVENDER + "%-8s %-16s %-14s %-30s %-14s %-8s" + RESET + "%n",
         "ProdID", "Category", "Brand", "Name", "Price", "Stock"
     );
-    System.out.println(SOFTGRAY +
-        "------------------------------------------------------------------------------------------------------------"
-        + RESET
+
+    System.out.println(
+        SOFTGRAY +
+        "------------------------------------------------------------------------------------------------" +
+        RESET
     );
 
     // Rows
@@ -2947,7 +2949,7 @@ private void showProductsPreview() {
         String stockColor = p.stock <= 5 ? ROSE : MINT;
 
         System.out.printf(
-            "%-8s %-16s %-14s %-30s %-14d %s%-8d%s%n",
+            "%-8s %-16s %-14s %-30s %-14s %s%-8d%s%n",
             p.productId,
             p.category,
             p.brand,
