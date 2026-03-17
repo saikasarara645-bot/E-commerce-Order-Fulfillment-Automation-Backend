@@ -3,7 +3,7 @@
     "productId": "A401",
     "name": "WH-1000XM4",
     "price": 32000,
-    "stock": 33
+    "stock": 30
   },
   {
     "productId": "A402",
@@ -27,7 +27,7 @@
     "productId": "H301",
     "name": "Ceiling Fan",
     "price": 6200,
-    "stock": 19
+    "stock": 17
   },
   {
     "productId": "H302",
@@ -46,6 +46,12 @@
     "name": "Rechargeable Fan",
     "price": 7800,
     "stock": 6
+  },
+  {
+    "productId": "H305",
+    "name": "Washing Machine",
+    "price": 64000,
+    "stock": 12
   },
   {
     "productId": "L201",
@@ -102,6 +108,12 @@
     "stock": 12
   },
   {
+    "productId": "M106",
+    "name": "C23",
+    "price": 2500,
+    "stock": 12
+  },
+  {
     "productId": "P501",
     "name": "Mi Power Bank 3",
     "price": 2399,
@@ -123,12 +135,12 @@
     "productId": "P504",
     "name": "RPP-20",
     "price": 2999,
-    "stock": 10
+    "stock": 22
   },
   {
     "productId": "P505",
     "name": "I23",
     "price": 1000,
-    "stock": 5
+    "stock": 12
   }
 ]

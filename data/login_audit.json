@@ -1,7 +1,32 @@
 [
-  {
+{
     "action": "LOGIN_SUCCESS",
     "username": "Saika",
     "timestamp": "2026-03-17T12:21:12.377795500"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T12:28:22.937364500"
+  },
+{
+    "action": "DELETE_ORDERS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T12:36:32.565107400"
+  },
+{
+    "action": "RESTORE_ORDERS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T12:37:01.956607500"
+  },
+{
+    "action": "LOGIN_FAIL",
+    "username": "Saika",
+    "timestamp": "2026-03-17T14:17:12.851962800"
+  },
+  {
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T14:17:27.142602800"
   }
 ]
