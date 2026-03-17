@@ -327,7 +327,7 @@ private Order buildOrderFromJson(String obj) {
 
     Order o = new Order();
 
-    o.orderId = extractJsonString(obj, "orderId");
+    o.orderId = normalizeOrderId(extractJsonString(obj, "orderId"));
     o.date = extractJsonString(obj, "date");
     o.address = extractJsonString(obj, "address");
     o.paymentMode = extractJsonString(obj, "paymentMode");
@@ -369,7 +369,10 @@ private int appendOrdersFromJsonArray(String ordersJson) {
 
         Order o = buildOrderFromJson(orderObjects[i]);
         if (o == null) continue;
-        if (o.orderId == null || o.orderId.trim().equals("")) continue;
+
+        o.orderId = normalizeOrderId(o.orderId);
+
+        if (o.orderId.equals("")) continue;
 
         if (findOrderById(o.orderId) != null) {
             continue; // skip duplicates
@@ -379,6 +382,7 @@ private int appendOrdersFromJsonArray(String ordersJson) {
         restored++;
     }
 
+    dp.refreshNextOrderNumber();
     return restored;
 }
 
@@ -2527,9 +2531,9 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
     printTitle("Product Catalog");
 
     System.out.printf(
-        LAVENDER + "%-8s %-18s %-15s %-28s %-10s %-10s%n" + RESET,
-        "ProdID", "Category", "Brand", "Name", "Price", "Stock"
-    );
+    LAVENDER + "%-8s %-18s %-15s %-28s %-14s %-10s%n" + RESET,
+    "ProdID", "Category", "Brand", "Name", "Price", "Stock"
+);
 
     System.out.println(
         SOFTGRAY + "---------------------------------------------------------------------------------------" + RESET
@@ -2552,15 +2556,17 @@ private void acceptNewOrder(BufferedReader console) throws Exception {
             stockColor = MINT;
         }
 
-        System.out.printf(
-            "%-8s %-18s %-15s %-28s %-10d %s%-10d%s%n",
-            prod.productId,
-            trimTo(category, 18),
-            trimTo(brand, 15),
-            trimTo(name, 28),
-            prod.price,
-            stockColor, prod.stock, RESET
-        );
+      System.out.printf(
+    "%-8s %-18s %-15s %-28s %-14s %s%-10d%s%n",
+    prod.productId,
+    trimTo(category, 18),
+    trimTo(brand, 15),
+    trimTo(name, 28),
+    formatMoney(prod.price),
+    stockColor,
+    prod.stock,
+    RESET
+);
     }
 
     printLine();
@@ -2947,11 +2953,11 @@ private void showProductsPreview() {
 
     // Header
     System.out.printf(
-        LAVENDER + "%-8s %-16s %-14s %-30s %-10s %-8s" + RESET + "%n",
+        LAVENDER + "%-8s %-16s %-14s %-30s %-14s %-8s" + RESET + "%n",
         "ProdID", "Category", "Brand", "Name", "Price", "Stock"
     );
     System.out.println(SOFTGRAY +
-        "------------------------------------------------------------------------------------------------------"
+        "------------------------------------------------------------------------------------------------------------"
         + RESET
     );
 
@@ -2963,12 +2969,12 @@ private void showProductsPreview() {
         String stockColor = p.stock <= 5 ? ROSE : MINT;
 
         System.out.printf(
-            "%-8s %-16s %-14s %-30s %-10d %s%-8d%s%n",
+            "%-8s %-16s %-14s %-30s %-14d %s%-8d%s%n",
             p.productId,
             p.category,
             p.brand,
             p.name,
-            p.price,
+            formatMoney(p.price),
             stockColor,
             p.stock,
             RESET

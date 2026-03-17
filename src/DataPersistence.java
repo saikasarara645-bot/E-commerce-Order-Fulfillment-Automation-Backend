@@ -40,12 +40,12 @@ private String normalizeOrderId(String raw) {
 
     raw = raw.trim().toUpperCase();
 
-    // remove leading O if present
+    // Remove leading O if present
     if (raw.startsWith("O")) {
         raw = raw.substring(1);
     }
 
-    // keep only digits
+    // Keep only digits
     String digits = "";
     for (int i = 0; i < raw.length(); i++) {
         char c = raw.charAt(i);
@@ -54,11 +54,12 @@ private String normalizeOrderId(String raw) {
         }
     }
 
+    if (digits.equals("")) return "";
+
     int num = toInt(digits);
     if (num <= 0) return "";
 
-    // pad to 5 digits: 1001 -> 01001
-    String s = "" + num;
+    String s = String.valueOf(num);
     while (s.length() < 5) {
         s = "0" + s;
     }
@@ -289,13 +290,12 @@ private String[] splitTopLevelObjects(String jsonArrayText) {
     return result;
 }
 /** Load all data from files: products, orders, admins */
- public void loadAll() throws Exception {
- loadProducts();
- loadOrders();
- loadAdmins();
- // Compute initial next order number based on loaded orders
- computeNextOrderNumber();
- }
+public void loadAll() throws Exception {
+    loadProducts();
+    loadOrders();
+    loadAdmins();
+    refreshNextOrderNumber();
+}
  private void loadProducts() throws Exception {
     productCount = 0;
 
@@ -589,24 +589,21 @@ public int computeOrderTotal(Order o) {
 }
  /** Determine nextOrderNumber by finding the max numeric part of loaded order IDs */
 private int computeNextOrderNumber() {
-    int max = 1000;   // so next becomes 01001
+    int max = 1000;   // so first generated id becomes O01001
 
     for (int i = 0; i < orderCount; i++) {
         Order o = orders[i];
         if (o == null || o.orderId == null) continue;
 
-        String s = o.orderId.trim();
+        String normalized = normalizeOrderId(o.orderId);
+        if (normalized.equals("")) continue;
 
-        if (s.equals("")) continue;
+        // Remove leading O
+        String digits = normalized.substring(1);
 
-        // remove optional O prefix
-        if (s.length() > 0 && (s.charAt(0) == 'O' || s.charAt(0) == 'o')) {
-            s = s.substring(1).trim();
-        }
-
-        if (isNumeric(s)) {
-            int n = toInt(s);
-            if (n > max) max = n;
+        int n = toInt(digits);
+        if (n > max) {
+            max = n;
         }
     }
 
@@ -632,33 +629,21 @@ private boolean isNumeric(String s) {
 }
 
  // Generate a new unique Order ID (e.g., "O1001", "O1002", ...) 
- public String generateOrderId() {
-    int maxId = 0;
-
-    for (int i = 0; i < orderCount; i++) {
-        Order o = orders[i];
-        if (o == null || o.orderId == null) continue;
-
-        String id = o.orderId.trim();
-
-        try {
-            int num = Integer.parseInt(id);
-            if (num > maxId) {
-                maxId = num;
-            }
-        } catch (Exception e) {
-            // ignore invalid order ids
-        }
+public String generateOrderId() {
+    // Safety check in case data changed before generation
+    if (nextOrderNumber <= 0) {
+        refreshNextOrderNumber();
     }
 
-    int nextId = maxId + 1;
-
-    String s = String.valueOf(nextId);
+    String s = String.valueOf(nextOrderNumber);
     while (s.length() < 5) {
         s = "0" + s;
     }
 
-    return s;
+    String id = "O" + s;
+    nextOrderNumber++;
+
+    return id;
 }
 /** Parse an "ItemList" string into Item objects added to Order
 * Supported formats:
