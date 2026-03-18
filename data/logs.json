@@ -187,8 +187,56 @@
     "orderId": "O01029",
     "message": "Status changed to PACKED"
   },
-  {
+{
     "orderId": "O01029",
     "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Deleted ALL order history. Orders=12, Receipts=0, Backup=orders_archive.json"
+  },
+{
+    "orderId": "O01030",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "RESTORE from archive. Count=12"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+{
+    "orderId": "O01031",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01031",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01031",
+    "message": "PAYMENT OK (MockCard approved)"
+  },
+{
+    "orderId": "O01031",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01031",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+  {
+    "orderId": "ADMIN",
+    "message": "RESTORE from archive. Count=0"
   }
 ]

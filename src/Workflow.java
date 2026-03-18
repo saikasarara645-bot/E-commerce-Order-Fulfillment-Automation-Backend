@@ -639,12 +639,12 @@ private void printAdminMenu(Admin currentAdmin) {
     printMenuOption(17,"Auto Cancel Stale Orders",true);
     printMenuOption(18,"Show Recently Auto-Cancelled Orders",true);
     // ADMIN ONLY
-    printSection("SYSTEM (ADMIN ONLY)");
+    printSection("SYSTEM");
     printMenuOption(19,"Bulk Import Orders",isAdmin);
     printMenuOption(20,"Archive Delivered Orders",isAdmin);
     printMenuOption(21,"Clear Logs",isAdmin);
     printMenuOption(22,"Add New Admin",isAdmin);
-    printMenuOption(23,"Change Admin Password",isAdmin);
+    printMenuOption(23,"Change Password",true);
     printMenuOption(24,"Generate Report",isAdmin);
     printMenuOption(25,"Delete ALL Order History",isAdmin);
     printMenuOption(26,"Restore Order History",isAdmin);
@@ -754,8 +754,7 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
             break;
 
         case "23":
-            if(isAdmin) changeAdminPassword(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            changeAdminPassword(console);
             break;
 
         case "24":

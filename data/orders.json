@@ -1,5 +1,24 @@
 [
   {
+    "orderId": "O01030",
+    "date": "2026-03-17",
+    "address": "Gazipur",
+    "paymentMode": "COD",
+    "status": "PENDING",
+    "totalAmount": 64000,
+    "cancelReason": "",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "A401",
+        "quantity": 2
+      }
+    ]
+  },
+  {
     "orderId": "O01001",
     "date": "2026-03-17",
     "address": "Dhaka",
@@ -200,7 +219,7 @@
     "address": "Dhaka",
     "paymentMode": "COD",
     "status": "CANCELLED",
-    "totalAmount": 0,
+    "totalAmount": 12400,
     "cancelReason": "Inventory Shortage: H301",
     "trackingId": "",
     "isSimulationOrder": false,
@@ -247,6 +266,25 @@
     "items": [
       {
         "productId": "H304",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "orderId": "O01031",
+    "date": "2026-03-18",
+    "address": "Sylhet",
+    "paymentMode": "MockCard",
+    "status": "PACKED",
+    "totalAmount": 320000,
+    "cancelReason": "",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "L203",
         "quantity": 4
       }
     ]

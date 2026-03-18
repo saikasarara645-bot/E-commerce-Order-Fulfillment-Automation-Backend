@@ -24,9 +24,59 @@
     "username": "Saika",
     "timestamp": "2026-03-17T14:17:12.851962800"
   },
-  {
+{
     "action": "LOGIN_SUCCESS",
     "username": "Saika",
     "timestamp": "2026-03-17T14:17:27.142602800"
+  },
+{
+    "action": "LOGIN_FAIL",
+    "username": "Saika",
+    "timestamp": "2026-03-17T15:51:59.598146900"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T15:52:09.960307100"
+  },
+{
+    "action": "DELETE_ORDERS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T15:52:27.751201400"
+  },
+{
+    "action": "RESTORE_ORDERS",
+    "username": "Saika",
+    "timestamp": "2026-03-17T15:53:39.099531400"
+  },
+{
+    "action": "LOGIN_FAIL",
+    "username": "Saika",
+    "timestamp": "2026-03-18T00:24:17.530944"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-18T00:24:31.576350100"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Zenia",
+    "timestamp": "2026-03-18T14:35:37.000868200"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Zenia",
+    "timestamp": "2026-03-18T14:37:21.734529500"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-18T14:40:59.160648300"
+  },
+  {
+    "action": "RESTORE_ORDERS",
+    "username": "Saika",
+    "timestamp": "2026-03-18T14:41:14.595339900"
   }
 ]
