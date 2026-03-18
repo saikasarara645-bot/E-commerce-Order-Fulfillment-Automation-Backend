@@ -1,1 +1,9 @@
-[]
+{
+  "totalOrders": 8,
+  "completedOrders": 1,
+  "cancelledOrders": 0,
+  "totalRevenue": 9999,
+  "topCancellationReasons": [
+
+  ]
+}
