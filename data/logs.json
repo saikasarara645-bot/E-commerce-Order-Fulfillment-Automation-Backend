@@ -1,0 +1,242 @@
+[
+{
+    "orderId": "O01001",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01001",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01001",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01001",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01001",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Added product H305"
+  },
+{
+    "orderId": "O01002",
+    "message": "Reorder created from 01001 (Status: PENDING)"
+  },
+{
+    "orderId": "O01003",
+    "message": "Simulation order created with status: DELIVERED"
+  },
+{
+    "orderId": "SYSTEM",
+    "message": "Bulk imported order 01021"
+  },
+{
+    "orderId": "SYSTEM",
+    "message": "Bulk imported order O01004"
+  },
+{
+    "orderId": "SYSTEM",
+    "message": "Bulk imported order 01023"
+  },
+{
+    "orderId": "SYSTEM",
+    "message": "Bulk imported order O01005"
+  },
+{
+    "orderId": "SYSTEM",
+    "message": "Bulk imported order 01025"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Deleted ALL order history. Orders=8, Receipts=2, Backup=orders_archive.json"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "RESTORE from archive. Count=8"
+  },
+{
+    "orderId": "O01026",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01001",
+    "message": "Status changed to SHIPPED"
+  },
+{
+    "orderId": "O01021",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01021",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01021",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01021",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01004",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01004",
+    "message": "PAYMENT OK (MockCard approved)"
+  },
+{
+    "orderId": "O01004",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01004",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01004",
+    "message": "Status changed to SHIPPED"
+  },
+{
+    "orderId": "O01004",
+    "message": "Status changed to OUT_FOR_DELIVERY"
+  },
+{
+    "orderId": "O01026",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01026",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01026",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01026",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01026",
+    "message": "Status changed to SHIPPED"
+  },
+{
+    "orderId": "O01027",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01027",
+    "message": "Order cancelled -Inventory Shortage: H301"
+  },
+{
+    "orderId": "O01028",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01028",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01028",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01028",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01028",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01028",
+    "message": "Status changed to SHIPPED"
+  },
+{
+    "orderId": "O01028",
+    "message": "Status changed to OUT_FOR_DELIVERY"
+  },
+{
+    "orderId": "O01028",
+    "message": "Status changed to DELIVERED"
+  },
+{
+    "orderId": "O01029",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01029",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01029",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01029",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01029",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Deleted ALL order history. Orders=12, Receipts=0, Backup=orders_archive.json"
+  },
+{
+    "orderId": "O01030",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "RESTORE from archive. Count=12"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+{
+    "orderId": "O01031",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01031",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01031",
+    "message": "PAYMENT OK (MockCard approved)"
+  },
+{
+    "orderId": "O01031",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01031",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+  {
+    "orderId": "ADMIN",
+    "message": "RESTORE from archive. Count=0"
+  }
+]

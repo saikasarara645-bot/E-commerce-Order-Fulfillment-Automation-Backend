@@ -1,0 +1,146 @@
+[
+  {
+    "productId": "A401",
+    "name": "WH-1000XM4",
+    "price": 32000,
+    "stock": 30
+  },
+  {
+    "productId": "A402",
+    "name": "Tune 510BT",
+    "price": 7999,
+    "stock": 18
+  },
+  {
+    "productId": "A403",
+    "name": "Soundcore Q10",
+    "price": 6999,
+    "stock": 14
+  },
+  {
+    "productId": "A404",
+    "name": "Crusher Evo",
+    "price": 29000,
+    "stock": 22
+  },
+  {
+    "productId": "H301",
+    "name": "Ceiling Fan",
+    "price": 6200,
+    "stock": 17
+  },
+  {
+    "productId": "H302",
+    "name": "Stand Fan",
+    "price": 6800,
+    "stock": 8
+  },
+  {
+    "productId": "H303",
+    "name": "Table Fan",
+    "price": 5500,
+    "stock": 8
+  },
+  {
+    "productId": "H304",
+    "name": "Rechargeable Fan",
+    "price": 7800,
+    "stock": 6
+  },
+  {
+    "productId": "H305",
+    "name": "Washing Machine",
+    "price": 64000,
+    "stock": 12
+  },
+  {
+    "productId": "L201",
+    "name": "Pavilion 15 (i5)",
+    "price": 72000,
+    "stock": 13
+  },
+  {
+    "productId": "L202",
+    "name": "Inspiron 14 (i5)",
+    "price": 75000,
+    "stock": 15
+  },
+  {
+    "productId": "L203",
+    "name": "IdeaPad 3 (i5)",
+    "price": 80000,
+    "stock": 8
+  },
+  {
+    "productId": "L204",
+    "name": "VivoBook 15 (i5)",
+    "price": 70000,
+    "stock": 60
+  },
+  {
+    "productId": "M101",
+    "name": "Galaxy A14 (4/64)",
+    "price": 2500,
+    "stock": 10
+  },
+  {
+    "productId": "M102",
+    "name": "Redmi 12 (8/128)",
+    "price": 18999,
+    "stock": 10
+  },
+  {
+    "productId": "M103",
+    "name": "C55 (8/128)",
+    "price": 19500,
+    "stock": 21
+  },
+  {
+    "productId": "M104",
+    "name": "G21 (6/128)",
+    "price": 17500,
+    "stock": 60
+  },
+  {
+    "productId": "M105",
+    "name": "Spark 20",
+    "price": 20000,
+    "stock": 12
+  },
+  {
+    "productId": "M106",
+    "name": "C23",
+    "price": 2500,
+    "stock": 12
+  },
+  {
+    "productId": "P501",
+    "name": "Mi Power Bank 3",
+    "price": 2399,
+    "stock": 30
+  },
+  {
+    "productId": "P502",
+    "name": "PowerCore 20K",
+    "price": 4999,
+    "stock": 12
+  },
+  {
+    "productId": "P503",
+    "name": "Bipow 20W",
+    "price": 3499,
+    "stock": 18
+  },
+  {
+    "productId": "P504",
+    "name": "RPP-20",
+    "price": 2999,
+    "stock": 22
+  },
+  {
+    "productId": "P505",
+    "name": "I23",
+    "price": 1000,
+    "stock": 12
+  }
+]
