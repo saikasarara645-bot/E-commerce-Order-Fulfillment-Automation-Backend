@@ -1,9 +1,12 @@
 {
-  "totalOrders": 8,
-  "completedOrders": 1,
-  "cancelledOrders": 0,
-  "totalRevenue": 9999,
+  "totalOrders": 14,
+  "completedOrders": 2,
+  "cancelledOrders": 1,
+  "totalRevenue": 265999,
   "topCancellationReasons": [
-
+    {
+      "reason": "Inventory Shortage: H301",
+      "count": 1
+    }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "orderId": "O01003",
+  "address": "Simulation Address",
+  "status": "DELIVERED",
+  "trackingId": "(Not assigned)",
+  "paymentMode": "COD",
+  "isSimulationOrder": true,
+  "items": [
+    {
+      "itemName": "Simulation Item",
+      "quantity": 1,
+      "priceEach": 9999
+    }
+  ],
+  "totalPaid": 9999,
+  "message": "Thank you for your purchase!"
+}
