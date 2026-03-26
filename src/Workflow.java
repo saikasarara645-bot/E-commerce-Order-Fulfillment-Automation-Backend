@@ -1,9 +1,6 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Comparator;
 
 
 
@@ -555,6 +552,47 @@ for (int i = 0; i < dp.orderCount; i++) {
        printLine();
        printProductSummary();  
 }
+private String twoDigits(int n) {
+    return (n < 10 ? "0" : "") + n;
+}
+
+private boolean isLeapYear(int year) {
+    if (year % 400 == 0) return true;
+    if (year % 100 == 0) return false;
+    return year % 4 == 0;
+}
+
+private int[] getCurrentDateParts() {
+    long millis = System.currentTimeMillis();
+    long totalDays = millis / 86400000L;
+
+    int year = 1970;
+    while (true) {
+        int daysInYear = isLeapYear(year) ? 366 : 365;
+        if (totalDays >= daysInYear) {
+            totalDays -= daysInYear;
+            year++;
+        } else {
+            break;
+        }
+    }
+
+    int[] monthDays = {31,28,31,30,31,30,31,31,30,31,30,31};
+    if (isLeapYear(year)) monthDays[1] = 29;
+
+    int month = 1;
+    while (month <= 12) {
+        if (totalDays >= monthDays[month - 1]) {
+            totalDays -= monthDays[month - 1];
+            month++;
+        } else {
+            break;
+        }
+    }
+
+    int day = (int) totalDays + 1;
+    return new int[] { year, month, day };
+}
 
 private int countLowStock(int threshold) {
     int c = 0;
@@ -782,13 +820,34 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
     }
 }
 private void showOrderLogsMenu(BufferedReader console) throws Exception {
-
     printTitle("Available Orders (Sorted by Date)");
 
-    Order[] sorted = Arrays.copyOf(dp.orders, dp.orderCount);
-    Arrays.sort(sorted, Comparator.comparing(o -> o.date));
+    // Manual copy instead of Arrays.copyOf(...)
+    Order[] sorted = new Order[dp.orderCount];
+    for (int i = 0; i < dp.orderCount; i++) {
+        sorted[i] = dp.orders[i];
+    }
 
-    for (Order o : sorted) {
+    // Manual sort instead of Arrays.sort(..., Comparator.comparing(...))
+    for (int i = 0; i < sorted.length - 1; i++) {
+        for (int j = i + 1; j < sorted.length; j++) {
+            if (sorted[i] == null || sorted[j] == null) {
+                continue;
+            }
+
+            String date1 = (sorted[i].date == null) ? "" : sorted[i].date.trim();
+            String date2 = (sorted[j].date == null) ? "" : sorted[j].date.trim();
+
+            if (date1.compareTo(date2) > 0) {
+                Order temp = sorted[i];
+                sorted[i] = sorted[j];
+                sorted[j] = temp;
+            }
+        }
+    }
+
+    for (int i = 0; i < sorted.length; i++) {
+        Order o = sorted[i];
         if (o != null) {
             System.out.println(
                 SOFTGRAY + o.orderId + RESET +
@@ -811,7 +870,7 @@ private void showOrderLogsMenu(BufferedReader console) throws Exception {
     if (order != null)
         log.viewLogsByOrder(order.orderId);
     else
-        System.out.println(ROSE+"Order not found."+RESET);
+        System.out.println(ROSE + "Order not found." + RESET);
 }
 private void showOrderTimeline(BufferedReader console) throws Exception {
     showTimelinePreview();
@@ -2471,11 +2530,10 @@ private String normalizeOrderId(String input) {
     }
 
     /** Helper: get current date as YYYY-MM-DD */
-    private String currentDateString() {
-        // Use system date for realism
-        LocalDate today = LocalDate.now();
-        return today.toString();
-    }
+  private String currentDateString() {
+    int[] parts = getCurrentDateParts();
+    return parts[0] + "-" + twoDigits(parts[1]) + "-" + twoDigits(parts[2]);
+}
 
     /** Helper: convert a YYYY-MM-DD date string to an approximate day count for comparison */
     private int dateToDayCount(String dateStr) {
@@ -2724,36 +2782,32 @@ private void systemHealthCheck() {
     printLine();
 }
 private void autoCancelStaleOrders(int days) throws Exception {
-
-    java.time.LocalDate today = java.time.LocalDate.now();
+    int todayCount = dateToDayCount(currentDateString());
     int cancelled = 0;
 
     for (int i = 0; i < dp.orderCount; i++) {
-
         Order o = dp.orders[i];
         if (o == null) continue;
         if (!"PENDING".equals(o.status)) continue;
+        if (o.date == null || o.date.trim().equals("")) continue;
 
-        try {
-            java.time.LocalDate d = java.time.LocalDate.parse(o.date);
-            long diff = java.time.temporal.ChronoUnit.DAYS.between(d, today);
+        int orderDayCount = dateToDayCount(o.date.trim());
+        if (orderDayCount == 0) continue;
 
-            if (diff >= days) {
-                o.status = "CANCELLED";
-                o.cancelReason = "Auto-cancelled after " + diff + " day(s) in PENDING status";
-                cancelled++;
+        int diff = todayCount - orderDayCount;
 
-                System.out.print(
-                    ROSE + "Cancelled Order: " + o.orderId +
-                    " (Pending for " + diff + " days)\n" + RESET
-                );
+        if (diff >= days) {
+            o.status = "CANCELLED";
+            o.cancelReason = "Auto-cancelled after " + diff + " day(s) in PENDING status";
+            cancelled++;
 
-                log.write("SYSTEM", "Auto-cancelled order " + o.orderId +
-                        " after " + diff + " day(s) in PENDING status");
-            }
+            System.out.print(
+                ROSE + "Cancelled Order: " + o.orderId +
+                " (Pending for " + diff + " days)\n" + RESET
+            );
 
-        } catch (Exception ex) {
-            // ignore bad date format
+            log.write("SYSTEM", "Auto-cancelled order " + o.orderId +
+                    " after " + diff + " day(s) in PENDING status");
         }
     }
 

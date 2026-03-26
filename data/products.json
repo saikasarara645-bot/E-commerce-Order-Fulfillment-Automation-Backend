@@ -5,7 +5,7 @@
     "brand": "Sony",
     "name": "WH-1000XM4",
     "price": 32000,
-    "stock": 24
+    "stock": 20
   },
   {
     "productId": "A402",
@@ -37,7 +37,7 @@
     "brand": "Walton",
     "name": "Ceiling Fan",
     "price": 6200,
-    "stock": 0
+    "stock": 12
   },
   {
     "productId": "H302",

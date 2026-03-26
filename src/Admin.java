@@ -14,7 +14,7 @@ public class Admin {
     //public static final String PEACH     = "\u001B[38;5;216m"; // warnings/restricted
     public static final String ROSE      = "\u001B[38;5;174m"; // exit/error
     public static final String SOFTGRAY  = "\u001B[38;5;250m"; // normal text
- public String username;
+    public String username;
     public String passHash;  // Hashed password
     public Role role;  // User role (e.g., ADMIN, MANAGER, SUPPORT)
 

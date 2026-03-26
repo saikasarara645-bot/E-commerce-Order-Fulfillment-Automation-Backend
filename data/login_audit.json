@@ -74,9 +74,44 @@
     "username": "Saika",
     "timestamp": "2026-03-18T14:40:59.160648300"
   },
-  {
+{
     "action": "RESTORE_ORDERS",
     "username": "Saika",
     "timestamp": "2026-03-18T14:41:14.595339900"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-19T09:20:38.834807800"
+  },
+{
+    "action": "LOGIN_FAIL",
+    "username": "admin",
+    "timestamp": "2026-03-20T13:48:44.729931500"
+  },
+{
+    "action": "LOGIN_FAIL",
+    "username": "admin",
+    "timestamp": "2026-03-20T13:48:56.324372500"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-25T22:27:18.199616400"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-25T23:50:26.227719500"
+  },
+{
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-26T22:22:52.444554700"
+  },
+  {
+    "action": "LOGIN_SUCCESS",
+    "username": "Saika",
+    "timestamp": "2026-03-26T17:25:06"
   }
 ]

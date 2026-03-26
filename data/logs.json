@@ -235,8 +235,84 @@
     "orderId": "ADMIN",
     "message": "Password changed"
   },
-  {
+{
     "orderId": "ADMIN",
     "message": "RESTORE from archive. Count=0"
+  },
+{
+    "orderId": "O01032",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01030",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01030",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01030",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01030",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01032",
+    "message": "Order cancelled -Inventory Shortage: P502"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Restocked H301 (+12)"
+  },
+{
+    "orderId": "O01033",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01031",
+    "message": "Status changed to SHIPPED"
+  },
+{
+    "orderId": "O01025",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01025",
+    "message": "PAYMENT OK (MockCard approved)"
+  },
+{
+    "orderId": "O01025",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01025",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01004",
+    "message": "Status changed to DELIVERED"
+  },
+{
+    "orderId": "O01034",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01034",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01034",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01034",
+    "message": "Status changed to PACKED"
+  },
+  {
+    "orderId": "O01034",
+    "message": "Order accepted and moved to PACKED"
   }
 ]

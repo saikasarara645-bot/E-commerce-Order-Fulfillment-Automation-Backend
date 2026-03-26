@@ -66,6 +66,61 @@ private String normalizeOrderId(String raw) {
 
     return "O" + s;
 }
+private String twoDigits(int n) {
+    if (n < 10) {
+        return "0" + n;
+    }
+    return "" + n;
+}
+
+private boolean isLeapYear(int year) {
+    if (year % 400 == 0) return true;
+    if (year % 100 == 0) return false;
+    return year % 4 == 0;
+}
+
+private int[] getCurrentDateTimeParts() {
+    long millis = System.currentTimeMillis();
+    long totalSeconds = millis / 1000L;
+    long totalDays = totalSeconds / 86400L;
+
+    int secondsInDay = (int) (totalSeconds % 86400L);
+    if (secondsInDay < 0) {
+        secondsInDay += 86400;
+        totalDays--;
+    }
+
+    int hour = secondsInDay / 3600;
+    int minute = (secondsInDay % 3600) / 60;
+    int second = secondsInDay % 60;
+
+    int year = 1970;
+    while (true) {
+        int daysInYear = isLeapYear(year) ? 366 : 365;
+        if (totalDays >= daysInYear) {
+            totalDays -= daysInYear;
+            year++;
+        } else {
+            break;
+        }
+    }
+
+    int[] monthDays = {31,28,31,30,31,30,31,31,30,31,30,31};
+    if (isLeapYear(year)) monthDays[1] = 29;
+
+    int month = 1;
+    while (month <= 12) {
+        if (totalDays >= monthDays[month - 1]) {
+            totalDays -= monthDays[month - 1];
+            month++;
+        } else {
+            break;
+        }
+    }
+
+    int day = (int) totalDays + 1;
+    return new int[] { year, month, day, hour, minute, second };
+}
 
 private String readWholeFile(String filename) throws Exception {
     BufferedReader br = null;
@@ -817,8 +872,9 @@ public void appendLoginAudit(String action, String username) {
 }
 
 public String currentDateTimeString() {
- java.time.LocalDateTime dt = java.time.LocalDateTime.now();
- return dt.toString(); // 2026-02-07T12:30:00
+    int[] p = getCurrentDateTimeParts();
+    return p[0] + "-" + twoDigits(p[1]) + "-" + twoDigits(p[2])
+         + "T" + twoDigits(p[3]) + ":" + twoDigits(p[4]) + ":" + twoDigits(p[5]);
 }
 // Auto-generate Product ID based on category using your existing pattern (M/L/H/A/P)
 public String generateProductIdByCategory(String category) {
