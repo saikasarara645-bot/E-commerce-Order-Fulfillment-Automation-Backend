@@ -686,11 +686,6 @@ public String generateOrderId() {
 
     return id;
 }
-/** Parse an "ItemList" string into Item objects added to Order
-* Supported formats:
-* - "P01x2,P03x1"
-* - "P01:2,P03:1"
-*/
 public void parseItemsIntoOrder(Order o, String itemsPart) {
  if (o == null || itemsPart == null) return;
  String part = itemsPart.trim();

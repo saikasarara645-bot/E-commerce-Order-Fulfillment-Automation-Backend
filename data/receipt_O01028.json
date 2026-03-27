@@ -1,0 +1,17 @@
+{
+  "orderId": "O01028",
+  "address": "Tangail",
+  "status": "DELIVERED",
+  "trackingId": "TRK01028",
+  "paymentMode": "COD",
+  "isSimulationOrder": false,
+  "items": [
+    {
+      "itemName": "Washing Machine",
+      "quantity": 4,
+      "priceEach": 64000
+    }
+  ],
+  "totalPaid": 256000,
+  "message": "Thank you for your purchase!"
+}

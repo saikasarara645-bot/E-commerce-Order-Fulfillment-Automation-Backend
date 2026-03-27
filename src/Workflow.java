@@ -462,14 +462,9 @@ private void printSection(String text) {
     System.out.println(PINK + BOLD + ">>" + text + RESET);
     printLine();
 }
-private void printMenuOption(int num, String text, boolean enabled) {
+private void printMenuOption(int num, String text) {
     String label = "[" + num + "] ";
-
-    if (enabled) {
-        System.out.println(LAVENDER + label + RESET + MINT + text + RESET);
-    } else {
-        System.out.println(LAVENDER + label + RESET + ROSE + text + " (Restricted)" + RESET);
-    }
+    System.out.println(LAVENDER + label + RESET + MINT + text + RESET);
 }
 private void printFooter(String message) {
     if (message == null) message = "";
@@ -643,50 +638,57 @@ private int countLowStock(int threshold) {
     }
 }
 private void printAdminMenu(Admin currentAdmin) {
-
     boolean isAdmin = currentAdmin.role == Role.ADMIN;
     boolean isManager = currentAdmin.role == Role.MANAGER;
     boolean canManageStock = isAdmin || isManager;
+
     System.out.println();
     System.out.println(LAVENDER + BOLD + "==================== MENU ====================" + RESET);
 
     // ORDER MANAGEMENT
     printSection("ORDER MANAGEMENT");
-    printMenuOption(1,"Accept New Order",true);
-    printMenuOption(2,"Update Order Status",true);
-    printMenuOption(3,"View Order Logs",true);
-    printMenuOption(4,"Search/Filter Orders",true);
-    printMenuOption(5,"Generate Receipt",true);
+    printMenuOption(1, "Accept New Order");
+    printMenuOption(2, "Update Order Status");
+    printMenuOption(3, "View Order Logs");
+    printMenuOption(4, "Search/Filter Orders");
+    printMenuOption(5, "Generate Receipt");
 
-    // PRODUCT
+    // PRODUCT & STOCK
     printSection("PRODUCT & STOCK");
-    printMenuOption(6,"Advanced Product Filter",true);
-    printMenuOption(7,"Manage Products",canManageStock);
-    printMenuOption(8,"Low Stock Alerts",canManageStock);
-    printMenuOption(9,"Restock Product",canManageStock);
-    printMenuOption(10,"Export Stock Report",canManageStock);
+    printMenuOption(6, "Advanced Product Filter");
+
+    if (canManageStock) {
+        printMenuOption(7, "Manage Products");
+        printMenuOption(8, "Low Stock Alerts");
+        printMenuOption(9, "Restock Product");
+        printMenuOption(10, "Export Stock Report");
+    }
 
     // OPERATIONS
     printSection("OPERATIONS");
-    printMenuOption(11,"Reorder Previous Order",true);
-    printMenuOption(12,"Retry Failed Order",true);
-    printMenuOption(13,"Simulation Mode",true);
-    printMenuOption(14,"Load Test Data",true);
-    printMenuOption(15,"System Health Check",true);
-    printMenuOption(16,"Show Order Timeline",true);
-    printMenuOption(17,"Auto Cancel Stale Orders",true);
-    printMenuOption(18,"Show Recently Auto-Cancelled Orders",true);
-    // ADMIN ONLY
+    printMenuOption(11, "Reorder Previous Order");
+    printMenuOption(12, "Retry Failed Order");
+    printMenuOption(13, "Simulation Mode");
+    printMenuOption(14, "Load Test Data");
+    printMenuOption(15, "System Health Check");
+    printMenuOption(16, "Show Order Timeline");
+    printMenuOption(17, "Auto Cancel Stale Orders");
+    printMenuOption(18, "Show Recently Auto-Cancelled Orders");
+
     printSection("SYSTEM");
-    printMenuOption(19,"Bulk Import Orders",isAdmin);
-    printMenuOption(20,"Archive Delivered Orders",isAdmin);
-    printMenuOption(21,"Clear Logs",isAdmin);
-    printMenuOption(22,"Add New Admin",isAdmin);
-    printMenuOption(23,"Change Password",true);
-    printMenuOption(24,"Generate Report",isAdmin);
-    printMenuOption(25,"Delete ALL Order History",isAdmin);
-    printMenuOption(26,"Restore Order History",isAdmin);
-    printMenuOption(27,"Undo Last Restore",isAdmin);
+    if (isAdmin) {
+        printMenuOption(19, "Bulk Import Orders");
+        printMenuOption(20, "Archive Delivered Orders");
+        printMenuOption(21, "Clear Logs");
+        printMenuOption(22, "Add New Admin");
+    }
+        printMenuOption(23, "Change Admin Password");
+    if(isAdmin){
+        printMenuOption(24, "Generate Report");
+        printMenuOption(25, "Delete ALL Order History");
+        printMenuOption(26, "Restore Order History");
+        printMenuOption(27, "Undo Last Restore");
+    }
 
     System.out.println();
     System.out.println(LAVENDER + "[0] Exit" + RESET);
@@ -711,22 +713,22 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
 
         case "7":
             if(canManageStock) handleProductManagement(console);
-            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "8":
             if(canManageStock) showLowStockAlerts();
-            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "9":
             if(canManageStock) handleRestock(console);
-            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "10":
             if(canManageStock) exportStockReport();
-            else System.out.println(ROSE+"Restricted: Admin/Manager only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "11": handleReorder(console); break;
@@ -769,26 +771,26 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
         break;
 
         case "19":
-        if (isAdmin) {
-          importOrdersFromFile(console);
+         if (isAdmin) {
+            importOrdersFromFile(console);
         } else {
-        System.out.println(ROSE + "Restricted: Admin only." + RESET);
-        }
-        break;
+             System.out.println(ROSE + "Invalid option." + RESET);
+    }
+    break;
 
         case "20":
             if(isAdmin) archiveDeliveredOrders(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "21":
             if(isAdmin) clearLogs(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "22":
             if(isAdmin) addNewAdmin(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "23":
@@ -797,22 +799,22 @@ private void handleDashboardChoice(String choice, BufferedReader console, Admin 
 
         case "24":
             if(isAdmin) generateReport();
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "25":
             if(isAdmin) deleteAllOrderHistory(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "26":
             if(isAdmin) restoreOrdersFromArchive(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         case "27":
             if(isAdmin) undoLastRestore(console);
-            else System.out.println(ROSE+"Restricted: Admin only."+RESET);
+            else System.out.println(ROSE + "Invalid option." + RESET);
             break;
 
         default:
@@ -914,8 +916,7 @@ private void addNewAdmin(BufferedReader console) throws Exception {
     System.out.print(SOFTGRAY+"Enter new admin username: "+RESET);
     String username = console.readLine().trim();
 
-    System.out.print(SOFTGRAY+"Enter new admin password: "+RESET);
-    String password = console.readLine().trim();
+    String password = Admin.readPasswordWithAsterisk(console, SOFTGRAY + "Enter new admin password: " + RESET);
 
     System.out.print(SOFTGRAY+"Enter role (ADMIN, MANAGER, SUPPORT): "+RESET);
     String roleStr = console.readLine().trim().toUpperCase();
@@ -1755,23 +1756,14 @@ private void importOrdersFromFile(BufferedReader console) throws Exception {
 }
     /** Feature 20: Change password for the currently logged-in admin account */
     private void changeAdminPassword(BufferedReader console) throws Exception {
-        System.out.print(SOFTGRAY+"Enter current password: "+RESET);
-        String currentPass = console.readLine();
-        if (currentPass == null) currentPass = "";
-        currentPass = currentPass.trim();
+        String currentPass = Admin.readPasswordWithAsterisk(console,SOFTGRAY + "Enter current password: " + RESET);
         Admin admin = dp.admins[dp.currentAdminIndex];
         if (!admin.passHash.equals(Admin.hashPassword(currentPass))) {
             System.out.print(ROSE+"Current password is incorrect.\n"+RESET);
             return;
         }
-        System.out.print(SOFTGRAY+"Enter new password: "+RESET);
-        String newPass1 = console.readLine();
-        if (newPass1 == null) newPass1 = "";
-        newPass1 = newPass1.trim();
-        System.out.print(SOFTGRAY+"Confirm new password: "+RESET);
-        String newPass2 = console.readLine();
-        if (newPass2 == null) newPass2 = "";
-        newPass2 = newPass2.trim();
+        String newPass1 = Admin.readPasswordWithAsterisk(console,SOFTGRAY + "Enter new password: " + RESET);
+        String newPass2 = Admin.readPasswordWithAsterisk(console,SOFTGRAY + "Confirm new password: " + RESET);
         if (!newPass1.equals(newPass2) || newPass1.equals("")) {
             System.out.print(ROSE+"Password mismatch or empty. Password not changed.\n"+RESET);
             return;
@@ -1797,6 +1789,75 @@ private void importOrdersFromFile(BufferedReader console) throws Exception {
 
     writeWholeFile("logs.json", "[]");
     System.out.print(MINT + "All logs cleared.\n" + RESET);
+}
+private void showReceiptPreview(Order order) {
+    if (order == null) {
+        System.out.print(ROSE + "Receipt preview not available.\n" + RESET);
+        return;
+    }
+
+    printLine();
+    System.out.println(PINK + BOLD + "Receipt Preview" + RESET);
+    printLine();
+
+    String address = (order.address == null || order.address.trim().equals(""))
+            ? "(Not Provided)"
+            : order.address.trim();
+
+    String tracking = (order.trackingId == null || order.trackingId.trim().equals(""))
+            ? "(Not assigned)"
+            : order.trackingId.trim();
+
+    String payment = (order.paymentMode == null || order.paymentMode.trim().equals(""))
+            ? "(N/A)"
+            : order.paymentMode.trim();
+
+    System.out.println(LAVENDER + "Order ID: " + RESET + order.orderId);
+    System.out.println(LAVENDER + "Date: " + RESET + order.date);
+    System.out.println(LAVENDER + "Status: " + RESET + order.status);
+    System.out.println(LAVENDER + "Tracking ID: " + RESET + tracking);
+    System.out.println(LAVENDER + "Address: " + RESET + address);
+    System.out.println(LAVENDER + "Payment Mode: " + RESET + payment);
+    System.out.println();
+
+    System.out.println(PINK + BOLD + "Items" + RESET);
+    printLine();
+
+    for (int j = 0; j < order.itemCount; j++) {
+        Item it = order.items[j];
+        if (it == null) continue;
+
+        String itemName;
+        int priceEach;
+
+        if (order.isSimulationOrder) {
+            itemName = (order.simulationItemName == null || order.simulationItemName.trim().equals(""))
+                    ? "Simulation Item"
+                    : order.simulationItemName.trim();
+            priceEach = order.simulationItemPrice;
+        } else {
+            Product p = dp.findProductById(it.productId);
+            itemName = (p != null && p.name != null && !p.name.trim().equals(""))
+                    ? p.name.trim()
+                    : it.productId;
+            priceEach = (p != null) ? p.price : 0;
+        }
+
+        int lineTotal = priceEach * it.quantity;
+
+        System.out.println(
+                SOFTGRAY + "- " + RESET
+                + itemName
+                + SOFTGRAY + " | Qty: " + RESET + it.quantity
+                + SOFTGRAY + " | Price: " + RESET + "BDT " + priceEach
+                + SOFTGRAY + " | Line Total: " + RESET + "BDT " + lineTotal
+        );
+    }
+
+    printLine();
+    System.out.println(MINT + "Total Paid: BDT " + computeOrderTotal(order) + RESET);
+    System.out.println(MINT + "Message: Thank you for your purchase!" + RESET);
+    printLine();
 }
 
  private void generateReceipt(BufferedReader console) throws Exception {
@@ -1881,9 +1942,13 @@ private void importOrdersFromFile(BufferedReader console) throws Exception {
     json.append("  \"message\": ").append(q("Thank you for your purchase!")).append("\n");
     json.append("}");
 
-    writeWholeFile(filename, json.toString());
+   writeWholeFile(filename, json.toString());
 
-    System.out.print(MINT + "Receipt generated: " + filename + "\n" + RESET);
+   System.out.print(MINT + "Receipt generated: " + filename + "\n" + RESET);
+   showReceiptPreview(order);
+
+   System.out.print(SOFTGRAY + "Press Enter to continue..." + RESET);
+   console.readLine();
 }
     /** Feature 14: Increase stock of an existing product (restock) */
     private void handleRestock(BufferedReader console) throws Exception {
@@ -2954,8 +3019,6 @@ private void showOrdersPreview() {
         else if (st.equals("DELIVERED")) stColor = MINT;
         else if (st.equals("CANCELLED")) stColor = ROSE;
         else stColor = SOFTGRAY;
-
-        // ✅ FIX TOTAL: if stored total is 0, compute from items
         int total = o.totalAmount;
         if (total <= 0) {
             total = computeOrderTotal(o);
@@ -3047,7 +3110,7 @@ private void showRestockPreview() {
     System.out.println(SOFTGRAY + "------------------------------------------------------------" + RESET);
 
     int lowCount = 0;
-    int threshold = 5; // ✅ change this if you want (ex: 10)
+    int threshold = 5; 
 
     for (int i = 0; i < dp.productCount; i++) {
         Product p = dp.products[i];
@@ -3581,6 +3644,7 @@ private void undoLastRestore(BufferedReader console) throws Exception {
 
     System.out.print(MINT + "Undo successful. orders.json restored to previous state.\n" + RESET);
 }
+
    }
 
 

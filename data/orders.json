@@ -275,7 +275,7 @@
     "date": "2026-03-18",
     "address": "Sylhet",
     "paymentMode": "MockCard",
-    "status": "SHIPPED",
+    "status": "OUT_FOR_DELIVERY",
     "totalAmount": 320000,
     "cancelReason": "",
     "trackingId": "TRK01031",
@@ -350,6 +350,90 @@
     "items": [
       {
         "productId": "A401",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "orderId": "O01035",
+    "date": "2026-03-27",
+    "address": "Dhanmondi",
+    "paymentMode": "MockCard",
+    "status": "CANCELLED",
+    "totalAmount": 216000,
+    "cancelReason": "Payment Declined",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "L201",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "orderId": "O01036",
+    "date": "2026-03-27",
+    "address": "Dhaka",
+    "paymentMode": "COD",
+    "status": "PENDING",
+    "totalAmount": 790000,
+    "cancelReason": "",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "M106",
+        "quantity": 204
+      },
+      {
+        "productId": "L204",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "orderId": "O01037",
+    "date": "2026-03-27",
+    "address": "Dhaka",
+    "paymentMode": "COD",
+    "status": "CANCELLED",
+    "totalAmount": 790000,
+    "cancelReason": "Inventory Shortage: M106",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "M106",
+        "quantity": 204
+      },
+      {
+        "productId": "L204",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "orderId": "O01038",
+    "date": "2026-03-27",
+    "address": "Dhaka",
+    "paymentMode": "COD",
+    "status": "PENDING",
+    "totalAmount": 12400,
+    "cancelReason": "",
+    "trackingId": "",
+    "isSimulationOrder": false,
+    "simulationItemName": "",
+    "simulationItemPrice": 0,
+    "items": [
+      {
+        "productId": "H301",
         "quantity": 2
       }
     ]
