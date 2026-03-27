@@ -53,11 +53,7 @@ public class Admin {
         if (u == null) u = "";
         u = u.trim();
 
-        System.out.print(SOFTGRAY+"Password: "+RESET);
-        String p = console.readLine();
-        if (p == null) p = "";
-        p = p.trim();
-        
+        String p = readPasswordWithAsterisk(console, SOFTGRAY + "Password: " + RESET);
         boolean authenticated = false;
         int foundIndex = -1;
 
@@ -72,18 +68,13 @@ public class Admin {
 
           if (authenticated) {
             dp.currentAdminIndex = foundIndex;
-            
-            // ✅ NEW LINE #1 (SUCCESS LOG)
             dp.appendLoginAudit("LOGIN_SUCCESS", u);
-
             Admin admin = dp.admins[foundIndex];
             System.out.println(MINT+"Login successful. Role: " + admin.role +RESET);
             return true;
 
         } else {
-            // ✅ NEW LINE #2 (FAIL LOG)
             dp.appendLoginAudit("LOGIN_FAIL", u);
-
             System.out.print(ROSE+"Invalid credentials. "+RESET);
             attempts++;
             if (attempts < 3) {
@@ -116,5 +107,42 @@ public class Admin {
             return password;
         }
     }
-    
+   private static class PasswordMaskingThread extends Thread {
+    private volatile boolean running = true;
+    private final String prompt;
+
+    public PasswordMaskingThread(String prompt) {
+        this.prompt = prompt;
+    }
+
+    public void stopMasking() {
+        running = false;
+    }
+
+    @Override
+    public void run() {
+        System.out.print(prompt);
+        while (running) {
+            System.out.print("\010*");
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+    }
+}
+
+public static String readPasswordWithAsterisk(BufferedReader console, String prompt) throws Exception {
+    PasswordMaskingThread maskingThread = new PasswordMaskingThread(prompt);
+    maskingThread.start();
+
+    String password = console.readLine();
+
+    maskingThread.stopMasking();
+    System.out.println();
+
+    if (password == null) return "";
+    return password.trim();
+} 
 }

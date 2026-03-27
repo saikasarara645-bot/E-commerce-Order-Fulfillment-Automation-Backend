@@ -311,8 +311,56 @@
     "orderId": "O01034",
     "message": "Status changed to PACKED"
   },
-  {
+{
     "orderId": "O01034",
     "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01035",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01035",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01035",
+    "message": "PAYMENT FAIL (MockCard declined)"
+  },
+{
+    "orderId": "O01035",
+    "message": "Order cancelled - Payment Declined"
+  },
+{
+    "orderId": "O01036",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01031",
+    "message": "Status changed to OUT_FOR_DELIVERY"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Restocked H304 (+13)"
+  },
+{
+    "orderId": "O01037",
+    "message": "Reorder created from 01036 (Status: PENDING)"
+  },
+{
+    "orderId": "O01037",
+    "message": "Order cancelled -Inventory Shortage: M106"
+  },
+{
+    "orderId": "O01038",
+    "message": "Retry order created from 01027 (Status: PENDING)"
+  },
+{
+    "orderId": "ADMIN",
+    "message": "Password changed"
+  },
+  {
+    "orderId": "ADMIN",
+    "message": "Password changed"
   }
 ]
