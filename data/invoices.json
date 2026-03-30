@@ -65,10 +65,16 @@
     "totalAmount": 22999,
     "generatedAt": "2026-03-25T23:58:26.187471600"
   },
-  {
+{
     "invoiceId": "INV-202603-01034",
     "orderId": "O01034",
     "totalAmount": 64000,
     "generatedAt": "2026-03-26T17:25:36"
+  },
+  {
+    "invoiceId": "INV-202603-01040",
+    "orderId": "O01040",
+    "totalAmount": 101000,
+    "generatedAt": "2026-03-28T10:13:30"
   }
 ]
