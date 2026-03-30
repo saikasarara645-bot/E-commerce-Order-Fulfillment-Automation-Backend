@@ -359,8 +359,64 @@
     "orderId": "ADMIN",
     "message": "Password changed"
   },
-  {
+{
     "orderId": "ADMIN",
     "message": "Password changed"
+  },
+{
+    "orderId": "O01039",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01039",
+    "message": "Order cancelled -Inventory Shortage: L203"
+  },
+{
+    "orderId": "O01040",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01040",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01040",
+    "message": "PAYMENT OK (Cash on Delivery)"
+  },
+{
+    "orderId": "O01040",
+    "message": "Status changed to PACKED"
+  },
+{
+    "orderId": "O01040",
+    "message": "Order accepted and moved to PACKED"
+  },
+{
+    "orderId": "O01041",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01041",
+    "message": "Inventory OK – stock reserved"
+  },
+{
+    "orderId": "O01041",
+    "message": "PAYMENT FAIL (MockCard declined)"
+  },
+{
+    "orderId": "O01041",
+    "message": "Order cancelled - Payment Declined"
+  },
+{
+    "orderId": "O01042",
+    "message": "Order created via admin interface (PENDING)"
+  },
+{
+    "orderId": "O01043",
+    "message": "Reorder created from 01042 (Status: PENDING)"
+  },
+  {
+    "orderId": "O01044",
+    "message": "Simulation order created with status: DELIVERED"
   }
 ]
